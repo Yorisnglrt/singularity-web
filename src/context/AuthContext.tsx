@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export interface User {
@@ -26,6 +27,9 @@ interface AuthContextType {
   toggleInteraction: (eventId: string, action: EventInteraction['action']) => void;
   hasInteraction: (eventId: string, action: EventInteraction['action']) => boolean;
   isLoading: boolean;
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean) => void;
+  openAuthModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,9 +37,13 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const STORAGE_INTERACTIONS_KEY = 'sc_interactions';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [interactions, setInteractions] = useState<EventInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const openAuthModal = () => setShowAuthModal(true);
 
   // Load session and listen for auth changes
   useEffect(() => {
@@ -100,11 +108,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, displayName: string): Promise<{ error?: string }> => {
     try {
+      console.log('REGISTER START', { email, displayName });
+
       // 1. Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            display_name: displayName,
+          },
+        },
       });
+
+      console.log('SIGNUP RESULT', authData);
+      console.log('SIGNUP ERROR', authError);
 
       if (authError) return { error: authError.message };
       if (!authData.user) return { error: 'Registration failed - no user returned.' };
@@ -152,6 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setInteractions([]);
+    router.push('/');
+    router.refresh();
   };
 
   const toggleInteraction = (eventId: string, action: EventInteraction['action']) => {
@@ -172,7 +192,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, interactions, login, register, logout, toggleInteraction, hasInteraction, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      interactions, 
+      login, 
+      register, 
+      logout, 
+      toggleInteraction, 
+      hasInteraction, 
+      isLoading,
+      showAuthModal,
+      setShowAuthModal,
+      openAuthModal
+    }}>
       {children}
     </AuthContext.Provider>
   );

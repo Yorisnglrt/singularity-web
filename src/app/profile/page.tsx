@@ -6,7 +6,7 @@ import { events } from '@/data/events';
 import styles from './page.module.css';
 
 export default function ProfilePage() {
-  const { user, interactions, logout } = useAuth();
+  const { user, interactions, logout, openAuthModal } = useAuth();
 
   if (!user) {
     return (
@@ -16,7 +16,7 @@ export default function ProfilePage() {
             <span className={styles.icon}>◈</span>
             <h1>Sign in to view your profile</h1>
             <p>Track your event interactions, earn loyalty points, and save your favourites.</p>
-            <Link href="/login" className="btn btn-primary">Sign In / Register</Link>
+            <button onClick={openAuthModal} className="btn btn-primary">Sign In / Register</button>
           </div>
         </div>
       </div>

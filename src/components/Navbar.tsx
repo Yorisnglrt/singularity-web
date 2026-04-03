@@ -22,11 +22,10 @@ const locales: Locale[] = ['en', 'no', 'cs', 'pl'];
 
 export default function Navbar() {
   const { t, locale, setLocale } = useI18n();
-  const { user } = useAuth();
+  const { user, showAuthModal, setShowAuthModal } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
 
   return (
     <>
@@ -86,7 +85,7 @@ export default function Navbar() {
                 <span className={styles.userName}>{user.displayName}</span>
               </Link>
             ) : (
-              <button className={styles.signInBtn} onClick={() => setShowAuth(true)} id="nav-signin">
+              <button className={styles.signInBtn} onClick={() => setShowAuthModal(true)} id="nav-signin">
                 Sign In
               </button>
             )}
@@ -107,7 +106,7 @@ export default function Navbar() {
       </div>
     </nav>
 
-    {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+    {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
   </>
   );
 }
