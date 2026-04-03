@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export interface User {
   id: string;
@@ -29,8 +30,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_USERS_KEY = 'sc_users';
-const STORAGE_SESSION_KEY = 'sc_session';
 const STORAGE_INTERACTIONS_KEY = 'sc_interactions';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -38,75 +37,119 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [interactions, setInteractions] = useState<EventInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load session on mount
+  // Load session and listen for auth changes
   useEffect(() => {
-    try {
-      const session = localStorage.getItem(STORAGE_SESSION_KEY);
-      if (session) {
-        const parsed = JSON.parse(session) as User;
-        setUser(parsed);
-        // Load that user's interactions
-        const allInteractions = JSON.parse(localStorage.getItem(STORAGE_INTERACTIONS_KEY) || '{}');
-        setInteractions(allInteractions[parsed.id] || []);
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchProfile(session.user.id, session.user.email || '');
       }
-    } catch (e) {
-      // Corrupt storage, clear it
-      localStorage.removeItem(STORAGE_SESSION_KEY);
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+      if (session?.user) {
+        await fetchProfile(session.user.id, session.user.email || '');
+      } else {
+        setUser(null);
+        setInteractions([]);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const getUsers = (): Record<string, { passwordHash: string; user: User }> => {
+  const fetchProfile = async (id: string, email: string) => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_USERS_KEY) || '{}');
-    } catch { return {}; }
-  };
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  const saveUsers = (users: Record<string, { passwordHash: string; user: User }>) => {
-    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-  };
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // If profile doesn't exist, we might want to handle it (but signup should create it)
+        return;
+      }
 
-  // Very simple hash for mock purposes only (NOT for production)
-  const mockHash = (str: string) => btoa(str + '_sc_salt');
+      if (data) {
+        const userData: User = {
+          id: data.id,
+          email: data.email || email,
+          displayName: data.display_name || email.split('@')[0],
+          avatarInitial: (data.display_name || email)[0].toUpperCase(),
+          points: data.points || 0,
+          createdAt: data.created_at || new Date().toISOString(),
+        };
+        setUser(userData);
+
+        // Load interactions from localStorage for now (can be moved to Supabase later)
+        const allInteractions = JSON.parse(localStorage.getItem(STORAGE_INTERACTIONS_KEY) || '{}');
+        setInteractions(allInteractions[data.id] || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch profile:', e);
+    }
+  };
 
   const register = async (email: string, password: string, displayName: string): Promise<{ error?: string }> => {
-    const users = getUsers();
-    const key = email.toLowerCase();
-    if (users[key]) return { error: 'An account with this email already exists.' };
-    if (password.length < 6) return { error: 'Password must be at least 6 characters.' };
+    try {
+      // 1. Sign up user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      email: key,
-      displayName: displayName || email.split('@')[0],
-      avatarInitial: (displayName || email)[0].toUpperCase(),
-      points: 0,
-      createdAt: new Date().toISOString(),
-    };
-    users[key] = { passwordHash: mockHash(password), user: newUser };
-    saveUsers(users);
-    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(newUser));
-    setUser(newUser);
-    setInteractions([]);
-    return {};
+      if (authError) return { error: authError.message };
+      if (!authData.user) return { error: 'Registration failed - no user returned.' };
+
+      // 2. Explicitly create or upsert a profile row in the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          email: authData.user.email,
+          display_name: displayName || '',
+          points: 0,
+          created_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // We log the error but the auth user was still created.
+        return { error: 'Auth successful, but profile creation failed: ' + profileError.message };
+      }
+
+      return {};
+    } catch (err: any) {
+      console.error('Signup exception:', err);
+      return { error: err.message || 'An unexpected error occurred during signup.' };
+    }
   };
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
-    const users = getUsers();
-    const key = email.toLowerCase();
-    const record = users[key];
-    if (!record) return { error: 'No account found with this email.' };
-    if (record.passwordHash !== mockHash(password)) return { error: 'Incorrect password.' };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(record.user));
-    setUser(record.user);
-    const allInteractions = JSON.parse(localStorage.getItem(STORAGE_INTERACTIONS_KEY) || '{}');
-    setInteractions(allInteractions[record.user.id] || []);
-    return {};
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      console.error('Login exception:', err);
+      return { error: err.message || 'An unexpected error occurred during login.' };
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem(STORAGE_SESSION_KEY);
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     setInteractions([]);
   };
