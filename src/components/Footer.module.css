@@ -1,0 +1,132 @@
+.footer {
+  position: relative;
+  padding-top: var(--space-16);
+  padding-bottom: var(--space-8);
+  background: var(--color-bg-secondary);
+}
+
+.glowLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--color-accent-primary-rgb), 0.3),
+    rgba(var(--color-accent-secondary-rgb), 0.3),
+    transparent
+  );
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--space-12);
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logoImage {
+  width: 220px;
+  height: 51px;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-primary) 100%);
+  -webkit-mask-image: url('/logo-white.png');
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: left center;
+  mask-image: url('/logo-white.png');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: left center;
+  opacity: 0.9;
+}
+
+.tagline {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  max-width: 300px;
+  line-height: var(--leading-relaxed);
+}
+
+/* Columns */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.colTitle {
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-primary);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.links a {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.links a:hover {
+  color: var(--color-accent-primary);
+}
+
+/* Bottom */
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border);
+}
+
+.copyright {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.location {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-muted);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .bottom {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+}

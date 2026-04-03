@@ -1,0 +1,121 @@
+/* ===================================
+   SINGULARITY DnB — Design Tokens
+   =================================== */
+
+:root {
+  /* === Colors === */
+  --color-bg-primary: #050507;
+  --color-bg-secondary: #0a0a0f;
+  --color-bg-tertiary: #111118;
+  --color-bg-card: #0d0d14;
+  --color-bg-card-hover: #13131d;
+
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Neon accents */
+  --color-accent-primary: #00ffb2;
+  --color-accent-primary-rgb: 0, 255, 178;
+  --color-accent-secondary: #00e5ff;
+  --color-accent-secondary-rgb: 0, 229, 255;
+  --color-accent-tertiary: #bf5af2;
+  --color-accent-tertiary-rgb: 191, 90, 242;
+  --color-accent-hot: #ff3b5c;
+  --color-accent-hot-rgb: 255, 59, 92;
+
+  /* Neon glow variants */
+  --glow-primary: 0 0 20px rgba(var(--color-accent-primary-rgb), 0.3),
+                  0 0 60px rgba(var(--color-accent-primary-rgb), 0.1);
+  --glow-secondary: 0 0 20px rgba(var(--color-accent-secondary-rgb), 0.3),
+                    0 0 60px rgba(var(--color-accent-secondary-rgb), 0.1);
+  --glow-text: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.5),
+               0 0 40px rgba(var(--color-accent-primary-rgb), 0.15);
+
+  /* Text colors */
+  --color-text-primary: #f0f0f5;
+  --color-text-secondary: #8a8a9a;
+  --color-text-muted: #55556a;
+  --color-text-accent: var(--color-accent-primary);
+
+  /* === Typography === */
+  --font-heading: 'Rajdhani', 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  --text-6xl: 5rem;
+  --text-hero: clamp(3rem, 8vw, 8rem);
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: 0.2em;
+
+  /* === Spacing === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  --space-section: clamp(4rem, 10vh, 8rem);
+
+  /* === Border Radius === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* === Transitions === */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === Z-index === */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+
+  /* === Layout === */
+  --container-max: 1240px;
+  --container-padding: var(--space-6);
+  --nav-height: 72px;
+
+  /* === Glassmorphism === */
+  --glass-bg: rgba(10, 10, 15, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(20px);
+}

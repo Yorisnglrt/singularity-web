@@ -1,0 +1,205 @@
+.page {
+  padding-top: calc(var(--nav-height) + var(--space-12));
+  padding-bottom: var(--space-section);
+  min-height: 100vh;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+}
+
+.infoCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.title {
+  font-size: var(--text-6xl);
+  font-family: var(--font-heading);
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.desc {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 480px;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  position: relative;
+  padding-left: var(--space-8);
+  margin-top: var(--space-4);
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 11px;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.timelineStep {
+  position: relative;
+}
+
+.timelineDot {
+  position: absolute;
+  left: calc(var(--space-8) * -1);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-accent-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+}
+
+.timelineContent {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.timelineContent:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.stepName {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+}
+
+.stepPoints {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-accent-primary);
+}
+
+/* Wallet Card */
+.cardCol {
+  display: flex;
+  justify-content: center;
+}
+
+.passCard {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  border-top: 4px solid var(--color-accent-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10) var(--space-8);
+  width: 100%;
+  max-width: 440px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(var(--color-accent-primary-rgb), 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.howSection {
+  width: 100%;
+}
+
+.howTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.howList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.howList span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.howList span::before {
+  content: '→';
+  color: var(--color-accent-primary);
+  font-family: var(--font-mono);
+}
+
+/* Real QR Code container */
+.qrWrapper {
+  display: block;
+  width: 220px;
+  height: 220px;
+  background: #fff;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.qrWrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(var(--color-accent-primary-rgb), 0.3);
+}
+
+.qrImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qrFooter {
+  text-align: center;
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  line-height: 1.4;
+}
+
+.qrFooter strong {
+  color: var(--color-accent-primary);
+}

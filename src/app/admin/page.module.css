@@ -1,0 +1,228 @@
+.adminPage {
+  min-height: 100vh;
+  padding: 4rem 2rem;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-base);
+}
+
+.authGate {
+  max-width: 400px;
+  margin: 10vh auto;
+  padding: 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.authTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  text-align: center;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #1a1a1a;
+  border: 1px solid var(--color-border);
+  color: #f0f0f0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+}
+
+/* Ensure select menus have correct contrast in all states */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+select.input:hover {
+  border-color: var(--color-border-hover, #555);
+}
+
+/* Option elements: force dark bg + light text so the native popup is readable */
+select.input option {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+}
+
+select.input option:checked,
+select.input option:focus {
+  background-color: #2c2c2c;
+  color: var(--color-accent-primary);
+}
+
+.button {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--color-accent-primary);
+  color: #000;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.buttonOutline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.buttonOutline:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.buttonDanger {
+  background: rgba(255, 59, 92, 0.1);
+  color: #ff3b5c;
+  border: 1px solid #ff3b5c;
+}
+
+.buttonDanger:hover {
+  background: #ff3b5c;
+  color: #fff;
+}
+
+/* Dashboard */
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 0.5rem 1.5rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.tabActive {
+  background: var(--color-accent-primary);
+  color: #000;
+  border-color: var(--color-accent-primary);
+}
+
+.alert {
+  padding: 1rem;
+  margin-bottom: 2rem;
+  background: rgba(0, 255, 178, 0.1);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-primary);
+}
+
+/* Layout for Editor */
+.editorGrid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--color-bg-card);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.sidebarItem {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sidebarItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebarItemActive {
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  color: var(--color-accent-primary);
+  border-left: 2px solid var(--color-accent-primary);
+}
+
+.mainArea {
+  background: var(--color-bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.formActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .editorGrid {
+    grid-template-columns: 1fr;
+  }
+}

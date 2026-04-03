@@ -1,0 +1,298 @@
+[
+  {
+    "id": "acta-pon-it",
+    "name": "Acta Pon It",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #FF5733, #C70039)",
+    "socialLinks": {}
+  },
+  {
+    "id": "burge",
+    "name": "Burge",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #900C3F, #581845)",
+    "socialLinks": {}
+  },
+  {
+    "id": "clueless",
+    "name": "Clueless",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #113311, #225522)",
+    "socialLinks": {}
+  },
+  {
+    "id": "digital-cookbook",
+    "name": "Digital Cookbook",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #001f3f, #0074D9)",
+    "socialLinks": {}
+  },
+  {
+    "id": "gulito",
+    "name": "Gulito",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #FFDC00, #FF851B)",
+    "socialLinks": {}
+  },
+  {
+    "id": "haidama",
+    "name": "Haidama",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #3D9970, #2ECC40)",
+    "socialLinks": {}
+  },
+  {
+    "id": "hany-b",
+    "name": "Hany B",
+    "bio": {
+      "en": "Singularity DJ. Pushing the boundaries of underground bass music.",
+      "cs": "Singularity DJ. Posouvání hranic undergroundové basové muziky.",
+      "no": "Singularity DJ. Presser grensene for undergrunns bassmusikk.",
+      "pl": "Singularity DJ. Przesuwanie granic undergroudowej muzyki basowej."
+    },
+    "isCrew": true,
+    "isInvited": false,
+    "avatarGradient": "linear-gradient(135deg, #00ffb2, #006644)",
+    "socialLinks": {
+      "soundcloud": "#",
+      "instagram": "#"
+    }
+  },
+  {
+    "id": "igubu",
+    "name": "Igubu",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #B10DC9, #85144b)",
+    "socialLinks": {}
+  },
+  {
+    "id": "kaslex",
+    "name": "Kaslex",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #00aff0, #005a9e)",
+    "socialLinks": {}
+  },
+  {
+    "id": "kiyani",
+    "name": "KIYANI",
+    "bio": {
+      "en": "Played at Singularity. Bringing fresh energy to the dancefloor.",
+      "cs": "Hrál na Singularity. Přináší na parket čerstvou krev a energii.",
+      "no": "Spilte på Singularity. Bringe frisk energi til dansegulvet.",
+      "pl": "Grał na Singularity. Wnosi świeżą energię na parkiet."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #ffcc00, #ff6b00)",
+    "socialLinks": {
+      "soundcloud": "#"
+    }
+  },
+  {
+    "id": "lemontek",
+    "name": "Lemontek",
+    "bio": {
+      "en": "Singularity DJ. High energy sets and relentless mixing.",
+      "cs": "Singularity DJ. High energy sety a nelítostný mixing.",
+      "no": "Singularity DJ. Høyenergisett og nådeløs miksing.",
+      "pl": "Singularity DJ. Wysokoenergetyczne sety i nieustanne miksowanie."
+    },
+    "isCrew": true,
+    "isInvited": false,
+    "avatarGradient": "linear-gradient(135deg, #bf5af2, #440066)",
+    "socialLinks": {
+      "soundcloud": "#",
+      "instagram": "#"
+    }
+  },
+  {
+    "id": "noa",
+    "name": "NOA",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #F012BE, #B10DC9)",
+    "socialLinks": {}
+  },
+  {
+    "id": "noise-preacher",
+    "name": "Noise Preacher",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #01FF70, #2ECC40)",
+    "socialLinks": {}
+  },
+  {
+    "id": "nostre",
+    "name": "Nostre",
+    "bio": {
+      "en": "Played at Singularity. Smooth transitions and heavy impact.",
+      "cs": "Hrál na Singularity. Hladké přechody a tvrdý dopad.",
+      "no": "Spilte på Singularity. Glatte overganger og tung innvirkning.",
+      "pl": "Grał na Singularity. Płynne przejścia i mocne uderzenie."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #0a84ff, #003366)",
+    "socialLinks": {
+      "soundcloud": "#"
+    },
+    "photoUrl": "/images/artists/DSC05397.jpg"
+  },
+  {
+    "id": "propagan",
+    "name": "Propagan",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #e3000f, #8b0000)",
+    "socialLinks": {}
+  },
+  {
+    "id": "ross-b",
+    "name": "Ross B",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #85144b, #FF4136)",
+    "socialLinks": {}
+  },
+  {
+    "id": "sim01",
+    "name": "Sim01",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #7FDBFF, #0074D9)",
+    "socialLinks": {}
+  },
+  {
+    "id": "xcstnz",
+    "name": "XCSTNZ",
+    "bio": {
+      "en": "Singularity Guest DJ.",
+      "cs": "Hostující Singularity DJ.",
+      "no": "Singularity Gjest DJ.",
+      "pl": "Singularity Gość DJ."
+    },
+    "isCrew": false,
+    "isInvited": true,
+    "avatarGradient": "linear-gradient(135deg, #39CCCC, #3D9970)",
+    "socialLinks": {}
+  },
+  {
+    "id": "yakub",
+    "name": "Yakub",
+    "bio": {
+      "en": "Singularity DJ. Master of deep rollers and dark atmospheres.",
+      "cs": "Singularity DJ. Mistr temných, hlubokých rollerek a atmosfér.",
+      "no": "Singularity DJ. Mester av dype rollers og mørke atmosfærer.",
+      "pl": "Singularity DJ. Mistrz głębokich rollers i mrocznych atmosfer."
+    },
+    "isCrew": true,
+    "isInvited": false,
+    "avatarGradient": "linear-gradient(135deg, #00e5ff, #003388)",
+    "socialLinks": {
+      "soundcloud": "#"
+    }
+  },
+  {
+    "id": "yori",
+    "name": "Yori",
+    "bio": {
+      "en": "Singularity DJ. Bringing heavy basslines and technical precision.",
+      "cs": "Singularity DJ. Přináší ostré basové linky a technickou preciznost.",
+      "no": "Singularity DJ. Bringer tunge basslinjer og teknisk presisjon.",
+      "pl": "Singularity DJ. Przynosi ciężkie linie basowe i techniczną precyzję."
+    },
+    "isCrew": true,
+    "isInvited": false,
+    "avatarGradient": "linear-gradient(135deg, #ff3b5c, #990022)",
+    "socialLinks": {
+      "soundcloud": "#",
+      "instagram": "#"
+    }
+  }
+]

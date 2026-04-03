@@ -1,0 +1,217 @@
+.page {
+  padding-top: calc(var(--nav-height) + 3rem);
+  padding-bottom: 6rem;
+  min-height: 100vh;
+}
+
+/* Unauthenticated */
+.unauthenticated {
+  max-width: 480px;
+  margin: 8rem auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.icon {
+  font-size: 3rem;
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+/* Profile header */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: var(--weight-bold);
+  color: #000;
+  flex-shrink: 0;
+}
+
+.profileInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.displayName {
+  font-size: var(--text-3xl);
+  margin: 0;
+}
+
+.email {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.pointsBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+.pointsIcon { color: var(--color-accent-primary); font-size: 0.75rem; }
+.pointsValue { font-family: var(--font-heading); font-weight: var(--weight-bold); color: var(--color-accent-primary); }
+.pointsLabel { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.logoutBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+}
+.logoutBtn:hover {
+  border-color: #ff3b5c;
+  color: #ff3b5c;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  flex: 1;
+  min-width: 100px;
+}
+
+.statValue {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-primary);
+}
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+/* Sections */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.eventRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.eventRow:hover {
+  border-color: var(--color-accent-primary);
+  transform: translateX(4px);
+}
+
+.eventDot {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.eventName {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  letter-spacing: 0.05em;
+}
+
+.eventMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 0.2rem;
+}
+
+/* Empty */
+.empty {
+  text-align: center;
+  padding: 3rem 0;
+  color: var(--color-text-muted);
+}
+
+/* Coming soon */
+.comingSoon {
+  margin-top: 3rem;
+  padding: 2rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  opacity: 0.5;
+}
+
+.comingSoonText {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}

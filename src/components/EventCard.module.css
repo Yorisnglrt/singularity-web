@@ -1,0 +1,142 @@
+.card {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  overflow: hidden;
+}
+
+.card.featured {
+  grid-template-columns: 280px 1fr;
+}
+
+/* Poster */
+.poster {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.posterOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.posterContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.posterDate {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--text-5xl);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: white;
+}
+
+.posterMonth {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-widest);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Info */
+.info {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-wide);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.metaIcon {
+  color: var(--color-accent-primary);
+  font-size: var(--text-xs);
+}
+
+.metaDivider {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+}
+
+.desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* Lineup */
+.lineup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lineupLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-muted);
+}
+
+.lineupNames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lineupName {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* Actions */
+.actions {
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .card,
+  .card.featured {
+    grid-template-columns: 1fr;
+  }
+
+  .poster {
+    min-height: 140px;
+  }
+
+  .info {
+    padding: var(--space-4);
+  }
+}
+
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 255, 178, 0.1);
+}

@@ -1,0 +1,243 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: var(--nav-height);
+}
+
+/* Background effects */
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(var(--color-accent-primary-rgb), 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--color-accent-primary-rgb), 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: calc(50% - 30px) calc(50% - 30px);
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
+}
+
+.bgGlow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--color-accent-primary-rgb), 0.08) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.bgPulse {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.1);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: bass-pulse 2s ease-in-out infinite;
+}
+
+/* Waveform */
+.waveform {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 5%;
+  opacity: 0.15;
+}
+
+.waveBar {
+  flex: 1;
+  background: linear-gradient(to top, var(--color-accent-primary), transparent);
+  border-radius: 2px 2px 0 0;
+  animation: bass-pulse 1.5s ease-in-out infinite;
+  min-width: 2px;
+}
+
+/* Content */
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  animation: fadeInUp 0.8s ease both;
+}
+
+.tagDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  box-shadow: 0 0 8px var(--color-accent-primary);
+  animation: pulse-glow 2s infinite;
+}
+
+.titleWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  animation: fadeInUp 0.8s ease 0.1s both;
+}
+
+.heroLogoImage {
+  width: 100%;
+  max-width: 800px;
+  height: 180px;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-primary) 100%);
+  -webkit-mask-image: url('/logo-white.png');
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-image: url('/logo-white.png');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  filter: drop-shadow(0 0 10px rgba(var(--color-accent-primary-rgb), 0.3));
+}
+
+.subtitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-accent-primary);
+  text-shadow: var(--glow-text);
+  animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+.tagline {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  max-width: 500px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+/* Countdown */
+.countdownSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  animation: fadeInUp 0.8s ease 0.4s both;
+}
+
+.countdownLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.countdown {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.countdownUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.countdownValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  min-width: 56px;
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+.countdownLabelSmall {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+/* CTAs */
+.ctas {
+  display: flex;
+  gap: var(--space-4);
+  animation: fadeInUp 0.8s ease 0.5s both;
+}
+
+/* Scroll hint */
+.scrollHint {
+  position: absolute;
+  bottom: var(--space-8);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.scrollLine {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--color-accent-primary), transparent);
+  animation: pulse-glow 2s infinite;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .subtitle {
+    font-size: var(--text-lg);
+  }
+
+  .tagline {
+    font-size: var(--text-base);
+  }
+
+  .countdown {
+    gap: var(--space-2);
+  }
+
+  .countdownValue {
+    font-size: var(--text-xl);
+    min-width: 44px;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .ctas {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .waveform {
+    height: 60px;
+  }
+}
