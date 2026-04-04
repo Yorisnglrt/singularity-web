@@ -22,17 +22,25 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
     e.preventDefault();
     setError('');
     setLoading(true);
-    let result;
-    if (mode === 'login') {
-      result = await login(email, password);
-    } else {
-      result = await register(email, password, displayName);
-    }
-    setLoading(false);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      onClose();
+    
+    try {
+      let result;
+      if (mode === 'login') {
+        result = await login(email, password);
+      } else {
+        result = await register(email, password, displayName);
+      }
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        onClose();
+      }
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
