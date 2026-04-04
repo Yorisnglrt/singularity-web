@@ -21,6 +21,7 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("AUTH TEST 777");
     setError('');
     setLoading(true);
     
