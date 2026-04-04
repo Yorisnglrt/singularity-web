@@ -258,8 +258,8 @@
 
   .heroLogoImage {
     max-width: 1200px;
-    max-height: 500px;
-    filter: drop-shadow(0 0 40px rgba(var(--color-accent-primary-rgb), 0.4));
+    height: 400px;
+    filter: drop-shadow(0 0 50px rgba(var(--color-accent-primary-rgb), 0.4));
   }
 
   .subtitle {
