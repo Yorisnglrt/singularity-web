@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import styles from './AuthModal.module.css';
 
 interface AuthModalProps {
@@ -25,21 +26,35 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
     
     try {
       console.log("AUTH START", { mode, email });
-      let result;
+      
       if (mode === 'login') {
-        result = await login(email, password);
-      } else {
-        result = await register(email, password, displayName);
-      }
-      
-      console.log("AUTH RESULT", result);
-      
-      if (result?.error) {
-        setError(result.error);
-        alert(result.error || "Auth failed");
-      } else {
-        console.log("AUTH SUCCESS - CLOSING MODAL");
+        console.log("DIRECT LOGIN START", email);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        console.log("DIRECT LOGIN RESPONSE", { data, error });
+        
+        if (error) {
+          setError(error.message);
+          alert(error.message);
+          return;
+        }
+        
+        console.log("DIRECT LOGIN SUCCESS - CLOSING MODAL");
         onClose();
+      } else {
+        const result = await register(email, password, displayName);
+        console.log("AUTH RESULT (REGISTER)", result);
+        
+        if (result?.error) {
+          setError(result.error);
+          alert(result.error || "Registration failed");
+        } else {
+          console.log("AUTH SUCCESS (REGISTER) - CLOSING MODAL");
+          onClose();
+        }
       }
     } catch (err: any) {
       console.error("AUTH MODAL ERROR", err);
