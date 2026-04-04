@@ -24,7 +24,6 @@ type ReactionCounts = Record<typeof actions[number]['key'], number>;
 interface Reactor {
   id: string;
   name: string;
-  avatarUrl?: string;
 }
 
 export default function EventActions({ eventId, ticketUrl, isFree, isPast }: EventActionsProps) {
@@ -36,45 +35,56 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
   const [totalReactors, setTotalReactors] = useState(0);
 
   const fetchInteractionStats = async () => {
+    // 1. Fetch Counts (Robust, no join)
     try {
-      // 1. Fetch all actions to calculate counts
-      // Use select('action') to keep payload small
-      const { data: allReactions, error: reactionsError } = await supabase
+      const { data: reactionsData, error: reactionsError } = await supabase
         .from('event_reactions')
-        .select('action, user_id, profiles(display_name, avatar_url)')
+        .select('action')
         .eq('event_id', eventId);
       
       if (reactionsError) throw reactionsError;
 
-      // Calculate counts
       const newCounts: ReactionCounts = { like: 0, interested: 0, attending: 0 };
-      const uniqueUserMap = new Map<string, Reactor>();
-
-      allReactions?.forEach((row: any) => {
-        // Counts
+      reactionsData?.forEach((row: any) => {
         if (row.action in newCounts) {
           newCounts[row.action as keyof ReactionCounts]++;
         }
+      });
+      setCounts(newCounts);
+    } catch (err) {
+      console.error('Error fetching reaction counts:', err);
+    }
 
-        // Reactors for avatar stack (unique users)
-        if (!uniqueUserMap.has(row.user_id) && row.profiles) {
+    // 2. Fetch Reactors (Independent, joins profiles)
+    try {
+      const { data: reactorsData, error: reactorsError } = await supabase
+        .from('event_reactions')
+        .select(`
+          user_id,
+          profiles (
+            display_name
+          )
+        `)
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+
+      if (reactorsError) throw reactorsError;
+
+      const uniqueUserMap = new Map<string, Reactor>();
+      reactorsData?.forEach((row: any) => {
+        if (!uniqueUserMap.has(row.user_id) && row.profiles?.display_name) {
           uniqueUserMap.set(row.user_id, {
             id: row.user_id,
-            name: row.profiles.display_name,
-            avatarUrl: row.profiles.avatar_url
+            name: row.profiles.display_name
           });
         }
       });
 
-      setCounts(newCounts);
       setTotalReactors(uniqueUserMap.size);
-      
-      // Get the first 10 for the stack
-      const reactorsList = Array.from(uniqueUserMap.values()).slice(0, 10);
-      setReactors(reactorsList);
-
+      setReactors(Array.from(uniqueUserMap.values()).slice(0, 10));
     } catch (err) {
-      console.error('Error fetching interaction stats:', err);
+      console.error('Error fetching reactor profiles:', err);
+      // We don't throw here to ensure counts remain visible even if profiles fail
     }
   };
 
@@ -160,11 +170,7 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
             <div className={styles.avatarStack}>
               {visibleReactors.map(reactor => (
                 <div key={reactor.id} className={styles.avatarCircle} title={reactor.name}>
-                  {reactor.avatarUrl ? (
-                    <img src={reactor.avatarUrl} alt={reactor.name} className={styles.avatarImg} />
-                  ) : (
-                    <span className={styles.avatarInitial}>{reactor.name[0].toUpperCase()}</span>
-                  )}
+                  <span className={styles.avatarInitial}>{reactor.name[0].toUpperCase()}</span>
                 </div>
               ))}
               {remainingCount > 0 && (
