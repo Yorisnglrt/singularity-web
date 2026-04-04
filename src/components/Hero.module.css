@@ -241,3 +241,40 @@
     height: 60px;
   }
 }
+
+/* Desktop Scaling */
+@media (min-width: 1024px) {
+  .content {
+    gap: var(--space-10);
+    padding: var(--space-20) 0;
+  }
+
+  .heroLogoImage {
+    max-height: 240px;
+    filter: drop-shadow(0 0 20px rgba(var(--color-accent-primary-rgb), 0.4));
+  }
+
+  .subtitle {
+    font-size: var(--text-4xl);
+  }
+
+  .tagline {
+    font-size: var(--text-xl);
+    max-width: 640px;
+  }
+
+  .countdownValue {
+    font-size: var(--text-5xl);
+    min-width: 80px;
+    padding: var(--space-4) var(--space-6);
+  }
+
+  .countdown {
+    gap: var(--space-6);
+  }
+
+  .ctas {
+    gap: var(--space-6);
+    margin-top: var(--space-4);
+  }
+}

@@ -71,21 +71,21 @@ export default function Hero() {
 
         {nextEvent && (
           <div className={styles.countdown}>
-            <div className={styles.countBox}>
-              <span className={styles.countNum}>{countdown.days}</span>
-              <span className={styles.countLabel}>{t('home.countdown.days')}</span>
+            <div className={styles.countdownUnit}>
+              <span className={styles.countdownValue}>{countdown.days}</span>
+              <span className={styles.countdownLabelSmall}>{t('home.countdown.days')}</span>
             </div>
-            <div className={styles.countBox}>
-              <span className={styles.countNum}>{countdown.hours}</span>
-              <span className={styles.countLabel}>{t('home.countdown.hours')}</span>
+            <div className={styles.countdownUnit}>
+              <span className={styles.countdownValue}>{countdown.hours}</span>
+              <span className={styles.countdownLabelSmall}>{t('home.countdown.hours')}</span>
             </div>
-            <div className={styles.countBox}>
-              <span className={styles.countNum}>{countdown.mins}</span>
-              <span className={styles.countLabel}>{t('home.countdown.mins')}</span>
+            <div className={styles.countdownUnit}>
+              <span className={styles.countdownValue}>{countdown.mins}</span>
+              <span className={styles.countdownLabelSmall}>{t('home.countdown.mins')}</span>
             </div>
-            <div className={styles.countBox}>
-              <span className={styles.countNum}>{countdown.secs}</span>
-              <span className={styles.countLabel}>{t('home.countdown.secs')}</span>
+            <div className={styles.countdownUnit}>
+              <span className={styles.countdownValue}>{countdown.secs}</span>
+              <span className={styles.countdownLabelSmall}>{t('home.countdown.secs')}</span>
             </div>
           </div>
         )}
