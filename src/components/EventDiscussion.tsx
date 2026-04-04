@@ -123,7 +123,7 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
   return (
     <div className={styles.discussion}>
       <h2 className={styles.title}>
-        Discussion <span>◈</span>
+        Discussion {comments.length > 0 && <span className={styles.count}>· {comments.length}</span>}
       </h2>
 
       {user ? (

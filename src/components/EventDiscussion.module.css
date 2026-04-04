@@ -17,6 +17,12 @@
   font-size: 0.8em;
 }
 
+.count {
+  color: var(--color-accent-primary);
+  opacity: 0.8;
+  font-weight: var(--weight-normal);
+}
+
 /* Form Styles */
 .form {
   background: rgba(255, 255, 255, 0.03);

@@ -65,6 +65,16 @@
   text-transform: uppercase;
 }
 
+.count {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-accent-primary);
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  margin-left: 0.2rem;
+}
+
 .loginHint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);

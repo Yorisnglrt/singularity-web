@@ -36,7 +36,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_INTERACTIONS_KEY = 'sc_interactions';
+// Supabase handles interactions and counting.
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -103,9 +103,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         setUser(userData);
 
-        // Load interactions from localStorage for now (can be moved to Supabase later)
-        const allInteractions = JSON.parse(localStorage.getItem(STORAGE_INTERACTIONS_KEY) || '{}');
-        setInteractions(allInteractions[data.id] || []);
+        // Load interactions from Supabase
+        const { data: interactionsData } = await supabase
+          .from('event_reactions')
+          .select('event_id, action')
+          .eq('user_id', data.id);
+        
+        if (interactionsData) {
+          setInteractions(interactionsData.map(i => ({
+            eventId: i.event_id,
+            action: i.action as EventInteraction['action']
+          })));
+        }
       }
     } catch (e) {
       console.error('Failed to fetch profile:', e);
@@ -194,17 +203,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.refresh();
   };
 
-  const toggleInteraction = (eventId: string, action: EventInteraction['action']) => {
+  const toggleInteraction = async (eventId: string, action: EventInteraction['action']) => {
     if (!user) return;
-    const exists = interactions.find(i => i.eventId === eventId && i.action === action);
+    
+    // Check if it exists in local state
+    const exists = interactions.some(i => i.eventId === eventId && i.action === action);
+    
+    // Optimistic UI update
+    const previous = interactions;
     const updated = exists
       ? interactions.filter(i => !(i.eventId === eventId && i.action === action))
       : [...interactions, { eventId, action }];
-
+    
     setInteractions(updated);
-    const allInteractions = JSON.parse(localStorage.getItem(STORAGE_INTERACTIONS_KEY) || '{}');
-    allInteractions[user.id] = updated;
-    localStorage.setItem(STORAGE_INTERACTIONS_KEY, JSON.stringify(allInteractions));
+
+    try {
+      if (exists) {
+        await supabase
+          .from('event_reactions')
+          .delete()
+          .match({ event_id: eventId, user_id: user.id, action: action });
+      } else {
+        await supabase
+          .from('event_reactions')
+          .insert({ event_id: eventId, user_id: user.id, action: action });
+      }
+    } catch (e) {
+      console.error('Failed to toggle interaction in Supabase:', e);
+      // Rollback on failure
+      setInteractions(previous);
+    }
   };
 
   const hasInteraction = (eventId: string, action: EventInteraction['action']) => {

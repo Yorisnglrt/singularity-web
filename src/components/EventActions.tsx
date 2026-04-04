@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import styles from './EventActions.module.css';
@@ -18,25 +19,63 @@ const actions = [
   { key: 'attending' as const,  icon: '✓',  label: 'Attending'   },
 ];
 
+type ReactionCounts = Record<typeof actions[number]['key'], number>;
+
 export default function EventActions({ eventId, ticketUrl, isFree, isPast }: EventActionsProps) {
   const { user, hasInteraction, toggleInteraction } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [pendingAction, setPendingAction] = useState<typeof actions[0]['key'] | null>(null);
+  const [counts, setCounts] = useState<ReactionCounts>({ like: 0, interested: 0, attending: 0 });
 
-  const handleAction = (key: typeof actions[0]['key']) => {
+  const fetchCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_reactions')
+        .select('action')
+        .eq('event_id', eventId);
+      
+      if (error) throw error;
+
+      const newCounts: ReactionCounts = { like: 0, interested: 0, attending: 0 };
+      data?.forEach((row: any) => {
+        if (row.action in newCounts) {
+          newCounts[row.action as keyof ReactionCounts]++;
+        }
+      });
+      setCounts(newCounts);
+    } catch (err) {
+      console.error('Error fetching reaction counts:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCounts();
+  }, [eventId]);
+
+  const handleAction = async (key: typeof actions[0]['key']) => {
     if (!user) {
       setPendingAction(key);
       setShowAuth(true);
       return;
     }
-    toggleInteraction(eventId, key);
+
+    const isActive = hasInteraction(eventId, key);
+    
+    // Optimistic count update
+    setCounts(prev => ({
+      ...prev,
+      [key]: isActive ? Math.max(0, prev[key] - 1) : prev[key] + 1
+    }));
+
+    await toggleInteraction(eventId, key);
+    // Refresh counts from server to be sure
+    fetchCounts();
   };
 
   const handleAuthClose = () => {
     setShowAuth(false);
-    // If they logged in and had a pending action, execute it
     if (user && pendingAction) {
-      toggleInteraction(eventId, pendingAction);
+      handleAction(pendingAction);
     }
     setPendingAction(null);
   };
@@ -44,7 +83,6 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
   return (
     <>
       <div className={styles.wrapper}>
-        {/* Ticket / Free CTA — only for upcoming events */}
         {!isPast && (
           <div className={styles.ticketRow}>
             {isFree ? (
@@ -63,10 +101,10 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
           </div>
         )}
 
-        {/* Interaction buttons */}
         <div className={styles.actions}>
           {actions.map(({ key, icon, label }) => {
             const active = user ? hasInteraction(eventId, key) : false;
+            const count = counts[key];
             return (
               <button
                 key={key}
@@ -78,6 +116,7 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
               >
                 <span className={styles.actionIcon}>{icon}</span>
                 <span className={styles.actionLabel}>{label}</span>
+                {count > 0 && <span className={styles.count}>{count}</span>}
               </button>
             );
           })}
