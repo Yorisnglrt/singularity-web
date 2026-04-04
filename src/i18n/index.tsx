@@ -6,16 +6,18 @@ import en from './translations/en.json';
 import no from './translations/no.json';
 import cs from './translations/cs.json';
 import pl from './translations/pl.json';
+import de from './translations/de.json';
 
-export type Locale = 'en' | 'no' | 'cs' | 'pl';
+export type Locale = 'en' | 'no' | 'cs' | 'pl' | 'de';
 
-const translations: Record<Locale, Record<string, string>> = { en, no, cs, pl };
+const translations: Record<Locale, Record<string, string>> = { en, no, cs, pl, de };
 
 export const localeLabels: Record<Locale, string> = {
   en: '🇬🇧 EN',
   no: '🇳🇴 NO',
   cs: '🇨🇿 CS',
   pl: '🇵🇱 PL',
+  de: '🇩🇪 DE',
 };
 
 interface I18nContextType {

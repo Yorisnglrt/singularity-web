@@ -18,7 +18,7 @@ const navLinks = [
   { href: '/about', key: 'nav.about' },
 ];
 
-const locales: Locale[] = ['en', 'no', 'cs', 'pl'];
+const locales: Locale[] = ['en', 'no', 'cs', 'pl', 'de'];
 
 export default function Navbar() {
   const { t, locale, setLocale } = useI18n();
