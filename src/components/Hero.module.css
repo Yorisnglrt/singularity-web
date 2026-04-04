@@ -5,7 +5,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding-top: var(--nav-height);
 }
 
 /* Background effects */
@@ -26,11 +25,13 @@
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--color-accent-primary-rgb), 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-accent-primary-rgb), 0.15) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   animation: pulse-glow 4s ease-in-out infinite;
+  z-index: -1; /* Behind logo */
+  pointer-events: none;
 }
 
 .bgPulse {
@@ -38,11 +39,13 @@
   width: 300px;
   height: 300px;
   border-radius: 50%;
-  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.15);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   animation: bass-pulse 2s ease-in-out infinite;
+  z-index: -1; /* Behind logo */
+  pointer-events: none;
 }
 
 /* Waveform */
@@ -103,6 +106,8 @@
   width: 100%;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 1; /* Above background grid */
   animation: fadeInUp 0.8s ease 0.1s both;
 }
 
@@ -110,6 +115,8 @@
   width: 100%;
   max-width: 800px;
   height: 180px;
+  position: relative;
+  z-index: 2; /* In front of glow */
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-primary) 100%);
   -webkit-mask-image: url('/logo-white.png');
   -webkit-mask-size: contain;

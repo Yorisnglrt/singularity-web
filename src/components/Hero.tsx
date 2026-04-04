@@ -37,10 +37,8 @@ export default function Hero() {
 
   return (
     <section className={styles.hero} id="hero">
-      {/* Background effects */}
+      {/* Background grid stays in the back */}
       <div className={styles.bgGrid} />
-      <div className={styles.bgGlow} />
-      <div className={styles.bgPulse} />
 
       {/* Waveform decoration */}
       <div className={styles.waveform}>
@@ -64,6 +62,9 @@ export default function Hero() {
 
         <div className={styles.titleWrapper}>
           <div className={styles.heroLogoImage} />
+          {/* Glow effects centered behind the logo */}
+          <div className={styles.bgGlow} />
+          <div className={styles.bgPulse} />
         </div>
 
         <p className={styles.subtitle}>{t('hero.subtitle')}</p>
