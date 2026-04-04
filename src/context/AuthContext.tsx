@@ -31,6 +31,7 @@ interface AuthContextType {
   showAuthModal: boolean;
   setShowAuthModal: (show: boolean) => void;
   openAuthModal: () => void;
+  forgotPassword: (email: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -158,21 +159,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
     try {
-      console.log("LOGIN START", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log("LOGIN RESPONSE", { data, error });
-
       if (error) return { error: error.message };
-      
-      console.log("LOGIN SUCCESS AFTER SUPABASE RESPONSE");
       return {};
     } catch (err: any) {
       console.error('Login exception:', err);
       return { error: err.message || 'An unexpected error occurred during login.' };
+    }
+  };
+
+  const forgotPassword = async (email: string): Promise<{ error?: string }> => {
+    try {
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.singularity-oslo.no';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/reset-password`,
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      console.error('Forgot password exception:', err);
+      return { error: err.message || 'An unexpected error occurred.' };
     }
   };
 
@@ -213,7 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       showAuthModal,
       setShowAuthModal,
-      openAuthModal
+      openAuthModal,
+      forgotPassword
     }}>
       {children}
     </AuthContext.Provider>
