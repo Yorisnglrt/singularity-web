@@ -58,14 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
       if (session?.user) {
-        await fetchProfile(session.user.id, session.user.email || '');
+        // Fetch profile asynchronously to not block the main auth loop
+        fetchProfile(session.user.id, session.user.email || '').finally(() => {
+          setIsLoading(false);
+        });
       } else {
         setUser(null);
         setInteractions([]);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => {
