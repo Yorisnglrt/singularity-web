@@ -21,35 +21,65 @@ const actions = [
 
 type ReactionCounts = Record<typeof actions[number]['key'], number>;
 
+interface Reactor {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+
 export default function EventActions({ eventId, ticketUrl, isFree, isPast }: EventActionsProps) {
   const { user, hasInteraction, toggleInteraction } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [pendingAction, setPendingAction] = useState<typeof actions[0]['key'] | null>(null);
   const [counts, setCounts] = useState<ReactionCounts>({ like: 0, interested: 0, attending: 0 });
+  const [reactors, setReactors] = useState<Reactor[]>([]);
+  const [totalReactors, setTotalReactors] = useState(0);
 
-  const fetchCounts = async () => {
+  const fetchInteractionStats = async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch all actions to calculate counts
+      // Use select('action') to keep payload small
+      const { data: allReactions, error: reactionsError } = await supabase
         .from('event_reactions')
-        .select('action')
+        .select('action, user_id, profiles(display_name, avatar_url)')
         .eq('event_id', eventId);
       
-      if (error) throw error;
+      if (reactionsError) throw reactionsError;
 
+      // Calculate counts
       const newCounts: ReactionCounts = { like: 0, interested: 0, attending: 0 };
-      data?.forEach((row: any) => {
+      const uniqueUserMap = new Map<string, Reactor>();
+
+      allReactions?.forEach((row: any) => {
+        // Counts
         if (row.action in newCounts) {
           newCounts[row.action as keyof ReactionCounts]++;
         }
+
+        // Reactors for avatar stack (unique users)
+        if (!uniqueUserMap.has(row.user_id) && row.profiles) {
+          uniqueUserMap.set(row.user_id, {
+            id: row.user_id,
+            name: row.profiles.display_name,
+            avatarUrl: row.profiles.avatar_url
+          });
+        }
       });
+
       setCounts(newCounts);
+      setTotalReactors(uniqueUserMap.size);
+      
+      // Get the first 10 for the stack
+      const reactorsList = Array.from(uniqueUserMap.values()).slice(0, 10);
+      setReactors(reactorsList);
+
     } catch (err) {
-      console.error('Error fetching reaction counts:', err);
+      console.error('Error fetching interaction stats:', err);
     }
   };
 
   useEffect(() => {
-    fetchCounts();
+    fetchInteractionStats();
   }, [eventId]);
 
   const handleAction = async (key: typeof actions[0]['key']) => {
@@ -68,8 +98,8 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
     }));
 
     await toggleInteraction(eventId, key);
-    // Refresh counts from server to be sure
-    fetchCounts();
+    // Refresh to get full reactor list and correct server-side counts
+    fetchInteractionStats();
   };
 
   const handleAuthClose = () => {
@@ -79,6 +109,9 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
     }
     setPendingAction(null);
   };
+
+  const visibleReactors = reactors.slice(0, 5);
+  const remainingCount = totalReactors - visibleReactors.length;
 
   return (
     <>
@@ -121,6 +154,27 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
             );
           })}
         </div>
+
+        {totalReactors > 0 && (
+          <div className={styles.socialRow}>
+            <div className={styles.avatarStack}>
+              {visibleReactors.map(reactor => (
+                <div key={reactor.id} className={styles.avatarCircle} title={reactor.name}>
+                  {reactor.avatarUrl ? (
+                    <img src={reactor.avatarUrl} alt={reactor.name} className={styles.avatarImg} />
+                  ) : (
+                    <span className={styles.avatarInitial}>{reactor.name[0].toUpperCase()}</span>
+                  )}
+                </div>
+              ))}
+              {remainingCount > 0 && (
+                <div className={`${styles.avatarCircle} ${styles.avatarMore}`}>
+                  +{remainingCount}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {!user && (
           <p className={styles.loginHint}>

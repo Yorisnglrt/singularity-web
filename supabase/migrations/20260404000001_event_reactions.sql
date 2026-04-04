@@ -13,7 +13,7 @@ ALTER TABLE event_reactions ENABLE ROW LEVEL SECURITY;
 
 -- 1. Everyone can read reaction counts
 CREATE POLICY "Public Read Reactions" ON event_reactions
-FOR SELECT USING (true);
+FOR SELECT TO anon, authenticated USING (true);
 
 -- 2. Authenticated users can toggles their own reactions
 CREATE POLICY "Auth Insert Reactions" ON event_reactions
@@ -21,3 +21,17 @@ FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Auth Delete Reactions" ON event_reactions
 FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- 3. Profiles need a public select policy for basic info to show in the avatar stack
+-- Note: This might already exist, but we ensure it covers our needs.
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profiles' AND policyname = 'Public Read Profiles'
+    ) THEN
+        CREATE POLICY "Public Read Profiles" ON profiles
+        FOR SELECT TO anon, authenticated
+        USING (true);
+    END IF;
+END $$;
