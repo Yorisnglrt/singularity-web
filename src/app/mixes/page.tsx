@@ -54,13 +54,6 @@ export default function MixesPage() {
           )}
         </div>
 
-        {/* Info box */}
-        <div className={styles.infoBox}>
-          <span className={styles.infoIcon}>◈</span>
-          <p className={styles.infoText}>
-            Drop your WAV files into <code>/public/audio/</code> and update the mix data to enable playback.
-          </p>
-        </div>
       </div>
     </div>
   );

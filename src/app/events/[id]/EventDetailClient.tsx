@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Event, toSlug } from '@/data/events';
 import EventActions from '@/components/EventActions';
+import EventDiscussion from '@/components/EventDiscussion';
 import styles from './page.module.css';
 
 interface Props {
@@ -72,6 +73,9 @@ export default function EventDetailClient({ event }: Props) {
                 isPast={event.isPast}
               />
             </div>
+
+            {/* Discussion Section */}
+            <EventDiscussion eventId={event.id} />
           </div>
 
           {/* Sidebar */}
