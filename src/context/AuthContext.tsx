@@ -10,6 +10,7 @@ export interface User {
   displayName: string;
   avatarInitial: string;
   points: number;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: data.display_name || email.split('@')[0],
           avatarInitial: (data.display_name || email)[0].toUpperCase(),
           points: data.points || 0,
+          isAdmin: data.is_admin || false,
           createdAt: data.created_at || new Date().toISOString(),
         };
         setUser(userData);

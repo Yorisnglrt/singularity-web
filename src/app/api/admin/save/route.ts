@@ -8,12 +8,29 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { type, data, password } = body;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return NextResponse.json({ error: 'No auth header' }, { status: 401 });
 
-    if (password !== 'Dj.fabrikken$0583!') {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.is_admin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { type, data } = body;
 
     if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !Array.isArray(data)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });

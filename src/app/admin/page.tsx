@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import EventForm from './EventForm';
 import styles from './page.module.css';
 
 type Tab = 'artists' | 'events' | 'mixes' | 'supporters';
 
 export default function AdminPage() {
-  const [password, setPassword] = useState('');
-  const [auth, setAuth] = useState(false);
+  const { user, isLoading, logout } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('artists');
   
   const [data, setData] = useState<{artists: any[], events: any[], mixes: any[], supporters: any[]}>({
@@ -24,7 +27,12 @@ export default function AdminPage() {
 
   const fetchData = async (type: Tab) => {
     try {
-      const res = await fetch(`/api/admin/data?type=${type}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/data?type=${type}`, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      });
       if (res.ok) {
         const json = await res.json();
         setData(prev => ({ ...prev, [type]: json }));
@@ -35,30 +43,27 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (auth) {
+    if (!isLoading && (!user || !user.isAdmin)) {
+      router.push('/');
+    } else if (user?.isAdmin) {
       fetchData('artists');
       fetchData('events');
       fetchData('mixes');
       fetchData('supporters');
     }
-  }, [auth]);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === 'Dj.fabrikken$0583!') {
-      setAuth(true);
-    } else {
-      alert('Invalid password');
-    }
-  };
+  }, [user, isLoading, router]);
 
   const saveToApi = async (type: Tab, newData: any[]) => {
     try {
       setStatusMsg('Saving...');
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/admin/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, data: newData, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({ type, data: newData })
       });
       if (res.ok) {
         setData(prev => ({ ...prev, [type]: newData }));
@@ -95,10 +100,16 @@ export default function AdminPage() {
     setUploading(true);
     setStatusMsg('Uploading audio...');
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('password', password);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+      const res = await fetch('/api/admin/upload', { 
+        method: 'POST', 
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      });
       if (res.ok) {
         const json = await res.json();
         setActiveItem((prev: any) => ({ ...prev, audioSrc: json.path }));
@@ -120,10 +131,16 @@ export default function AdminPage() {
     setUploading(true);
     setStatusMsg('Uploading...');
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('password', password);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+      const res = await fetch('/api/admin/upload', { 
+        method: 'POST', 
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      });
       if (res.ok) {
         const json = await res.json();
         setStatusMsg(`Uploaded: ${json.filename}`);
@@ -141,6 +158,34 @@ export default function AdminPage() {
     }
   };
 
+  const handleMigrate = async () => {
+    if (!confirm('Tímto nahrajete všechna lokální JSON data do Supabase. Pokračovat?')) return;
+    setStatusMsg('Migrating data...');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/migrate', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      });
+      const json = await res.json();
+      if (json.success) {
+        setStatusMsg('Migration successful!');
+        console.log('Migration summary:', json.summary);
+        // Refresh data
+        tables.forEach(t => fetchData(t as Tab));
+      } else {
+        setStatusMsg(`Migration failed: ${json.error}`);
+      }
+    } catch (e) {
+      setStatusMsg('Migration error.');
+    } finally {
+      setTimeout(() => setStatusMsg(''), 5000);
+    }
+  };
+
+  const tables = ['artists', 'events', 'mixes', 'supporters'];
+
   const createNewItem = () => {
     const idStr = `new-${Date.now()}`;
     if (activeTab === 'artists') {
@@ -154,25 +199,12 @@ export default function AdminPage() {
     }
   };
 
-  if (!auth) {
-    return (
-      <div className={styles.adminPage}>
-        <div className={styles.authGate}>
-          <h1 className={styles.authTitle}>Singularity Admin</h1>
-          <form onSubmit={handleLogin} style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
-            <input 
-              type="password" 
-              className={styles.input} 
-              placeholder="Password" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoFocus
-            />
-            <button type="submit" className={styles.button}>Access System</button>
-          </form>
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <div className={styles.adminPage}><div className={styles.alert}>Loading...</div></div>;
+  }
+
+  if (!user || !user.isAdmin) {
+    return null; // Will redirect via useEffect
   }
 
   // ── Mix editor (dedicated layout) ─────────────────────────────
@@ -311,10 +343,16 @@ export default function AdminPage() {
               if (!file) return;
               setUploading(true);
               setStatusMsg('Uploading photo...');
+              const { data: { session } } = await supabase.auth.getSession();
               const fd = new FormData();
               fd.append('file', file);
-              fd.append('password', password);
-              const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+              const res = await fetch('/api/admin/upload', { 
+                method: 'POST', 
+                body: fd,
+                headers: {
+                  'Authorization': `Bearer ${session?.access_token || ''}`
+                }
+              });
               if (res.ok) {
                 const json = await res.json();
                 setActiveItem((prev: any) => ({ ...prev, photoUrl: json.path }));
@@ -428,7 +466,7 @@ export default function AdminPage() {
       <div className={styles.dashboard}>
         <header className={styles.header}>
           <h1 className={styles.authTitle}>System Console</h1>
-          <button onClick={() => setAuth(false)} className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto'}}>Logout</button>
+          <button onClick={logout} className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto'}}>Logout</button>
         </header>
 
         {statusMsg && <div className={styles.alert}>{statusMsg}</div>}
@@ -442,7 +480,16 @@ export default function AdminPage() {
 
         <div className={styles.editorGrid}>
           <aside className={styles.sidebar}>
-            <button className={styles.button} onClick={createNewItem}>+ Add New</button>
+            <div style={{display:'flex', gap:'0.5rem', flexDirection:'column'}}>
+              <button className={styles.button} onClick={createNewItem}>+ Add New</button>
+              <button 
+                className={`${styles.button} ${styles.buttonOutline}`} 
+                onClick={handleMigrate}
+                style={{fontSize:'0.75rem', borderColor: 'var(--color-accent-primary)', color: 'var(--color-accent-primary)'}}
+              >
+                🔄 Migrate Local Data
+              </button>
+            </div>
             <div style={{marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
               {data[activeTab].map((item: any) => (
                 <div
