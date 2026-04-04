@@ -24,6 +24,7 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
     setLoading(true);
     
     try {
+      console.log("AUTH START", { mode, email });
       let result;
       if (mode === 'login') {
         result = await login(email, password);
@@ -31,13 +32,18 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
         result = await register(email, password, displayName);
       }
       
-      if (result.error) {
+      console.log("AUTH RESULT", result);
+      
+      if (result?.error) {
         setError(result.error);
+        alert(result.error || "Auth failed");
       } else {
+        console.log("AUTH SUCCESS - CLOSING MODAL");
         onClose();
       }
     } catch (err: any) {
-      console.error('Auth error:', err);
+      console.error("AUTH MODAL ERROR", err);
+      alert("Unexpected auth error: " + (err.message || "Unknown"));
       setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
