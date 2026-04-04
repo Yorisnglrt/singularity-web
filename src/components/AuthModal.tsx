@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n';
+import Link from 'next/link';
 import styles from './AuthModal.module.css';
 
 interface AuthModalProps {
@@ -10,6 +12,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalProps) {
+  const { t } = useI18n();
   const { login, register, forgotPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(defaultMode);
   const [email, setEmail] = useState('');
@@ -135,6 +138,15 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
           <button className={styles.submitBtn} type="submit" disabled={loading}>
             {loading ? 'Please wait...' : mode === 'forgot' ? 'Send Reset Link' : titles[mode]}
           </button>
+          
+          {mode === 'register' && (
+            <p className={styles.legalNote}>
+              {t('legal.agree')}{' '}
+              <Link href="/privacy-policy" onClick={onClose}>
+                {t('privacy.title')}
+              </Link>.
+            </p>
+          )}
         </form>
 
         <div className={styles.switchMode}>

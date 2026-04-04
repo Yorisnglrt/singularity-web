@@ -47,9 +47,15 @@ export default function Footer() {
         </div>
 
         <div className={styles.bottom}>
-          <p className={styles.copyright}>
-            © {year} Singularity Collective. {t('footer.rights')}
-          </p>
+          <div className={styles.legalInfo}>
+            <p className={styles.copyright}>
+              © {year} Singularity Collective. {t('footer.rights')}
+            </p>
+            <div className={styles.legalLinks}>
+              <Link href="/privacy-policy">{t('privacy.title')}</Link>
+              <Link href="/cookies">{t('cookies.title')}</Link>
+            </div>
+          </div>
           <p className={styles.location}>OSLO, NORWAY</p>
         </div>
       </div>
