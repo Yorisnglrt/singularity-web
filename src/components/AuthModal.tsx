@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase';
 import styles from './AuthModal.module.css';
 
 interface AuthModalProps {
@@ -21,45 +20,30 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("AUTH TEST 777");
     setError('');
     setLoading(true);
     
     try {
-      console.log("AUTH START", { mode, email });
-      
       if (mode === 'login') {
-        console.log("DIRECT LOGIN START", email);
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        console.log("DIRECT LOGIN RESPONSE", { data, error });
-        
-        if (error) {
-          setError(error.message);
-          alert(error.message);
-          return;
-        }
-        
-        console.log("DIRECT LOGIN SUCCESS - CLOSING MODAL");
-        onClose();
-      } else {
-        const result = await register(email, password, displayName);
-        console.log("AUTH RESULT (REGISTER)", result);
+        const result = await login(email, password);
         
         if (result?.error) {
           setError(result.error);
-          alert(result.error || "Registration failed");
-        } else {
-          console.log("AUTH SUCCESS (REGISTER) - CLOSING MODAL");
-          onClose();
+          return;
         }
+        
+        onClose();
+      } else {
+        const result = await register(email, password, displayName);
+        
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        
+        onClose();
       }
     } catch (err: any) {
-      console.error("AUTH MODAL ERROR", err);
-      alert("Unexpected auth error: " + (err.message || "Unknown"));
       setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
