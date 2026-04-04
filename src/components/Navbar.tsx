@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useI18n, Locale, localeLabels } from '@/i18n';
@@ -27,9 +27,21 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
   return (
     <>
-      <nav className={`${styles.nav} glass`} id="navbar">
+      <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''} glass`} id="navbar">
       <div className={`${styles.inner} container`}>
         <Link href="/" className={styles.logo} id="nav-logo" aria-label="Home">
           <div className={styles.logoImage} />
