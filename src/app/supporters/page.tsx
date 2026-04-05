@@ -1,11 +1,43 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
-import { supporters } from '@/data/supporters';
 import styles from './page.module.css';
+
+type Supporter = {
+  id: string;
+  name: string;
+  amount: number;
+};
 
 export default function SupportersPage() {
   const { t } = useI18n();
+  const [supporters, setSupporters] = useState<Supporter[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSupporters = async () => {
+      try {
+        const res = await fetch('/api/supporters', { cache: 'no-store' });
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error('Failed to load supporters:', data?.error);
+          setSupporters([]);
+          return;
+        }
+
+        setSupporters(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Supporters fetch error:', err);
+        setSupporters([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSupporters();
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -17,12 +49,18 @@ export default function SupportersPage() {
 
         <div className={styles.section}>
           <div className={styles.supportersList}>
-            {supporters.map(supporter => (
-              <article key={supporter.id} className={styles.supporterCard}>
-                <span className={styles.supporterName}>{supporter.name}</span>
-                <span className={styles.supporterYear}>{supporter.amount} kr</span>
-              </article>
-            ))}
+            {loading ? (
+              <p>Loading supporters...</p>
+            ) : supporters.length > 0 ? (
+              supporters.map(supporter => (
+                <article key={supporter.id} className={styles.supporterCard}>
+                  <span className={styles.supporterName}>{supporter.name}</span>
+                  <span className={styles.supporterYear}>{supporter.amount} kr</span>
+                </article>
+              ))
+            ) : (
+              <p>No supporters yet. Be the first!</p>
+            )}
           </div>
         </div>
 
@@ -54,7 +92,6 @@ export default function SupportersPage() {
               Open Vipps and scan the QR code to donate directly.
             </p>
             
-            {/* Reserved for future donation reference or number */}
             <div className={styles.futureField} />
           </div>
         </div>

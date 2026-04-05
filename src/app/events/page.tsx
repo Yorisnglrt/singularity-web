@@ -19,13 +19,15 @@ type RawEvent = {
   isPast?: boolean;
 };
 
+type EventType = 'outdoor' | 'club' | 'underground';
+
 type PageEvent = {
   id: string;
   title: string;
   date: string;
   time: string;
   venue: Record<Locale, string>;
-  type: string;
+  type: EventType;
   description: Record<Locale, string>;
   lineup: string[];
   posterColor: string;
@@ -61,6 +63,14 @@ function normalizeLocalizedField(field: RawEvent['venue'] | RawEvent['descriptio
     pl: field.pl ?? '',
     de: field.de ?? '',
   };
+}
+
+function normalizeEventType(value: unknown): EventType {
+  if (value === 'outdoor' || value === 'club' || value === 'underground') {
+    return value;
+  }
+
+  return 'club';
 }
 
 export default function EventsPage() {
@@ -106,7 +116,7 @@ export default function EventsPage() {
         date: event.date,
         time: event.time,
         venue: normalizeLocalizedField(event.venue),
-        type: event.type,
+        type: normalizeEventType(event.type),
         description: normalizeLocalizedField(event.description),
         lineup: Array.isArray(event.lineup) ? event.lineup : [],
         posterColor: event.posterColor || 'linear-gradient(135deg, #000, #333)',
