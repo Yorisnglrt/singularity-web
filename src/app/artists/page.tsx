@@ -111,24 +111,29 @@ export default function ArtistsPage() {
   }, []);
 
   const normalizedArtists = useMemo<PageArtist[]>(() => {
-    return artists.map((artist) => ({
-      id: artist.id,
-      name: artist.name,
-      photoUrl: artist.photoUrl || artist.photo || undefined,
-      bio: normalizeBio(artist.bio),
-      isCrew: artist.isCrew ?? artist.crew ?? false,
-      isInvited: artist.isInvited ?? !(artist.isCrew ?? artist.crew ?? false),
-      avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
-      socialLinks: artist.socialLinks || {
-        soundcloud: artist.soundcloud,
-        mixcloud: artist.mixcloud,
-        instagram: artist.instagram,
-      },
-    }));
+    return artists.map((artist) => {
+      const isCrew = artist.isCrew ?? artist.crew ?? false;
+      const isInvited = isCrew ? false : (artist.isInvited ?? true);
+
+      return {
+        id: artist.id,
+        name: artist.name,
+        photoUrl: artist.photoUrl || artist.photo || undefined,
+        bio: normalizeBio(artist.bio),
+        isCrew,
+        isInvited,
+        avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
+        socialLinks: artist.socialLinks || {
+          soundcloud: artist.soundcloud,
+          mixcloud: artist.mixcloud,
+          instagram: artist.instagram,
+        },
+      };
+    });
   }, [artists]);
 
   const crew = normalizedArtists.filter((a) => a.isCrew);
-  const invitedGuests = normalizedArtists.filter((a) => a.isInvited);
+  const invitedGuests = normalizedArtists.filter((a) => !a.isCrew && a.isInvited);
 
   return (
     <div className={styles.page}>
