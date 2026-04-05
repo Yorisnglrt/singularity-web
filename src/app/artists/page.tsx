@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useI18n } from '@/i18n';
+import { useI18n, Locale } from '@/i18n';
 import ArtistCard from '@/components/ArtistCard';
 import styles from './page.module.css';
 
-type Artist = {
+type RawArtist = {
   id: string;
   name: string;
   photoUrl?: string;
   photo?: string;
-  bio: Record<string, string> | string;
+  bio?: Record<string, string> | string | null;
   isCrew?: boolean;
   isInvited?: boolean;
   crew?: boolean;
@@ -25,9 +25,61 @@ type Artist = {
   instagram?: string;
 };
 
+type PageArtist = {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  bio: Record<Locale, string>;
+  isCrew: boolean;
+  isInvited: boolean;
+  avatarGradient: string;
+  socialLinks: {
+    soundcloud?: string;
+    mixcloud?: string;
+    instagram?: string;
+  };
+};
+
+function normalizeBio(bio: RawArtist['bio']): Record<Locale, string> {
+  const fallback: Record<Locale, string> = {
+    en: '',
+    cs: '',
+    no: '',
+    pl: '',
+  };
+
+  if (!bio) return fallback;
+
+  if (typeof bio === 'string') {
+    try {
+      const parsed = JSON.parse(bio) as Partial<Record<Locale, string>>;
+      return {
+        en: parsed.en ?? '',
+        cs: parsed.cs ?? '',
+        no: parsed.no ?? '',
+        pl: parsed.pl ?? '',
+      };
+    } catch {
+      return {
+        en: bio,
+        cs: bio,
+        no: bio,
+        pl: bio,
+      };
+    }
+  }
+
+  return {
+    en: bio.en ?? '',
+    cs: bio.cs ?? '',
+    no: bio.no ?? '',
+    pl: bio.pl ?? '',
+  };
+}
+
 export default function ArtistsPage() {
   const { t } = useI18n();
-  const [artists, setArtists] = useState<Artist[]>([]);
+  const [artists, setArtists] = useState<RawArtist[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,32 +106,21 @@ export default function ArtistsPage() {
     loadArtists();
   }, []);
 
-  const normalizedArtists = useMemo(() => {
-    return artists.map((artist) => {
-      let parsedBio = artist.bio;
-
-      if (typeof artist.bio === 'string') {
-        try {
-          parsedBio = JSON.parse(artist.bio);
-        } catch {
-          parsedBio = { en: artist.bio, cs: artist.bio, no: artist.bio, pl: artist.bio };
-        }
-      }
-
-      return {
-        ...artist,
-        photoUrl: artist.photoUrl || artist.photo || undefined,
-        bio: parsedBio,
-        isCrew: artist.isCrew ?? artist.crew ?? false,
-        isInvited: artist.isInvited ?? !(artist.isCrew ?? artist.crew ?? false),
-        avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
-        socialLinks: artist.socialLinks || {
-          soundcloud: artist.soundcloud,
-          mixcloud: artist.mixcloud,
-          instagram: artist.instagram,
-        },
-      };
-    });
+  const normalizedArtists = useMemo<PageArtist[]>(() => {
+    return artists.map((artist) => ({
+      id: artist.id,
+      name: artist.name,
+      photoUrl: artist.photoUrl || artist.photo || undefined,
+      bio: normalizeBio(artist.bio),
+      isCrew: artist.isCrew ?? artist.crew ?? false,
+      isInvited: artist.isInvited ?? !(artist.isCrew ?? artist.crew ?? false),
+      avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
+      socialLinks: artist.socialLinks || {
+        soundcloud: artist.soundcloud,
+        mixcloud: artist.mixcloud,
+        instagram: artist.instagram,
+      },
+    }));
   }, [artists]);
 
   const crew = normalizedArtists.filter((a) => a.isCrew);
