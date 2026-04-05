@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { toSlug } from '@/lib/slug';
 import EventForm from './EventForm';
 import styles from './page.module.css';
 
@@ -189,7 +190,16 @@ export default function AdminPage() {
   const createNewItem = () => {
     const idStr = `new-${Date.now()}`;
     if (activeTab === 'artists') {
-      setActiveItem({ id: idStr, name: 'New Artist', bio: {en:'', cs:'', no:'', pl:''}, isCrew: false, isInvited: true, avatarGradient: 'linear-gradient(135deg, #000, #333)', socialLinks: {} });
+      setActiveItem({
+        id: idStr,
+        name: 'New Artist',
+        bio: {en:'', cs:'', no:'', pl:'', de:''},
+        isCrew: false,
+        isInvited: true,
+        avatarGradient: 'linear-gradient(135deg, #000, #333)',
+        socialLinks: {},
+        _isNew: true
+      });
     } else if (activeTab === 'events') {
       setActiveItem({ id: idStr, title: 'New Event', date: new Date().toISOString().split('T')[0], time: '22:00 - 04:00', venue: 'TBA', type: 'club', description: {en:'', cs:'', no:'', pl:''}, lineup: [], posterColor: 'linear-gradient(135deg, #000, #333)', isFree: false, isPast: false });
     } else if (activeTab === 'mixes') {
@@ -323,7 +333,18 @@ export default function AdminPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.label}>Name</label>
-          <input className={styles.input} value={activeItem.name} onChange={e => setActiveItem({...activeItem, name: e.target.value})} />
+          <input
+            className={styles.input}
+            value={activeItem.name}
+            onChange={e => {
+              const newName = e.target.value;
+              const updates: any = { name: newName };
+              if (activeItem._isNew) {
+                updates.id = toSlug(newName);
+              }
+              setActiveItem({...activeItem, ...updates});
+            }}
+          />
         </div>
 
         <div className={styles.formGroup}>

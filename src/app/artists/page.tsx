@@ -112,8 +112,16 @@ export default function ArtistsPage() {
 
   const normalizedArtists = useMemo<PageArtist[]>(() => {
     return artists.map((artist) => {
-      const isCrew = artist.isCrew ?? artist.crew ?? false;
+      const isCrew = artist.isCrew === true || artist.crew === true;
+      // An artist is invited only if they are NOT crew AND have isInvited set (or default to true if not crew)
       const isInvited = isCrew ? false : (artist.isInvited ?? true);
+
+      // Robust social links merging
+      const socialLinks = {
+        soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud,
+        mixcloud: artist.socialLinks?.mixcloud || artist.mixcloud,
+        instagram: artist.socialLinks?.instagram || artist.instagram,
+      };
 
       return {
         id: artist.id,
@@ -123,11 +131,7 @@ export default function ArtistsPage() {
         isCrew,
         isInvited,
         avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
-        socialLinks: artist.socialLinks || {
-          soundcloud: artist.soundcloud,
-          mixcloud: artist.mixcloud,
-          instagram: artist.instagram,
-        },
+        socialLinks,
       };
     });
   }, [artists]);
