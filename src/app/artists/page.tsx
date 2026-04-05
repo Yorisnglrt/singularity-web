@@ -46,6 +46,7 @@ function normalizeBio(bio: RawArtist['bio']): Record<Locale, string> {
     cs: '',
     no: '',
     pl: '',
+    de: '',
   };
 
   if (!bio) return fallback;
@@ -58,6 +59,7 @@ function normalizeBio(bio: RawArtist['bio']): Record<Locale, string> {
         cs: parsed.cs ?? '',
         no: parsed.no ?? '',
         pl: parsed.pl ?? '',
+        de: parsed.de ?? '',
       };
     } catch {
       return {
@@ -65,6 +67,7 @@ function normalizeBio(bio: RawArtist['bio']): Record<Locale, string> {
         cs: bio,
         no: bio,
         pl: bio,
+        de: bio,
       };
     }
   }
@@ -74,6 +77,7 @@ function normalizeBio(bio: RawArtist['bio']): Record<Locale, string> {
     cs: bio.cs ?? '',
     no: bio.no ?? '',
     pl: bio.pl ?? '',
+    de: bio.de ?? '',
   };
 }
 
