@@ -107,25 +107,21 @@ export default function Home() {
 
       {/* Explore Artists - Residents Row */}
       <section className={`section ${styles.section}`} id="crew-spotlight">
-        <div className="container">
-          <ArtistShowcase 
-            artists={crewArtists} 
-            title={t('home.spotlight')} 
-            showDiamond 
-          />
-        </div>
+        <ArtistShowcase 
+          artists={crewArtists} 
+          title={t('home.spotlight')} 
+          showDiamond 
+        />
       </section>
 
       {/* Invited Guests Row */}
       {invitedArtists.length > 0 && (
         <section className={`section ${styles.section}`} id="invited-spotlight" style={{ paddingTop: 0 }}>
-          <div className="container">
-            <ArtistShowcase 
-              artists={invitedArtists} 
-              title="INVITED GUESTS" 
-              isInvited 
-            />
-          </div>
+          <ArtistShowcase 
+            artists={invitedArtists} 
+            title="INVITED GUESTS" 
+            isInvited 
+          />
         </section>
       )}
 

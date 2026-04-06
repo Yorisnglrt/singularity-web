@@ -3,15 +3,17 @@
   width: 100%;
   margin-bottom: var(--space-20);
   user-select: none;
-  overflow: visible; /* Let cards pop out */
+  overflow: visible;
+  padding-bottom: var(--space-12);
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-4);
-  padding: 0 var(--space-4);
+  margin-bottom: var(--space-8);
+  /* Standard container padding to stay aligned with page content */
+  padding: 0 var(--space-8); 
 }
 
 .title {
@@ -45,39 +47,37 @@
   align-items: flex-end; /* Align to the bottom baseline */
   padding: var(--space-12) 0 var(--space-4) 0;
   overflow: visible;
-  min-height: 550px; /* Room for the largest card */
+  min-height: 550px; /* Room for the largest card scaled upward */
+  /* Allow starting from the left edge */
+  margin-left: 0;
 }
 
 .cardAnchor {
   position: relative;
   flex: 0 0 330px; /* Base portrait width */
-  margin-left: -200px; /* Strong negative overlap for the stacked look */
   text-decoration: none;
   z-index: 1;
-  transition: z-index 0.3s ease;
   transform-origin: bottom center; /* Scale upward from the bottom */
-}
-
-.cardAnchor:first-child {
-  margin-left: 0;
 }
 
 /* The actual visual card */
 .internalCard {
   position: relative;
   background: var(--color-bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
+  /* 2px Solid Frame for physical feel */
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  /* 32px Rounding for premium feel */
+  border-radius: 32px;
   overflow: hidden;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
   width: 100%;
 }
 
 .cardActive {
-  border-color: #00ffb2; /* Neon Green Border */
+  border-color: #00ffb2; /* Neon Green Border Frame */
   box-shadow: 
-    0 0 25px rgba(0, 255, 178, 0.25),
-    0 15px 45px rgba(0, 0, 0, 0.8);
+    0 0 35px rgba(0, 255, 178, 0.3),
+    0 20px 60px rgba(0, 0, 0, 1);
 }
 
 .imageBox {
@@ -95,10 +95,6 @@
   transition: filter 0.5s ease;
 }
 
-.cardActive .portraitPhoto {
-  filter: grayscale(0%) brightness(1);
-}
-
 /* Bottom Overlay branding */
 .brandingOverlay {
   position: absolute;
@@ -106,7 +102,7 @@
   left: 0;
   right: 0;
   padding: var(--space-12) var(--space-4) var(--space-6);
-  background: linear-gradient(to top, rgba(0, 0, 0, 1) 15%, rgba(0, 0, 0, 0.6) 60%, transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0.6) 65%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -121,7 +117,7 @@
   color: #fff;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-align: center;
   line-height: 1;
 }
@@ -132,8 +128,8 @@
 
 .divider {
   width: 100%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
   margin: var(--space-2) 0;
 }
 
@@ -145,40 +141,39 @@
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   color: #fff;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: all 0.3s ease;
 }
 
 .icon:hover {
   color: #00ffb2;
   opacity: 1;
-  filter: drop-shadow(0 0 5px #00ffb2);
+  filter: drop-shadow(0 0 8px #00ffb2);
 }
 
 /* Responsive Scaling */
 @media (max-width: 1200px) {
   .cardAnchor {
     flex: 0 0 280px;
-    margin-left: -180px;
   }
 }
 
 @media (max-width: 768px) {
+  .headerRow {
+    padding: 0 var(--space-4);
+  }
   .deckArea {
     overflow-x: auto;
     scrollbar-width: none;
-    align-items: flex-end;
     min-height: 480px;
   }
   .cardAnchor {
     flex: 0 0 240px;
-    margin-left: -150px;
-    scroll-snap-align: start;
   }
-  .artistName {
-    font-size: var(--text-3xl);
+  .internalCard {
+    border-radius: 20px;
   }
 }

@@ -16,25 +16,43 @@ interface ArtistShowcaseProps {
 
 export default function ArtistShowcase({ artists, title, showDiamond, isInvited }: ArtistShowcaseProps) {
   const { t } = useI18n();
-  // Frozen state: starts with the first artist or a specific index
+  // Frozen state: starts with the first artist
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const getScale = (index: number) => {
     const distance = Math.abs(index - activeIndex);
-    if (distance === 0) return 1.0; // The 100% reference size
-    if (distance <= 4) return 1.0 - (distance * 0.08); // Progressive decay
-    return 0.68; // Stable minimum for 5+
+    if (distance === 0) return 1.0; 
+    if (distance <= 4) return 1.0 - (distance * 0.08); 
+    return 0.68; // Stable minimum
   };
 
   const getZIndex = (index: number) => {
+    // Focused card is on top (100). Others decrease as they move away.
     const distance = Math.abs(index - activeIndex);
-    return 100 - distance; // Active is on top (100)
+    return 100 - distance;
+  };
+
+  const getMarginLeft = (index: number) => {
+    if (index === 0) return 0;
+    
+    // Calculate distance of this card from the focus
+    const distance = Math.abs(index - activeIndex);
+    
+    // Progressive Overlap:
+    // Cards closer to the active card have smaller overlap (more visible).
+    // Cards farther away tuck more aggressively (more hidden).
+    const baseOverlap = 160;
+    const overlapStep = 25;
+    const overlap = baseOverlap + (Math.min(4, distance) * overlapStep);
+    
+    return -overlap;
   };
 
   const renderCard = (artist: Artist, index: number) => {
-    const tier = index === activeIndex ? 'active' : 'default';
+    const isActive = index === activeIndex;
     const scale = getScale(index);
     const zIndex = getZIndex(index);
+    const marginLeft = getMarginLeft(index);
     
     return (
       <motion.div
@@ -43,16 +61,17 @@ export default function ArtistShowcase({ artists, title, showDiamond, isInvited 
         onMouseEnter={() => setActiveIndex(index)}
         animate={{ 
           scale: scale,
-          zIndex: zIndex
+          zIndex: zIndex,
+          marginLeft: marginLeft
         }}
         transition={{ 
           type: 'spring', 
-          damping: 25, 
+          damping: 30, 
           stiffness: 150 
         }}
-        style={{ transformOrigin: 'bottom' }}
+        style={{ transformOrigin: 'bottom center' }}
       >
-        <Link href={`/artists/${artist.id}`} className={`${styles.internalCard} ${tier === 'active' ? styles.cardActive : ''}`}>
+        <Link href={`/artists/${artist.id}`} className={`${styles.internalCard} ${isActive ? styles.cardActive : ''}`}>
           <div className={styles.imageBox}>
             {artist.photoUrl ? (
               <img src={artist.photoUrl} alt={artist.name} className={styles.portraitPhoto} />
