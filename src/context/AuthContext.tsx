@@ -9,6 +9,14 @@ export interface User {
   email: string;
   displayName: string;
   avatarInitial: string;
+  avatarUrl?: string;
+  bio?: string;
+  favoriteProducer?: string;
+  favoriteTrack?: string;
+  favoriteVenue?: string;
+  favoriteFestival?: string;
+  city?: string;
+  favoriteSubgenre?: string;
   points: number;
   isAdmin: boolean;
   createdAt: string;
@@ -32,6 +40,7 @@ interface AuthContextType {
   setShowAuthModal: (show: boolean) => void;
   openAuthModal: () => void;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -97,6 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: data.email || email,
           displayName: data.display_name || email.split('@')[0],
           avatarInitial: (data.display_name || email)[0].toUpperCase(),
+          avatarUrl: data.avatar_url,
+          bio: data.bio,
+          favoriteProducer: data.favorite_producer,
+          favoriteTrack: data.favorite_track,
+          favoriteVenue: data.favorite_venue,
+          favoriteFestival: data.favorite_festival,
+          city: data.city,
+          favoriteSubgenre: data.favorite_subgenre,
           points: data.points || 0,
           isAdmin: data.is_admin || false,
           createdAt: data.created_at || new Date().toISOString(),
@@ -235,6 +252,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: Partial<User>): Promise<{ error?: string }> => {
+    if (!user) return { error: 'Not authenticated' };
+
+    try {
+      // Map camelCase TS fields back to underscore DB fields
+      const dbUpdate: any = {};
+      if (data.displayName !== undefined) dbUpdate.display_name = data.displayName;
+      if (data.avatarUrl !== undefined) dbUpdate.avatar_url = data.avatarUrl;
+      if (data.bio !== undefined) dbUpdate.bio = data.bio;
+      if (data.favoriteProducer !== undefined) dbUpdate.favorite_producer = data.favoriteProducer;
+      if (data.favoriteTrack !== undefined) dbUpdate.favorite_track = data.favoriteTrack;
+      if (data.favoriteVenue !== undefined) dbUpdate.favorite_venue = data.favoriteVenue;
+      if (data.favoriteFestival !== undefined) dbUpdate.favorite_festival = data.favoriteFestival;
+      if (data.city !== undefined) dbUpdate.city = data.city;
+      if (data.favoriteSubgenre !== undefined) dbUpdate.favorite_subgenre = data.favoriteSubgenre;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(dbUpdate)
+        .eq('id', user.id);
+
+      if (error) return { error: error.message };
+
+      // Update local state
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      return {};
+    } catch (err: any) {
+      console.error('Update profile exception:', err);
+      return { error: err.message || 'An unexpected error occurred.' };
+    }
+  };
+
   const hasInteraction = (eventId: string, action: EventInteraction['action']) => {
     return interactions.some(i => i.eventId === eventId && i.action === action);
   };
@@ -252,7 +301,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       showAuthModal,
       setShowAuthModal,
       openAuthModal,
-      forgotPassword
+      forgotPassword,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

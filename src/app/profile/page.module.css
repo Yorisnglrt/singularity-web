@@ -32,18 +32,26 @@
 }
 
 .avatar {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-heading);
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: var(--weight-bold);
   color: #000;
   flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid var(--color-border);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profileInfo {
@@ -62,6 +70,24 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
+  margin-bottom: 0.5rem;
+}
+
+.location {
+  font-size: var(--text-xs);
+  color: var(--color-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: var(--weight-semibold);
+  margin-bottom: 0.25rem;
+}
+
+.bio {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 500px;
+  margin-top: 0.5rem;
 }
 
 .pointsBadge {
@@ -79,6 +105,38 @@
 .pointsValue { font-family: var(--font-heading); font-weight: var(--weight-bold); color: var(--color-accent-primary); }
 .pointsLabel { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-self: flex-start;
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  color: var(--color-accent-primary);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  font-weight: var(--weight-bold);
+}
+
+.editBtn:hover {
+  background: var(--color-accent-primary);
+  color: #000;
+  box-shadow: var(--glow-primary);
+}
+
 .logoutBtn {
   background: none;
   border: 1px solid var(--color-border);
@@ -91,6 +149,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   transition: all 0.2s;
+  text-align: center;
 }
 .logoutBtn:hover {
   border-color: #ff3b5c;

@@ -37,18 +37,27 @@ export default function ProfilePage() {
         {/* Profile header */}
         <div className={styles.profileHeader}>
           <div className={styles.avatar}>
-            {user.avatarInitial}
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.displayName} className={styles.avatarImage} />
+            ) : (
+              user.avatarInitial
+            )}
           </div>
           <div className={styles.profileInfo}>
+            {user.city && <div className={styles.location}>◈ {user.city}</div>}
             <h1 className={styles.displayName}>{user.displayName}</h1>
             <p className={styles.email}>{user.email}</p>
+            {user.bio && <p className={styles.bio}>{user.bio}</p>}
             <div className={styles.pointsBadge}>
               <span className={styles.pointsIcon}>◈</span>
               <span className={styles.pointsValue}>{user.points}</span>
               <span className={styles.pointsLabel}>points</span>
             </div>
           </div>
-          <button onClick={logout} className={styles.logoutBtn}>Sign out</button>
+          <div className={styles.headerActions}>
+            <Link href="/profile/settings" className={styles.editBtn}>Edit Profile</Link>
+            <button onClick={logout} className={styles.logoutBtn}>Sign out</button>
+          </div>
         </div>
 
         {/* Stats */}
