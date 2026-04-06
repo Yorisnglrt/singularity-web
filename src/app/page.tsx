@@ -3,7 +3,7 @@
 import { useI18n } from '@/i18n';
 import Hero from '@/components/Hero';
 import EventCard from '@/components/EventCard';
-import ArtistCard from '@/components/ArtistCard';
+import ArtistStripCard from '@/components/ArtistStripCard';
 import MixPlayer from '@/components/MixPlayer';
 import { useEffect, useMemo, useState } from 'react';
 import { Event as AppEvent } from '@/data/events';
@@ -52,21 +52,11 @@ export default function Home() {
 
   const upcomingEvents = events.filter(e => !e.isPast);
 
-  // Advanced Artist Sorting & Splitting
-  const { featuredArtists, remainingArtists } = useMemo(() => {
-    // Sort all artists
-    const sorted = [...artists].sort((a, b) => {
-      // 1. Crew Members Priority
-      if (a.isCrew !== b.isCrew) return a.isCrew ? -1 : 1;
-
-      // 2. Alphabetical Fallback within group
-      return a.name.localeCompare(b.name);
-    });
-
-    return {
-      featuredArtists: sorted.slice(0, 4),
-      remainingArtists: sorted.slice(4)
-    };
+  // Artist Sorting Logic (Crew -> Invited -> Alphabetical)
+  const sortedArtists = useMemo(() => {
+    const crew = artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
+    const invited = artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
+    return [...crew, ...invited];
   }, [artists]);
   
   // Group mixes by eventId
@@ -113,7 +103,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Explore Artists */}
+      {/* Explore Artists - Interactive Strip */}
       <section className={`section ${styles.section}`} id="artist-spotlight">
         <div className="container">
           <div className={styles.sectionHeader}>
@@ -121,24 +111,13 @@ export default function Home() {
             <a href="/artists" className="btn btn-ghost">{t('nav.artists')} →</a>
           </div>
 
-          {/* Featured Grid */}
-          <div className={styles.featuredGrid}>
-            {featuredArtists.map(artist => (
-              <ArtistCard key={artist.id} artist={artist} />
-            ))}
-          </div>
-
-          {/* All Artists Horizontal Scroll */}
-          {remainingArtists.length > 0 && (
-            <div className={styles.remainingSection}>
-               <h3 className={styles.subtleHeading}>— {t('nav.artists')}</h3>
-               <div className={styles.artistScroll}>
-                {remainingArtists.map(artist => (
-                  <ArtistCard key={artist.id} artist={artist} />
-                ))}
-              </div>
+          <div className={styles.artistStripWrapper}>
+            <div className={styles.artistStrip}>
+              {sortedArtists.map(artist => (
+                <ArtistStripCard key={artist.id} artist={artist} />
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </section>
 

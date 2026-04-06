@@ -44,58 +44,45 @@
   color: var(--color-text-secondary);
 }
 
-/* Artist Sections */
-.featuredGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-6);
-  margin-bottom: var(--space-12);
+/* Artist Interactive Strip */
+.artistStripWrapper {
+  margin: var(--space-8) 0;
+  overflow: hidden;
 }
 
-.remainingSection {
-  margin-top: var(--space-12);
-  padding-top: var(--space-8);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.subtleHeading {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: var(--space-6);
-}
-
-.artistScroll {
+.artistStrip {
   display: flex;
-  overflow-x: auto;
-  gap: var(--space-4);
-  padding-bottom: var(--space-6);
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-accent-primary) transparent;
-  width: 100%;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  /* Desktop hover interaction */
 }
 
-.artistScroll::-webkit-scrollbar {
-  height: 4px;
+/* On desktop, we want a clean flex row that expands on hover */
+@media (min-width: 769px) {
+  .artistStrip {
+    justify-content: center;
+    padding: var(--space-8) 0;
+  }
 }
 
-.artistScroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+/* Mobile swipeable row */
+@media (max-width: 768px) {
+  .artistStripWrapper {
+    margin: var(--space-4) 0;
+    overflow-x: auto;
+    scrollbar-width: none; /* Hide scrollbar for cleaner look on mobile */
+  }
+  
+  .artistStripWrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .artistStrip {
+    padding: var(--space-4) var(--space-4);
+    gap: var(--space-4);
+  }
 }
 
-.artistScroll::-webkit-scrollbar-thumb {
-  background: var(--color-accent-primary);
-  border-radius: 2px;
-}
-
-.artistScroll > * {
-  width: 200px;
-  flex: 0 0 200px;
-}
-
-/* Old grid removed or repurposed if needed elsewhere */
 
 /* Mix list */
 .mixList {
