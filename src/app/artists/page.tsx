@@ -7,6 +7,7 @@ import styles from './page.module.css';
 
 type RawArtist = {
   id: string;
+  slug?: string;
   name: string;
   photoUrl?: string;
   photo?: string;
@@ -27,6 +28,7 @@ type RawArtist = {
 
 type PageArtist = {
   id: string;
+  slug: string;
   name: string;
   photoUrl?: string;
   bio: Record<Locale, string>;
@@ -125,6 +127,7 @@ export default function ArtistsPage() {
 
       return {
         id: artist.id,
+        slug: artist.slug || artist.id,
         name: artist.name,
         photoUrl: artist.photoUrl || artist.photo || undefined,
         bio: normalizeBio(artist.bio),

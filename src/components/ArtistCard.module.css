@@ -1,7 +1,20 @@
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform var(--transition-fast);
+  height: 100%;
+}
+
 .card {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
 }
 
 .avatar {
@@ -52,12 +65,9 @@
 .name {
   font-size: var(--text-xl);
   letter-spacing: var(--tracking-wider);
-}
-
-.styles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  text-transform: uppercase;
+  font-weight: 800;
+  margin: 0;
 }
 
 .bio {
@@ -65,6 +75,7 @@
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
   flex: 1;
+  margin: 0;
 }
 
 .links {
@@ -84,11 +95,12 @@
   transition: color var(--transition-fast);
 }
 
-.socialLink:hover {
-  color: var(--color-accent-primary);
+.card:hover {
+  transform: translateY(-5px);
+  border-color: #00ffb2;
+  box-shadow: 0 10px 30px rgba(0, 255, 178, 0.15);
 }
 
-.card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 10px 30px rgba(0, 255, 178, 0.1);
+.cardLink:hover .name {
+  color: #00ffb2;
 }
