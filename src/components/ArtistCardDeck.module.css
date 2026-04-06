@@ -1,0 +1,194 @@
+.deckContainer {
+  position: relative;
+  width: 100%;
+  padding: var(--space-12) 0;
+  overflow: visible;
+}
+
+/* Desktop Fan Layout */
+.fanLayout {
+  display: flex;
+  justify-content: center;
+  padding-left: 60px; /* offset for overlap */
+}
+
+.fanCard {
+  position: relative;
+  width: 220px;
+  height: 280px;
+  margin-left: -60px; /* Overlap */
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: 
+    transform 0.4s cubic-bezier(0.2, 1, 0.3, 1),
+    margin 0.4s cubic-bezier(0.2, 1, 0.3, 1),
+    z-index 0s 0s;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.fanCard:first-child {
+  margin-left: 0;
+}
+
+.fanCard:hover {
+  transform: scale(1.15) translateY(-30px);
+  margin: 0 40px; /* Push neighbors to show cards on the sides */
+  z-index: 20;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+/* Photo */
+.photoContainer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  filter: grayscale(30%) brightness(0.8);
+  transition: filter 0.4s ease;
+}
+
+.fanCard:hover .photo {
+  filter: grayscale(0%) brightness(1);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, 
+    rgba(0, 0, 0, 0.9) 0%, 
+    rgba(0, 0, 0, 0.4) 40%, 
+    transparent 100%
+  );
+}
+
+/* Mobile Carousel Layout */
+.mobileCarousel {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.carouselInner {
+  display: flex;
+  gap: var(--space-4);
+  padding: 0 10%; /* Center first item */
+}
+
+.carouselCard {
+  position: relative;
+  width: 260px;
+  height: 340px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--color-bg-card);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.2);
+  transition: transform 0.4s ease, border-color 0.4s ease;
+}
+
+.activeCard {
+  border-color: var(--color-accent-primary);
+}
+
+/* Artist Info Layer */
+.infoLayer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-5);
+  z-index: 2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.name {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.fanCard .name {
+  font-size: var(--text-lg);
+}
+
+.carouselCard .name {
+  font-size: var(--text-base);
+  opacity: 0.6;
+}
+
+.activeCard .name {
+  font-size: var(--text-xl);
+  opacity: 1;
+  color: var(--color-accent-primary);
+}
+
+.role {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-accent-primary);
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.activeCard .role {
+  opacity: 1;
+}
+
+/* Badges */
+.crewBadge {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: rgba(0, 255, 178, 0.1);
+  color: var(--color-accent-primary);
+  border: 1px solid var(--color-accent-primary);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  z-index: 3;
+}
+
+/* Swipe Indicator (Optional) */
+.swipeIndicator {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dotActive {
+  background: var(--color-accent-primary);
+  width: 12px;
+  border-radius: 3px;
+}

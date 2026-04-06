@@ -3,7 +3,7 @@
 import { useI18n } from '@/i18n';
 import Hero from '@/components/Hero';
 import EventCard from '@/components/EventCard';
-import ArtistStripCard from '@/components/ArtistStripCard';
+import ArtistCardDeck from '@/components/ArtistCardDeck';
 import MixPlayer from '@/components/MixPlayer';
 import { useEffect, useMemo, useState } from 'react';
 import { Event as AppEvent } from '@/data/events';
@@ -52,11 +52,11 @@ export default function Home() {
 
   const upcomingEvents = events.filter(e => !e.isPast);
 
-  // Artist Sorting Logic (Crew -> Invited -> Alphabetical)
-  const sortedArtists = useMemo(() => {
+  // Artist Sorting Logic (Separate Decks)
+  const { crewArtists, invitedArtists } = useMemo(() => {
     const crew = artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
     const invited = artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
-    return [...crew, ...invited];
+    return { crewArtists: crew, invitedArtists: invited };
   }, [artists]);
   
   // Group mixes by eventId
@@ -103,7 +103,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Explore Artists - Interactive Strip */}
+      {/* Explore Artists - Card Deck Mode */}
       <section className={`section ${styles.section}`} id="artist-spotlight">
         <div className="container">
           <div className={styles.sectionHeader}>
@@ -111,13 +111,21 @@ export default function Home() {
             <a href="/artists" className="btn btn-ghost">{t('nav.artists')} →</a>
           </div>
 
-          <div className={styles.artistStripWrapper}>
-            <div className={styles.artistStrip}>
-              {sortedArtists.map(artist => (
-                <ArtistStripCard key={artist.id} artist={artist} />
-              ))}
+          {/* Singularity Crew Deck */}
+          {crewArtists.length > 0 && (
+            <div className={styles.deckSection}>
+              <h3 className={styles.subtleHeading}>— {t('artists.residents')}</h3>
+              <ArtistCardDeck artists={crewArtists} />
             </div>
-          </div>
+          )}
+
+          {/* Invited Guests Deck */}
+          {invitedArtists.length > 0 && (
+            <div className={styles.deckSection}>
+              <h3 className={styles.subtleHeading}>— {t('artists.newTalent')}</h3>
+              <ArtistCardDeck artists={invitedArtists} />
+            </div>
+          )}
         </div>
       </section>
 

@@ -44,43 +44,20 @@
   color: var(--color-text-secondary);
 }
 
-/* Artist Interactive Strip */
-.artistStripWrapper {
-  margin: var(--space-8) 0;
-  overflow: hidden;
+/* Artist Card Deck Section */
+.deckSection {
+  margin-bottom: var(--space-16);
 }
 
-.artistStrip {
-  display: flex;
-  gap: var(--space-2);
-  padding: var(--space-4) 0;
-  /* Desktop hover interaction */
-}
-
-/* On desktop, we want a clean flex row that expands on hover */
-@media (min-width: 769px) {
-  .artistStrip {
-    justify-content: center;
-    padding: var(--space-8) 0;
-  }
-}
-
-/* Mobile swipeable row */
-@media (max-width: 768px) {
-  .artistStripWrapper {
-    margin: var(--space-4) 0;
-    overflow-x: auto;
-    scrollbar-width: none; /* Hide scrollbar for cleaner look on mobile */
-  }
-  
-  .artistStripWrapper::-webkit-scrollbar {
-    display: none;
-  }
-
-  .artistStrip {
-    padding: var(--space-4) var(--space-4);
-    gap: var(--space-4);
-  }
+.subtleHeading {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: var(--space-8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: var(--space-2);
 }
 
 
