@@ -1,35 +1,46 @@
 'use client';
 
-import { artists } from '@/data/artists';
 import { normalizeArtist } from '@/lib/data-normalization';
 import { useI18n } from '@/i18n';
 import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-interface Props {
-  params: { slug: string };
-}
-
-/**
- * Artist Profile Page - Client Component
- * This ensures the bio correctly switches languages based on the current context.
- * Metadata will be handled separately in a Server-side wrapper if needed later.
- */
 export default function ArtistProfilePage() {
   const { locale, t } = useI18n();
   const params = useParams();
   const slug = params?.slug as string;
 
-  // Find and normalize the artist strictly by slug
-  const rawArtist = slug ? artists.find((a) => a.slug === slug) : null;
-  
-  if (!rawArtist) {
+  const [artist, setArtist] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/artists', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const raw = data.find((a: any) => (a.slug || a.id) === slug);
+          if (raw) setArtist(normalizeArtist(raw));
+        }
+      } catch (err) {
+        console.error('Artist fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (slug) load();
+  }, [slug]);
+
+  if (loading) {
+    return <main className={styles.profileWrapper}><div style={{color:'#555',textAlign:'center',marginTop:'40vh'}}>◈</div></main>;
+  }
+
+  if (!artist) {
     notFound();
   }
 
-  const artist = normalizeArtist(rawArtist);
-  // Get bio with fallback to English
   const bio = artist.bio[locale] || artist.bio['en'];
 
   return (
