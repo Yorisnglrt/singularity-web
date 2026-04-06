@@ -93,7 +93,13 @@ export default function Navbar() {
           <div className={styles.authWrapper}>
             {user ? (
               <Link href="/profile" className={styles.userBtn} id="nav-profile" onClick={() => setMobileOpen(false)}>
-                <span className={styles.userAvatar}>{user.avatarInitial}</span>
+                <span className={styles.userAvatar}>
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.displayName} className={styles.avatarImg} />
+                  ) : (
+                    user.avatarInitial
+                  )}
+                </span>
                 <span className={styles.userName}>{user.displayName}</span>
               </Link>
             ) : (
