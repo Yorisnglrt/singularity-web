@@ -1,0 +1,202 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.previewContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  width: 100%;
+}
+
+.viewport {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none; /* Prevents scrolling while dragging */
+}
+
+.previewImg {
+  position: absolute;
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.05s linear; /* Smooth drag/zoom */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.currentAvatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-bg-card), var(--color-bg-primary));
+}
+
+.currentAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  font-size: 4rem;
+  color: var(--color-text-muted);
+  opacity: 0.2;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 100px rgba(0, 0, 0, 0.5); /* Dim area outside circle */
+  pointer-events: none;
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+.controls {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.zoomControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.zoomControl label {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+/* Custom Range Input */
+.zoomControl input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-border);
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.zoomControl input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.saveBtn {
+  flex: 1;
+  background: var(--color-accent-primary);
+  color: #000;
+  border: none;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.saveBtn:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: var(--glow-primary);
+}
+
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+}
+
+.uploadBtn {
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  color: var(--color-accent-primary);
+  padding: 0.75rem var(--space-6);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.uploadBtn:hover {
+  background: var(--color-accent-primary);
+  color: #000;
+  box-shadow: var(--glow-primary);
+}
+
+.message {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  text-align: center;
+  width: 100%;
+}
+
+.success {
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  color: var(--color-accent-primary);
+}
+
+.error {
+  background: rgba(var(--color-accent-hot-rgb), 0.1);
+  color: var(--color-accent-hot);
+}

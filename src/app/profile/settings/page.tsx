@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 import Link from 'next/link';
+import AvatarUpload from '@/components/AvatarUpload';
 
 export default function ProfileSettingsPage() {
   const { user, updateProfile, isLoading } = useAuth();
@@ -138,14 +139,10 @@ export default function ProfileSettingsPage() {
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="avatarUrl">Avatar URL</label>
-                <input
-                  type="text"
-                  id="avatarUrl"
-                  name="avatarUrl"
-                  value={formData.avatarUrl}
-                  onChange={handleChange}
-                  placeholder="https://example.com/photo.jpg"
+                <label>Profile Photo</label>
+                <AvatarUpload 
+                  currentUrl={formData.avatarUrl} 
+                  onUploadSuccess={(url) => setFormData(prev => ({ ...prev, avatarUrl: url }))} 
                 />
               </div>
 
