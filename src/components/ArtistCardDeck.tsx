@@ -4,8 +4,8 @@ import { Artist } from '@/data/artists';
 import { useI18n } from '@/i18n';
 import styles from './ArtistCardDeck.module.css';
 import Link from 'next/link';
-import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface ArtistCardDeckProps {
@@ -13,10 +13,10 @@ interface ArtistCardDeckProps {
 }
 
 export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [activeIndex, setActiveIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Mobile Swipe Logic
   const handleDragEnd = (event: any, info: any) => {
@@ -28,7 +28,7 @@ export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
     }
   };
 
-  const renderCardContent = (artist: Artist, isActive: boolean = false) => (
+  const renderCardContent = (artist: Artist, tier: 'active' | 'neighbor' | 'default') => (
     <>
       {/* Photo Container 4:3 */}
       <div className={styles.photoContainer}>
@@ -44,7 +44,10 @@ export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
       <div className={styles.details}>
         <motion.h3 
           className={styles.name}
-          animate={{ scale: isActive ? 1.1 : 1 }}
+          animate={{ 
+            scale: tier === 'active' ? 1.1 : 1,
+            color: tier === 'active' ? 'var(--color-accent-primary)' : 'var(--color-text-primary)'
+          }}
         >
           {artist.name}
         </motion.h3>
@@ -71,9 +74,27 @@ export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
         </div>
       </div>
 
-      {isActive && artist.isCrew && <div className={styles.crewBadge}>CREW</div>}
+      {tier === 'active' && artist.isCrew && <div className={styles.crewBadge}>CREW</div>}
     </>
   );
+
+  const getTier = (index: number, current: number | null): 'active' | 'neighbor' | 'default' => {
+    if (current === null) return 'default';
+    if (index === current) return 'active';
+    if (Math.abs(index - current) === 1) return 'neighbor';
+    return 'default';
+  };
+
+  const getAnimationProps = (tier: 'active' | 'neighbor' | 'default') => {
+    switch (tier) {
+      case 'active':
+        return { scale: 1.15, zIndex: 100, y: -25, opacity: 1, filter: 'grayscale(0%) brightness(1)' };
+      case 'neighbor':
+        return { scale: 1.05, zIndex: 30, y: -5, opacity: 0.9, filter: 'grayscale(20%) brightness(0.9)' };
+      default:
+        return { scale: 0.95, zIndex: 10, y: 0, opacity: 0.7, filter: 'grayscale(60%) brightness(0.75)' };
+    }
+  };
 
   if (isMobile) {
     return (
@@ -84,25 +105,24 @@ export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
-            animate={{ x: `calc(50% - 130px - ${activeIndex * (260 + 16)}px)` }}
+            animate={{ x: `calc(50% - 45vw - ${activeIndex * (475 + 16)}px)` }} // Center the 90vw card
             transition={{ type: 'spring', damping: 25, stiffness: 120 }}
           >
             {artists.map((artist, index) => {
-              const isActive = index === activeIndex;
+              const tier = getTier(index, activeIndex);
+              const animProps = getAnimationProps(tier);
+              
               return (
                 <Link 
                   key={artist.id} 
                   href={`/artists/${artist.id}`}
-                  className={`${styles.carouselCard} ${isActive ? styles.activeCard : ''}`}
+                  className={`${styles.carouselCard} ${tier === 'active' ? styles.mobileActiveCard : ''}`}
                 >
                   <motion.div
-                    animate={{ 
-                      scale: isActive ? 1.05 : 0.85,
-                      opacity: isActive ? 1 : 0.5,
-                    }}
+                    animate={animProps}
                     transition={{ duration: 0.4 }}
                   >
-                    {renderCardContent(artist, isActive)}
+                    {renderCardContent(artist, tier)}
                   </motion.div>
                 </Link>
               );
@@ -126,12 +146,28 @@ export default function ArtistCardDeck({ artists }: ArtistCardDeckProps) {
   // Desktop Fan Layout
   return (
     <div className={styles.deckContainer}>
-      <div className={styles.fanLayout}>
-        {artists.map((artist) => (
-          <Link key={artist.id} href={`/artists/${artist.id}`} className={styles.fanCard}>
-            {renderCardContent(artist)}
-          </Link>
-        ))}
+      <div className={styles.fanLayout} onMouseLeave={() => setHoveredIndex(null)}>
+        {artists.map((artist, index) => {
+          const tier = getTier(index, hoveredIndex);
+          const animProps = getAnimationProps(tier);
+          
+          return (
+            <Link 
+              key={artist.id} 
+              href={`/artists/${artist.id}`} 
+              className={`${styles.fanCard} ${tier === 'active' ? styles.fanCardActive : ''}`}
+              onMouseEnter={() => setHoveredIndex(index)}
+              style={{ zIndex: animProps.zIndex }}
+            >
+              <motion.div
+                animate={animProps}
+                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+              >
+                {renderCardContent(artist, tier)}
+              </motion.div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

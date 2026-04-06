@@ -9,26 +9,26 @@
 .fanLayout {
   display: flex;
   justify-content: center;
-  padding-left: 120px; /* Offset for the overlapping layout */
+  padding-left: 220px; /* Offset for the overlapping layout */
 }
 
 .fanCard {
   position: relative;
-  width: 380px;
+  width: 475px; 
   background: var(--color-bg-card);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
-  margin-left: -120px; /* Strong Overlap */
+  margin-left: -220px; /* Stronger Overlap for larger cards */
   overflow: hidden;
-  transition: 
-    transform 0.4s cubic-bezier(0.2, 1, 0.3, 1),
-    margin 0.4s cubic-bezier(0.2, 1, 0.3, 1),
-    box-shadow 0.4s ease,
-    border-color 0.4s ease;
   z-index: 1;
   text-decoration: none;
   display: flex;
   flex-direction: column;
+  /* Transitions moved to Framer Motion for 3-tier logic */
+  transition: 
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+  cursor: pointer;
 }
 
 .fanCard:first-child {
@@ -61,7 +61,7 @@
 
 /* Details Area */
 .details {
-  padding: var(--space-5);
+  padding: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -70,7 +70,7 @@
 
 .name {
   font-family: var(--font-heading);
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   text-transform: uppercase;
   color: var(--color-text-primary);
   margin: 0;
@@ -92,8 +92,8 @@
 }
 
 .socialIcon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: var(--color-text-muted);
   transition: all 0.3s ease;
 }
@@ -118,44 +118,27 @@
   box-shadow: 0 0 15px rgba(var(--color-accent-primary-rgb), 0.4);
 }
 
-/* HOVER INTERACTION: STACKED FOCUS */
-/* When the whole layout is hovered, dim everyone */
-.fanLayout:hover .fanCard {
-  opacity: 0.6;
-  filter: grayscale(80%);
-  transform: scale(0.96);
-}
-
-/* The specific hovered card comes to front */
-.fanCard:hover {
-  opacity: 1 !important;
-  filter: grayscale(0%) !important;
-  transform: scale(1.1) translateY(-25px) !important;
-  z-index: 100 !important;
-  margin-right: 60px; /* Displace neighbors to show more of this card */
+/* Dynamic styles applied via Framer Motion in ArtistCardDeck.tsx */
+.fanCardActive {
   border-color: var(--color-accent-primary);
   box-shadow: 
-    0 30px 60px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(var(--color-accent-primary-rgb), 0.15);
+    0 40px 80px rgba(0, 0, 0, 0.9),
+    0 0 30px rgba(var(--color-accent-primary-rgb), 0.2);
 }
 
-.fanCard:hover .photo {
+.fanCardActive .photo {
   filter: grayscale(0%) brightness(1);
 }
 
-.fanCard:hover .name {
+.fanCardActive .name {
   color: var(--color-accent-primary);
-}
-
-.fanCard:hover .cardDivider {
-  opacity: 0.5;
 }
 
 /* MOBILE CAROUSEL STYLES */
 .mobileCarousel {
   position: relative;
   width: 100%;
-  height: 500px;
+  height: 550px; /* Slightly taller for larger cards */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -169,7 +152,8 @@
 }
 
 .carouselCard {
-  width: 300px;
+  width: 90vw;
+  max-width: 475px; 
   border-radius: var(--radius-xl);
   overflow: hidden;
   background: var(--color-bg-card);
@@ -177,13 +161,14 @@
   text-decoration: none;
 }
 
-.activeCard {
+/* Active card styles for mobile */
+.mobileActiveCard {
   border-color: var(--color-accent-primary);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .carouselCard .name {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   text-align: center;
 }
 
@@ -194,19 +179,20 @@
 .swipeIndicator {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-top: var(--space-4);
+  gap: 10px;
+  margin-top: var(--space-6);
 }
 
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
 }
 
 .dotActive {
   background: var(--color-accent-primary);
-  width: 15px;
-  border-radius: 3px;
+  width: 20px;
+  border-radius: 4px;
 }
