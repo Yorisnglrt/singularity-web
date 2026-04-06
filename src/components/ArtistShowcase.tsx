@@ -76,7 +76,7 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
           flex: isMobile ? '0 0 240px' : '0 0 330px' 
         }}
       >
-        <Link href={`/artists/${artist.id}`} className={styles.internalCard}>
+        <Link href={`/artists/${artist.slug}`} className={styles.internalCard}>
           <div className={styles.imageBox}>
             {artist.photoUrl ? (
               <img src={artist.photoUrl} alt={artist.name} className={styles.portraitPhoto} />

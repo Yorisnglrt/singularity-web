@@ -3,6 +3,7 @@ import artistsData from './artists.json';
 
 export interface Artist {
   id: string;
+  slug: string;
   name: string;
   photoUrl?: string;
   bio: Record<Locale, string>;

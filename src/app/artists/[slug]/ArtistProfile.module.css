@@ -1,0 +1,197 @@
+.profileWrapper {
+  position: relative;
+  min-height: 100vh;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100px var(--space-8) var(--space-20);
+  overflow: hidden;
+}
+
+/* Subtle atmospheric haze background */
+.haze {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  filter: blur(150px);
+  z-index: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.backLink {
+  position: absolute;
+  top: 100px;
+  left: var(--space-8);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.backLink:hover {
+  color: #00ffb2;
+  transform: translateX(-10px);
+}
+
+/* THE HERO IMAGE / VISUAL */
+.heroContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  /* 24px Physical corners as refined */
+  border-radius: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 255, 178, 0.1);
+  background: var(--color-bg-card);
+}
+
+.portraitPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: inset 0 0 100px rgba(0, 255, 178, 0.15);
+  pointer-events: none;
+}
+
+/* BRANDING & BIO */
+.infoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.artistName {
+  font-family: var(--font-heading);
+  font-size: var(--text-6xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 0.9;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.badge {
+  padding: var(--space-2) var(--space-6);
+  border-radius: 50px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.crewBadge {
+  background: rgba(0, 255, 178, 0.15);
+  border: 1px solid #00ffb2;
+  color: #00ffb2;
+}
+
+.invitedBadge {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.bioBox {
+  font-size: var(--text-lg);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+}
+
+/* SOCIAL BUTTONS */
+.socialRow {
+  display: flex;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+}
+
+.socialBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-8);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+}
+
+.socialBtn:hover {
+  background: rgba(0, 255, 178, 0.1);
+  border-color: #00ffb2;
+  color: #00ffb2;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 1024px) {
+  .profileWrapper {
+    padding-top: 150px;
+  }
+  .content {
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+  .heroContainer {
+    max-width: 350px;
+    margin: 0 auto;
+  }
+  .infoPanel {
+    align-items: center;
+    text-align: center;
+  }
+  .artistName {
+    font-size: var(--text-5xl);
+  }
+  .bioBox {
+    margin: 0 auto;
+  }
+}

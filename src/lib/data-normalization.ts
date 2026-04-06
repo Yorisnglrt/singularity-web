@@ -66,6 +66,7 @@ export function normalizeArtist(artist: any): Artist {
   return {
     ...artist,
     id: artist.id,
+    slug: artist.slug || artist.id,
     name: artist.name || 'Unknown Artist',
     bio: normalizeLocalizedField(artist.bio),
     isCrew: !!artist.isCrew,
