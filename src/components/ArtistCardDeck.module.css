@@ -14,9 +14,9 @@
 
 .fanCard {
   position: relative;
-  width: 220px;
-  height: 280px;
-  margin-left: -60px; /* Overlap */
+  width: 260px;
+  height: 330px;
+  margin-left: -80px; /* Overlap */
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-bg-card);
@@ -35,7 +35,7 @@
 
 .fanCard:hover {
   transform: scale(1.15) translateY(-30px);
-  margin: 0 40px; /* Push neighbors to show cards on the sides */
+  margin: 0 60px; /* Push neighbors to show cards on the sides */
   z-index: 20;
   border-color: var(--color-accent-primary);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--color-accent-primary-rgb), 0.2);
@@ -125,7 +125,7 @@
 }
 
 .fanCard .name {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
 }
 
 .carouselCard .name {

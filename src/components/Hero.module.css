@@ -257,8 +257,8 @@
   }
 
   .heroLogoImage {
-    max-width: 1200px;
-    height: 400px;
+    max-width: 1400px;
+    height: 480px;
     filter: drop-shadow(0 0 50px rgba(var(--color-accent-primary-rgb), 0.4));
   }
 
@@ -268,12 +268,12 @@
 
   .tagline {
     font-size: var(--text-xl);
-    max-width: 640px;
+    max-width: 800px;
   }
 
   .countdownValue {
-    font-size: var(--text-5xl);
-    min-width: 80px;
+    font-size: var(--text-6xl);
+    min-width: 100px;
     padding: var(--space-4) var(--space-6);
   }
 
