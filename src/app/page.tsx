@@ -52,11 +52,11 @@ export default function Home() {
 
   const upcomingEvents = events.filter(e => !e.isPast);
 
-  // Artist Sorting Logic (Separate Decks)
-  const { crewArtists, invitedArtists } = useMemo(() => {
+  // Artist Sorting Logic (Unified Deck)
+  const sortedArtists = useMemo(() => {
     const crew = artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
     const invited = artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
-    return { crewArtists: crew, invitedArtists: invited };
+    return [...crew, ...invited];
   }, [artists]);
   
   // Group mixes by eventId
@@ -111,21 +111,10 @@ export default function Home() {
             <a href="/artists" className="btn btn-ghost">{t('nav.artists')} →</a>
           </div>
 
-          {/* Singularity Crew Deck */}
-          {crewArtists.length > 0 && (
-            <div className={styles.deckSection}>
-              <h3 className={styles.subtleHeading}>— {t('artists.residents')}</h3>
-              <ArtistCardDeck artists={crewArtists} />
-            </div>
-          )}
-
-          {/* Invited Guests Deck */}
-          {invitedArtists.length > 0 && (
-            <div className={styles.deckSection}>
-              <h3 className={styles.subtleHeading}>— {t('artists.newTalent')}</h3>
-              <ArtistCardDeck artists={invitedArtists} />
-            </div>
-          )}
+          {/* Unified Artist Deck */}
+          <div className={styles.deckSection}>
+            <ArtistCardDeck artists={sortedArtists} />
+          </div>
         </div>
       </section>
 
