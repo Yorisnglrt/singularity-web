@@ -42,10 +42,11 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
     const zIndex = 100 - distance;
 
     // Progressive Overlap (Tucking under)
-    // base overlap 150 + step 25 based on distance from focus
+    // base overlap 75 + step 10 based on distance from focus
+    // 50% scale from original (150/20)
     let marginLeft = 0;
     if (index > 0) {
-      const overlap = 150 + (Math.min(4, distance) * 20);
+      const overlap = 75 + (Math.min(4, distance) * 10);
       marginLeft = -overlap;
     }
 
@@ -73,7 +74,8 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
         }}
         style={{ 
           transformOrigin: 'bottom center',
-          flex: isMobile ? '0 0 240px' : '0 0 330px' 
+          // 50% scale from original (240px/330px)
+          flex: isMobile ? '0 0 120px' : '0 0 165px' 
         }}
       >
         <Link href={`/artists/${artist.slug}`} className={styles.internalCard}>
