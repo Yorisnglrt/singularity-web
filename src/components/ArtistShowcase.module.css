@@ -1,15 +1,16 @@
 .showcaseWrapper {
   position: relative;
   width: 100%;
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-20);
   user-select: none;
+  overflow: visible; /* Let cards pop out */
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
   padding: 0 var(--space-4);
 }
 
@@ -27,7 +28,7 @@
 
 .titleInvited {
   font-size: var(--text-base);
-  opacity: 0.6;
+  opacity: 0.5;
   letter-spacing: 0.2em;
 }
 
@@ -36,85 +37,88 @@
   color: var(--color-accent-primary);
 }
 
-/* Horizontal Scroll Container */
-.scrollArea {
+/* Static Stacked Deck Area */
+.deckArea {
   position: relative;
   width: 100%;
   display: flex;
-  gap: var(--space-4);
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory; /* Snap to center */
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-  padding: var(--space-4) calc(50% - 165px); /* Let first/last cards center */
-  padding-bottom: var(--space-12);
+  align-items: flex-end; /* Align to the bottom baseline */
+  padding: var(--space-12) 0 var(--space-4) 0;
+  overflow: visible;
+  min-height: 550px; /* Room for the largest card */
 }
 
-.scrollArea::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-/* Portrait Card Styling */
 .cardAnchor {
-  flex: 0 0 330px; /* Precise portrait width */
+  position: relative;
+  flex: 0 0 330px; /* Base portrait width */
+  margin-left: -200px; /* Strong negative overlap for the stacked look */
   text-decoration: none;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+  z-index: 1;
+  transition: z-index 0.3s ease;
+  transform-origin: bottom center; /* Scale upward from the bottom */
+}
+
+.cardAnchor:first-child {
+  margin-left: 0;
+}
+
+/* The actual visual card */
+.internalCard {
   position: relative;
   background: var(--color-bg-card);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  scroll-snap-align: center; /* Important for fish-eye focus */
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  width: 100%;
 }
 
-.cardAnchor:hover {
+.cardActive {
   border-color: #00ffb2; /* Neon Green Border */
   box-shadow: 
-    0 0 20px rgba(0, 255, 178, 0.2),
-    0 20px 40px rgba(0, 0, 0, 0.6);
-  transform: translateY(-8px);
-  z-index: 10;
+    0 0 25px rgba(0, 255, 178, 0.25),
+    0 15px 45px rgba(0, 0, 0, 0.8);
 }
 
 .imageBox {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4; /* Perfect Portrait Ratio as seen in image */
+  aspect-ratio: 3 / 4; /* Portrait ratio */
   overflow: hidden;
+  background: #000;
 }
 
 .portraitPhoto {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s ease;
+  transition: filter 0.5s ease;
 }
 
-.cardAnchor:hover .portraitPhoto {
-  transform: scale(1.05);
+.cardActive .portraitPhoto {
+  filter: grayscale(0%) brightness(1);
 }
 
-/* Bottom Overlay Branding */
+/* Bottom Overlay branding */
 .brandingOverlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: var(--space-8) var(--space-4) var(--space-6);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.6) 50%, transparent);
+  padding: var(--space-12) var(--space-4) var(--space-6);
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 15%, rgba(0, 0, 0, 0.6) 60%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .artistName {
   font-family: var(--font-heading);
-  font-size: var(--text-4xl); /* Large bold name */
+  font-size: var(--text-4xl);
   font-weight: 900;
-  color: var(--color-text-primary);
+  color: #fff;
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -122,10 +126,14 @@
   line-height: 1;
 }
 
+.cardActive .artistName {
+  color: #00ffb2;
+}
+
 .divider {
   width: 100%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   margin: var(--space-2) 0;
 }
 
@@ -140,7 +148,7 @@
   width: 20px;
   height: 20px;
   color: #fff;
-  opacity: 0.8;
+  opacity: 0.6;
   transition: all 0.3s ease;
 }
 
@@ -150,54 +158,26 @@
   filter: drop-shadow(0 0 5px #00ffb2);
 }
 
-/* Navigation Arrows (Desktop Only) */
-.navArrow {
-  position: absolute;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #00ffb2;
-  cursor: pointer;
-  z-index: 100;
-  opacity: 0;
-  transition: all 0.3s ease;
-  transform: translateY(-50%);
-}
-
-.showcaseWrapper:hover .navArrow {
-  opacity: 1;
-}
-
-.arrowLeft { left: var(--space-4); }
-.arrowRight { right: var(--space-4); }
-
-.navArrow:hover {
-  background: #00ffb2;
-  color: #000;
-  box-shadow: 0 0 20px rgba(0, 255, 178, 0.4);
-}
-
-.arrowIcon {
-  width: 24px;
-  height: 24px;
+/* Responsive Scaling */
+@media (max-width: 1200px) {
+  .cardAnchor {
+    flex: 0 0 280px;
+    margin-left: -180px;
+  }
 }
 
 @media (max-width: 768px) {
-  .navArrow {
-    display: none; /* Hide arrows on mobile */
+  .deckArea {
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-items: flex-end;
+    min-height: 480px;
   }
-  
   .cardAnchor {
-    flex: 0 0 260px; /* Slightly smaller on mobile */
+    flex: 0 0 240px;
+    margin-left: -150px;
+    scroll-snap-align: start;
   }
-  
   .artistName {
     font-size: var(--text-3xl);
   }
