@@ -112,18 +112,10 @@ export default function ArtistsPage() {
     loadArtists();
   }, []);
 
-  const normalizedArtists = useMemo<PageArtist[]>(() => {
-    return artists.map((artist) => {
+  const allSortedArtists = useMemo(() => {
+    const normalized = artists.map((artist) => {
       const isCrew = artist.isCrew === true || artist.crew === true;
-      // An artist is invited only if they are NOT crew AND have isInvited set (or default to true if not crew)
       const isInvited = isCrew ? false : (artist.isInvited ?? true);
-
-      // Robust social links merging
-      const socialLinks = {
-        soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud,
-        mixcloud: artist.socialLinks?.mixcloud || artist.mixcloud,
-        instagram: artist.socialLinks?.instagram || artist.instagram,
-      };
 
       return {
         id: artist.id,
@@ -134,50 +126,39 @@ export default function ArtistsPage() {
         isCrew,
         isInvited,
         avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #000, #333)',
-        socialLinks,
+        socialLinks: {
+          soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud,
+          mixcloud: artist.socialLinks?.mixcloud || artist.mixcloud,
+          instagram: artist.socialLinks?.instagram || artist.instagram,
+        },
       };
     });
-  }, [artists]);
 
-  const crew = normalizedArtists.filter((a) => a.isCrew);
-  const invitedGuests = normalizedArtists.filter((a) => !a.isCrew && a.isInvited);
+    return normalized.sort((a, b) => a.name.localeCompare(b.name));
+  }, [artists]);
 
   return (
     <div className={styles.page}>
       <div className="container">
         <div className={styles.header}>
           <h1 className={styles.title}>{t('artists.title')}</h1>
-          <p className={styles.subtitle}>SINGULARITY COLLECTIVE — ROSTER</p>
+          <p className={styles.subtitle}>SINGULARITY COLLECTIVE — FULL ROSTER</p>
         </div>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionTag}>◈ {t('artists.residents')}</span>
-            <span className={styles.sectionCount}>{crew.length}</span>
+            <span className={styles.sectionTag}>◈ {t('artists.allArtists')}</span>
+            <span className={styles.sectionCount}>{allSortedArtists.length}</span>
           </div>
           <div className={styles.grid}>
-            {crew.map((artist) => (
+            {allSortedArtists.map((artist) => (
               <ArtistCard key={artist.id} artist={artist} />
             ))}
           </div>
         </section>
 
-        {invitedGuests.length > 0 && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionTag}>◈ {t('artists.newTalent')}</span>
-              <span className={styles.sectionCount}>{invitedGuests.length}</span>
-            </div>
-            <div className={styles.grid}>
-              {invitedGuests.map((artist) => (
-                <ArtistCard key={artist.id} artist={artist} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {!loading && normalizedArtists.length === 0 && (
-          <p>No artists found.</p>
+        {!loading && allSortedArtists.length === 0 && (
+          <p className={styles.noData}>No artists found.</p>
         )}
       </div>
     </div>

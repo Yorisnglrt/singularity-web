@@ -71,6 +71,7 @@ export function normalizeArtist(artist: any): Artist {
     bio: normalizeLocalizedField(artist.bio),
     isCrew: !!artist.isCrew,
     isInvited: !!artist.isInvited,
+    photoUrl: artist.photoUrl || artist.photo_url || artist.photo || undefined,
     avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #333, #111)',
     socialLinks: {
       soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud_url,

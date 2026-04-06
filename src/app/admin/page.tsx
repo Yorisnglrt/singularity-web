@@ -36,7 +36,10 @@ export default function AdminPage() {
         }
       });
       if (res.ok) {
-        const json = await res.json();
+        let json = await res.json();
+        if (type === 'artists') {
+          json = json.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        }
         setData(prev => ({ ...prev, [type]: json }));
       }
     } catch (e) {
@@ -88,6 +91,11 @@ export default function AdminPage() {
     } else {
       currentArray.push(activeItem);
     }
+    
+    if (activeTab === 'artists') {
+      currentArray.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+    }
+    
     saveToApi(activeTab, currentArray);
   };
 

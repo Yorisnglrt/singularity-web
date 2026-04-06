@@ -36,7 +36,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
-    const { data, error } = await supabase.from(type!).select('*');
+    let query = supabase.from(type!).select('*');
+    
+    if (type === 'artists') {
+      query = query.order('name', { ascending: true });
+    } else if (type === 'events') {
+      query = query.order('date', { ascending: false });
+    } else if (type === 'mixes') {
+      query = query.order('date', { ascending: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Supabase read error:', error);
