@@ -44,9 +44,10 @@
   gap: var(--space-4);
   overflow-x: auto;
   scroll-behavior: smooth;
+  scroll-snap-type: x mandatory; /* Snap to center */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
-  padding: var(--space-4);
+  padding: var(--space-4) calc(50% - 165px); /* Let first/last cards center */
   padding-bottom: var(--space-12);
 }
 
@@ -64,6 +65,7 @@
   position: relative;
   background: var(--color-bg-card);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  scroll-snap-align: center; /* Important for fish-eye focus */
 }
 
 .cardAnchor:hover {
