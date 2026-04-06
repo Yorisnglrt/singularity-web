@@ -105,10 +105,27 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Future sections placeholder */}
-        <div className={styles.comingSoon}>
-          <h2 className={styles.sectionTitle}>◈ Membership & Rewards</h2>
-          <p className={styles.comingSoonText}>Loyalty points, member perks, and rewards are coming soon.</p>
+        {/* Membership Card */}
+        <div className={styles.membershipCard}>
+          <h2 className={styles.sectionTitle}>◈ Membership</h2>
+          <div className={styles.membershipGrid}>
+            <div className={styles.membershipItem}>
+              <span className={styles.membershipLabel}>Tier</span>
+              <span className={styles.membershipValue}>{user.tier || 'Standard'}</span>
+            </div>
+            <div className={styles.membershipItem}>
+              <span className={styles.membershipLabel}>Member Code</span>
+              <span className={styles.membershipValue} style={{fontFamily: 'var(--font-mono)', letterSpacing: '0.1em'}}>{user.memberCode || '—'}</span>
+            </div>
+            <div className={styles.membershipItem}>
+              <span className={styles.membershipLabel}>Points</span>
+              <span className={styles.membershipValue}>{user.points}</span>
+            </div>
+            <div className={styles.membershipItem}>
+              <span className={styles.membershipLabel}>Member Since</span>
+              <span className={styles.membershipValue}>{user.memberSince ? new Date(user.memberSince).toLocaleDateString('en', { month: 'short', year: 'numeric' }) : '—'}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

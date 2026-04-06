@@ -261,16 +261,37 @@
 }
 
 /* Coming soon */
-.comingSoon {
+.membershipCard {
   margin-top: 3rem;
   padding: 2rem;
-  border: 1px dashed var(--color-border);
+  border: 1px solid rgba(0, 255, 178, 0.2);
   border-radius: var(--radius-lg);
-  opacity: 0.5;
+  background: rgba(0, 255, 178, 0.03);
 }
 
-.comingSoonText {
-  font-size: var(--text-sm);
+.membershipGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.membershipItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.membershipLabel {
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
-  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.membershipValue {
+  font-size: var(--text-lg);
+  color: #fff;
+  font-weight: 700;
 }

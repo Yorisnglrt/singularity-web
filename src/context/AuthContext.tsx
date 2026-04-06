@@ -20,6 +20,9 @@ export interface User {
   points: number;
   isAdmin: boolean;
   createdAt: string;
+  memberCode?: string;
+  tier?: string;
+  memberSince?: string;
 }
 
 export interface EventInteraction {
@@ -117,6 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           points: data.points || 0,
           isAdmin: data.is_admin || false,
           createdAt: data.created_at || new Date().toISOString(),
+          memberCode: data.member_code || undefined,
+          tier: data.tier || undefined,
+          memberSince: data.member_since || undefined,
         };
         setUser(userData);
 
