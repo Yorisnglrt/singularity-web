@@ -207,6 +207,7 @@ export default function AdminPage() {
         isInvited: true,
         avatarGradient: 'linear-gradient(135deg, #000, #333)',
         socialLinks: {},
+        image: '',
         _isNew: true
       });
     } else if (activeTab === 'events') {
@@ -359,8 +360,8 @@ export default function AdminPage() {
         <div className={styles.formGroup}>
           <label className={styles.label}>Profile Photo (Portrait 3:4)</label>
           <ImageUpload 
-            currentUrl={activeItem.photoUrl}
-            onUploadSuccess={(url) => setActiveItem({ ...activeItem, photoUrl: url })}
+            currentUrl={activeItem.image}
+            onUploadSuccess={(url) => setActiveItem({ ...activeItem, image: url })}
             bucket="artists-avatar"
             uploadPath={`${activeItem.id}/profile.jpg`}
             aspectRatio={3/4}
