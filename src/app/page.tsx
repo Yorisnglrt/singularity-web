@@ -52,14 +52,14 @@ export default function Home() {
 
   const upcomingEvents = events.filter(e => !e.isPast);
 
-  // Split artists into Crew and Invited
-  const crewArtists = useMemo(() => 
-    artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name)),
-  [artists]);
+  // Unified Artist List: Crew (A-Z) -> Invited (A-Z)
+  const showcaseArtists = useMemo(() => {
+    const crew = artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
+    const invited = artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
+    return [...crew, ...invited];
+  }, [artists]);
   
-  const invitedArtists = useMemo(() => 
-    artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name)),
-  [artists]);
+  // Group mixes by eventId (omitted for brevity)
   
   // Group mixes by eventId
   const mixesByEvent = useMemo(() => {
@@ -105,25 +105,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Explore Artists - Residents Row */}
-      <section className={`section ${styles.section}`} id="crew-spotlight">
+      {/* Explore Artists - Unified Row */}
+      <section className={`section ${styles.section}`} id="artist-spotlight" style={{ paddingBottom: 'var(--space-20)' }}>
         <ArtistShowcase 
-          artists={crewArtists} 
+          artists={showcaseArtists} 
           title={t('home.spotlight')} 
           showDiamond 
         />
       </section>
-
-      {/* Invited Guests Row */}
-      {invitedArtists.length > 0 && (
-        <section className={`section ${styles.section}`} id="invited-spotlight" style={{ paddingTop: 0 }}>
-          <ArtistShowcase 
-            artists={invitedArtists} 
-            title="INVITED GUESTS" 
-            isInvited 
-          />
-        </section>
-      )}
 
       {/* Latest Mixes */}
       {Object.keys(mixesByEvent).length > 0 && (

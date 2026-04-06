@@ -1,10 +1,9 @@
 .showcaseWrapper {
   position: relative;
   width: 100%;
-  margin-bottom: var(--space-20);
+  margin-bottom: var(--space-12);
   user-select: none;
   overflow: visible;
-  padding-bottom: var(--space-12);
 }
 
 .headerRow {
@@ -12,8 +11,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-8);
-  /* Standard container padding to stay aligned with page content */
-  padding: 0 var(--space-8); 
+  /* Still aligned with site grid */
+  padding: 0 var(--space-8);
 }
 
 .title {
@@ -28,62 +27,70 @@
   text-transform: uppercase;
 }
 
-.titleInvited {
-  font-size: var(--text-base);
-  opacity: 0.5;
-  letter-spacing: 0.2em;
-}
-
 .diamondIcon {
   font-size: 0.8em;
   color: var(--color-accent-primary);
 }
 
-/* Static Stacked Deck Area */
+/* DESKTOP DECK MODE */
 .deckArea {
   position: relative;
   width: 100%;
   display: flex;
-  align-items: flex-end; /* Align to the bottom baseline */
-  padding: var(--space-12) 0 var(--space-4) 0;
+  justify-content: center; /* Centered deck composition */
+  align-items: flex-end; /* Bottom baseline alignment */
+  padding: var(--space-12) 0 var(--space-12) 0;
   overflow: visible;
-  min-height: 550px; /* Room for the largest card scaled upward */
-  /* Allow starting from the left edge */
-  margin-left: 0;
+  min-height: 580px;
 }
 
+/* MOBILE SCROLL MODE */
+.scrollArea {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding: 0 var(--space-4) var(--space-12) var(--space-4);
+}
+
+.scrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+/* SHARED CARD STYLING */
 .cardAnchor {
   position: relative;
-  flex: 0 0 330px; /* Base portrait width */
   text-decoration: none;
-  z-index: 1;
-  transform-origin: bottom center; /* Scale upward from the bottom */
+  transform-origin: bottom center;
 }
 
-/* The actual visual card */
+/* Internal Card - Physical Frame */
 .internalCard {
   position: relative;
   background: var(--color-bg-card);
-  /* 2px Solid Frame for physical feel */
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  /* 32px Rounding for premium feel */
-  border-radius: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.15); /* Proper visible border */
+  border-radius: 40px; /* Clearly rounded corners */
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .cardActive {
-  border-color: #00ffb2; /* Neon Green Border Frame */
+  border-color: #00ffb2; /* Active-card highlight highlight */
   box-shadow: 
-    0 0 35px rgba(0, 255, 178, 0.3),
-    0 20px 60px rgba(0, 0, 0, 1);
+    0 0 30px rgba(0, 255, 178, 0.3),
+    0 20px 50px rgba(0, 0, 0, 0.9);
 }
 
 .imageBox {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4; /* Portrait ratio */
+  aspect-ratio: 3 / 4; /* Accurate portrait ratio */
   overflow: hidden;
   background: #000;
 }
@@ -92,88 +99,57 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: filter 0.5s ease;
 }
 
-/* Bottom Overlay branding */
-.brandingOverlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: var(--space-12) var(--space-4) var(--space-6);
-  background: linear-gradient(to top, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0.6) 65%, transparent);
+/* Bottom branding - Consistent for all cards */
+.brandingArea {
+  padding: var(--space-6) var(--space-4);
+  background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4));
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  flex-grow: 1;
 }
 
 .artistName {
   font-family: var(--font-heading);
-  font-size: var(--text-4xl);
+  font-size: var(--text-2xl);
   font-weight: 900;
   color: #fff;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-align: center;
-  line-height: 1;
-}
-
-.cardActive .artistName {
-  color: #00ffb2;
 }
 
 .divider {
-  width: 100%;
+  width: 40px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: var(--space-2) 0;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .socialIcons {
   display: flex;
   gap: var(--space-4);
-  align-items: center;
-  justify-content: center;
 }
 
-.icon {
-  width: 22px;
-  height: 22px;
+.socialIcon {
+  width: 18px;
+  height: 18px;
   color: #fff;
-  opacity: 0.7;
-  transition: all 0.3s ease;
+  opacity: 0.6;
+  transition: opacity 0.3s ease, color 0.3s ease;
 }
 
-.icon:hover {
-  color: #00ffb2;
+.socialIcon:hover {
   opacity: 1;
-  filter: drop-shadow(0 0 8px #00ffb2);
+  color: #00ffb2;
 }
 
-/* Responsive Scaling */
-@media (max-width: 1200px) {
-  .cardAnchor {
-    flex: 0 0 280px;
-  }
-}
-
+/* Responsive Overrides */
 @media (max-width: 768px) {
   .headerRow {
     padding: 0 var(--space-4);
-  }
-  .deckArea {
-    overflow-x: auto;
-    scrollbar-width: none;
-    min-height: 480px;
-  }
-  .cardAnchor {
-    flex: 0 0 240px;
-  }
-  .internalCard {
-    border-radius: 20px;
   }
 }
