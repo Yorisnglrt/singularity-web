@@ -44,35 +44,58 @@
   color: var(--color-text-secondary);
 }
 
-/* Artist grid */
-.artistGrid {
+/* Artist Sections */
+.featuredGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+  margin-bottom: var(--space-12);
+}
+
+.remainingSection {
+  margin-top: var(--space-12);
+  padding-top: var(--space-8);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.subtleHeading {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-6);
+}
+
+.artistScroll {
   display: flex;
   overflow-x: auto;
   gap: var(--space-4);
-  padding-bottom: var(--space-4);
+  padding-bottom: var(--space-6);
   scrollbar-width: thin;
   scrollbar-color: var(--color-accent-primary) transparent;
-  width: max-content;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
 }
 
-.artistGrid::-webkit-scrollbar {
-  height: 6px;
+.artistScroll::-webkit-scrollbar {
+  height: 4px;
 }
-.artistGrid::-webkit-scrollbar-track {
+
+.artistScroll::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
-}
-.artistGrid::-webkit-scrollbar-thumb {
-  background: var(--color-accent-primary);
-  border-radius: 3px;
 }
 
-.artistGrid > * {
-  width: 240px;
-  flex: 0 0 240px;
+.artistScroll::-webkit-scrollbar-thumb {
+  background: var(--color-accent-primary);
+  border-radius: 2px;
 }
+
+.artistScroll > * {
+  width: 200px;
+  flex: 0 0 200px;
+}
+
+/* Old grid removed or repurposed if needed elsewhere */
 
 /* Mix list */
 .mixList {
@@ -148,6 +171,10 @@
 
   .membershipTeaser {
     padding: var(--space-8) var(--space-4);
+  }
+
+  .featuredGrid {
+    grid-template-columns: 1fr;
   }
 }
 

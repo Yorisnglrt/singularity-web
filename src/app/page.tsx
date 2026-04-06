@@ -51,7 +51,23 @@ export default function Home() {
   }, []);
 
   const upcomingEvents = events.filter(e => !e.isPast);
-  const featuredArtists = artists.slice(0, 4);
+
+  // Advanced Artist Sorting & Splitting
+  const { featuredArtists, remainingArtists } = useMemo(() => {
+    // Sort all artists
+    const sorted = [...artists].sort((a, b) => {
+      // 1. Crew Members Priority
+      if (a.isCrew !== b.isCrew) return a.isCrew ? -1 : 1;
+
+      // 2. Alphabetical Fallback within group
+      return a.name.localeCompare(b.name);
+    });
+
+    return {
+      featuredArtists: sorted.slice(0, 4),
+      remainingArtists: sorted.slice(4)
+    };
+  }, [artists]);
   
   // Group mixes by eventId
   const mixesByEvent = useMemo(() => {
@@ -97,18 +113,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Artist Spotlight */}
+      {/* Explore Artists */}
       <section className={`section ${styles.section}`} id="artist-spotlight">
         <div className="container">
           <div className={styles.sectionHeader}>
             <span className={styles.sectionTag}>◈ {t('home.spotlight')}</span>
             <a href="/artists" className="btn btn-ghost">{t('nav.artists')} →</a>
           </div>
-          <div className={styles.artistGrid}>
+
+          {/* Featured Grid */}
+          <div className={styles.featuredGrid}>
             {featuredArtists.map(artist => (
               <ArtistCard key={artist.id} artist={artist} />
             ))}
           </div>
+
+          {/* All Artists Horizontal Scroll */}
+          {remainingArtists.length > 0 && (
+            <div className={styles.remainingSection}>
+               <h3 className={styles.subtleHeading}>— {t('nav.artists')}</h3>
+               <div className={styles.artistScroll}>
+                {remainingArtists.map(artist => (
+                  <ArtistCard key={artist.id} artist={artist} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
