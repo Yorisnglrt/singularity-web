@@ -28,8 +28,8 @@
 }
 
 .logoImage {
-  width: 250px;
-  height: 58px;
+  width: 320px;
+  height: 74px;
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-primary) 100%);
   -webkit-mask-image: url('/logo-white.png');
   -webkit-mask-size: contain;
@@ -51,13 +51,13 @@
 .links {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .link {
   padding: var(--space-2) var(--space-3);
   font-family: var(--font-heading);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--weight-medium);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
@@ -184,9 +184,9 @@
 }
 
 .signInBtn {
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   font-family: var(--font-heading);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -216,8 +216,8 @@
 .userBtn:hover { background: var(--color-surface); }
 
 .userAvatar {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
   display: flex;
@@ -232,7 +232,7 @@
 
 .userName {
   font-family: var(--font-heading);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   max-width: 100px;

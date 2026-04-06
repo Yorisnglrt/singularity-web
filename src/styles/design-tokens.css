@@ -112,7 +112,7 @@
   /* === Layout === */
   --container-max: 1550px;
   --container-padding: var(--space-8);
-  --nav-height: 72px;
+  --nav-height: 100px;
 
   /* === Glassmorphism === */
   --glass-bg: rgba(10, 10, 15, 0.7);
