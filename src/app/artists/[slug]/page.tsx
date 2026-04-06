@@ -1,39 +1,34 @@
+'use client';
+
 import { artists } from '@/data/artists';
 import { normalizeArtist } from '@/lib/data-normalization';
-import { getLocale, getTranslations } from '@/i18n';
+import { useI18n } from '@/i18n';
 import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Metadata } from 'next';
 
 interface Props {
   params: { slug: string };
 }
 
 /**
- * Dynamic Metadata for SEO
+ * Artist Profile Page - Client Component
+ * This ensures the bio correctly switches languages based on the current context.
+ * Metadata will be handled separately in a Server-side wrapper if needed later.
  */
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const artistData = artists.find((a) => a.slug === params.slug || a.id === params.slug);
-  if (!artistData) return { title: 'Artist Not Found | SINGULARITY' };
-
-  return {
-    title: `${artistData.name} | SINGULARITY Artist Profile`,
-    description: `Explore the unique sound and vision of ${artistData.name} at SINGULARITY Collective.`,
-  };
-}
-
-export default async function ArtistProfilePage({ params }: Props) {
-  const locale = getLocale();
-  const t = getTranslations(locale);
+export default function ArtistProfilePage({ params }: Props) {
+  const { locale, t } = useI18n();
 
   // Find and normalize the artist
+  // We check for both slug and id for robustness
   const rawArtist = artists.find((a) => a.slug === params.slug || a.id === params.slug);
+  
   if (!rawArtist) {
     notFound();
   }
 
   const artist = normalizeArtist(rawArtist);
+  // Get bio with fallback to English
   const bio = artist.bio[locale] || artist.bio['en'];
 
   return (
@@ -44,14 +39,14 @@ export default async function ArtistProfilePage({ params }: Props) {
         style={{ background: artist.avatarGradient }} 
       />
 
-      {/* Back Link to Spotlight Section */}
+      {/* Back Link to Spotlight Section on Homepage */}
       <Link href="/#artist-spotlight" className={styles.backLink}>
         <span>←</span>
-        <span>BACK TO SHOWCASE</span>
+        <span>{t('nav.backToShowcase') || 'BACK TO SHOWCASE'}</span>
       </Link>
 
       <div className={styles.content}>
-        {/* Left: Hero Image / Visual */}
+        {/* Left: Hero Image / Visual with Physical Frame */}
         <div className={styles.heroContainer}>
           {artist.photoUrl ? (
             <img 
