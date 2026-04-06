@@ -59,7 +59,7 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
     return (
       <motion.div
         key={artist.id}
-        className={styles.cardAnchor}
+        className={`${styles.cardAnchor} ${isActive ? styles.cardAnchorActive : ''}`}
         onMouseEnter={() => !isMobile && setActiveIndex(index)}
         animate={isMobile ? { scale: 1, marginLeft: 0 } : { 
           scale: desktop.scale,
@@ -73,10 +73,10 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
         }}
         style={{ 
           transformOrigin: 'bottom center',
-          flex: isMobile ? '0 0 240px' : '0 0 330px' // Restore solid card widths
+          flex: isMobile ? '0 0 240px' : '0 0 330px' 
         }}
       >
-        <Link href={`/artists/${artist.id}`} className={`${styles.internalCard} ${isActive ? styles.cardActive : ''}`}>
+        <Link href={`/artists/${artist.id}`} className={styles.internalCard}>
           <div className={styles.imageBox}>
             {artist.photoUrl ? (
               <img src={artist.photoUrl} alt={artist.name} className={styles.portraitPhoto} />
