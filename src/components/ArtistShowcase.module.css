@@ -1,7 +1,7 @@
 .showcaseWrapper {
   position: relative;
   width: 100%;
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-20);
   user-select: none;
   overflow: visible;
 }
@@ -11,7 +11,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-8);
-  /* Still aligned with site grid */
   padding: 0 var(--space-8);
 }
 
@@ -32,19 +31,19 @@
   color: var(--color-accent-primary);
 }
 
-/* DESKTOP DECK MODE */
+/* DESKTOP DECK MODE: Centered & Physical */
 .deckArea {
   position: relative;
   width: 100%;
   display: flex;
-  justify-content: center; /* Centered deck composition */
-  align-items: flex-end; /* Bottom baseline alignment */
+  justify-content: center; /* Center the entire composition */
+  align-items: flex-end; /* All cards on one bottom line */
   padding: var(--space-12) 0 var(--space-12) 0;
   overflow: visible;
-  min-height: 580px;
+  min-height: 550px;
 }
 
-/* MOBILE SCROLL MODE */
+/* MOBILE SCROLL MODE: Simple & Standard */
 .scrollArea {
   display: flex;
   gap: var(--space-4);
@@ -59,38 +58,38 @@
   display: none;
 }
 
-/* SHARED CARD STYLING */
+/* THE CARD */
 .cardAnchor {
   position: relative;
   text-decoration: none;
-  transform-origin: bottom center;
+  transform-origin: bottom center; /* Scale upward */
 }
 
-/* Internal Card - Physical Frame */
 .internalCard {
   position: relative;
   background: var(--color-bg-card);
-  border: 2px solid rgba(255, 255, 255, 0.15); /* Proper visible border */
-  border-radius: 40px; /* Clearly rounded corners */
+  /* Physical Frame/Border */
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  /* Clearly Rounded corners */
+  border-radius: 32px;
   overflow: hidden;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .cardActive {
-  border-color: #00ffb2; /* Active-card highlight highlight */
+  border-color: #00ffb2; /* Clean active highlight */
   box-shadow: 
-    0 0 30px rgba(0, 255, 178, 0.3),
-    0 20px 50px rgba(0, 0, 0, 0.9);
+    0 0 30px rgba(0, 255, 178, 0.25),
+    0 20px 50px rgba(0, 0, 0, 0.8);
 }
 
 .imageBox {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4; /* Accurate portrait ratio */
+  aspect-ratio: 3 / 4; /* Perfect Portrait */
   overflow: hidden;
   background: #000;
 }
@@ -101,15 +100,19 @@
   object-fit: cover;
 }
 
-/* Bottom branding - Consistent for all cards */
-.brandingArea {
-  padding: var(--space-6) var(--space-4);
-  background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4));
+/* Branding Overlay - Premium Physical Feel */
+.brandingOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-12) var(--space-4) var(--space-6);
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0.6) 65%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  flex-grow: 1;
+  justify-content: flex-end;
+  gap: var(--space-1);
 }
 
 .artistName {
@@ -121,12 +124,15 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
+  line-height: 1;
 }
 
+/* Remove thin green line and replace with subtle divider */
 .divider {
   width: 40px;
   height: 2px;
   background: rgba(255, 255, 255, 0.2);
+  margin: var(--space-2) 0;
 }
 
 .socialIcons {
@@ -134,21 +140,19 @@
   gap: var(--space-4);
 }
 
-.socialIcon {
+.icon {
   width: 18px;
   height: 18px;
   color: #fff;
-  opacity: 0.6;
-  transition: opacity 0.3s ease, color 0.3s ease;
+  opacity: 0.7;
+  transition: all 0.3s ease;
 }
 
-.socialIcon:hover {
-  opacity: 1;
+.icon:hover {
   color: #00ffb2;
 }
 
-/* Responsive Overrides */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .headerRow {
     padding: 0 var(--space-4);
   }
