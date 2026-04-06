@@ -1,0 +1,199 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.previewContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  background: rgba(255, 255, 255, 0.02);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+}
+
+/* THE VIEWPORT - This is the crop window */
+.viewport {
+  position: relative;
+  width: 300px;
+  height: 300px; /* Default square, will be overridden by inline styles if aspect != 1 */
+  background: #000;
+  overflow: hidden;
+  cursor: grab;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  touch-action: none;
+}
+
+.viewport.circular {
+  border-radius: 50%;
+}
+
+.viewport:not(.circular) {
+  border-radius: var(--radius-md);
+}
+
+.previewImg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  /* Transform is applied inline: translate and scale */
+}
+
+/* Visual Overlay for the crop area */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--color-accent-primary);
+  opacity: 0.3;
+}
+
+.circular .overlay {
+  border-radius: 50%;
+}
+
+/* Current Image Preview (before editing) */
+.currentImage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+}
+
+.currentImageImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  font-size: 3rem;
+  color: var(--color-text-muted);
+  opacity: 0.2;
+}
+
+/* Controls */
+.controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.zoomControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.zoomControl label {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+}
+
+.zoomControl input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-accent-primary);
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  appearance: none;
+  outline: none;
+}
+
+.zoomControl input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.5);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.saveBtn {
+  flex: 2;
+  background: var(--color-accent-primary);
+  color: #000;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  box-shadow: var(--glow-primary);
+  transform: translateY(-2px);
+}
+
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cancelBtn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+
+.uploadBtn {
+  width: 100%;
+  background: rgba(var(--color-accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  color: var(--color-accent-primary);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.uploadBtn:hover {
+  background: var(--color-accent-primary);
+  color: #000;
+}
+
+/* Messages */
+.message {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.success { background: rgba(0, 255, 178, 0.1); color: var(--color-accent-primary); border: 1px solid rgba(0, 255, 178, 0.2); }
+.error { background: rgba(255, 59, 92, 0.1); color: var(--color-accent-hot); border: 1px solid rgba(255, 59, 92, 0.2); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

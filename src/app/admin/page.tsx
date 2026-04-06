@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { toSlug } from '@/lib/slug';
 import EventForm from './EventForm';
+import ImageUpload from '@/components/ImageUpload';
 import styles from './page.module.css';
 
 type Tab = 'artists' | 'events' | 'mixes' | 'supporters';
@@ -348,46 +349,18 @@ export default function AdminPage() {
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Photo (JPG, PNG, WebP)</label>
-          {activeItem.photoUrl && (
-            <div style={{marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem'}}>
-              <img src={activeItem.photoUrl} alt="preview" style={{width: 72, height: 72, objectFit: 'cover', borderRadius: '50%', border: '2px solid var(--color-accent-primary)'}} />
-              <button onClick={() => setActiveItem({...activeItem, photoUrl: ''})} style={{background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer'}}>✕ Remove photo</button>
-            </div>
-          )}
-          <input
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-            disabled={uploading}
-            onChange={async e => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploading(true);
-              setStatusMsg('Uploading photo...');
-              const { data: { session } } = await supabase.auth.getSession();
-              const fd = new FormData();
-              fd.append('file', file);
-              const res = await fetch('/api/admin/upload', { 
-                method: 'POST', 
-                body: fd,
-                headers: {
-                  'Authorization': `Bearer ${session?.access_token || ''}`
-                }
-              });
-              if (res.ok) {
-                const json = await res.json();
-                setActiveItem((prev: any) => ({ ...prev, photoUrl: json.path }));
-                setStatusMsg(`Photo uploaded: ${json.filename}`);
-              } else {
-                setStatusMsg('Photo upload failed.');
-              }
-              setUploading(false);
-              setTimeout(() => setStatusMsg(''), 4000);
-            }}
-            style={{color: 'var(--color-text-primary)', fontSize: '0.9rem'}}
+          <label className={styles.label}>Profile Photo (Portrait 3:4)</label>
+          <ImageUpload 
+            currentUrl={activeItem.photoUrl}
+            onUploadSuccess={(url) => setActiveItem({ ...activeItem, photoUrl: url })}
+            bucket="artists-avatar"
+            uploadPath={`${activeItem.id}/profile.jpg`}
+            aspectRatio={3/4}
+            circular={false}
+            outputWidth={600}
+            outputHeight={800}
+            label="Change Artist Photo"
           />
-          <p style={{fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem'}}>Or paste a URL directly:</p>
-          <input className={styles.input} value={activeItem.photoUrl || ''} placeholder="https://... or /images/artists/photo.jpg" onChange={e => setActiveItem({...activeItem, photoUrl: e.target.value})} />
         </div>
 
         <div className={styles.formGroup}>
