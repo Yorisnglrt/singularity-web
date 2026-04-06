@@ -2,6 +2,12 @@
   position: relative;
 }
 
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Section headers */
 .sectionHeader {
   display: flex;
@@ -32,10 +38,18 @@
 
 .manifestoTitle {
   font-size: var(--text-4xl);
-  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  /* Full-color Brand Gradient: Green to Cyan */
+  background: linear-gradient(135deg, 
+    var(--color-accent-primary) 0%, 
+    var(--color-accent-secondary) 50%, 
+    var(--color-accent-primary) 100%
+  );
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradient-flow 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(var(--color-accent-primary-rgb), 0.15));
 }
 
 .manifestoText {
