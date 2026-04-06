@@ -1,6 +1,7 @@
 [
   {
     "id": "acta-pon-it",
+    "slug": "acta-pon-it",
     "name": "Acta Pon It",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -15,6 +16,7 @@
   },
   {
     "id": "burge",
+    "slug": "burge",
     "name": "Burge",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -29,6 +31,7 @@
   },
   {
     "id": "clueless",
+    "slug": "clueless",
     "name": "Clueless",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -43,6 +46,7 @@
   },
   {
     "id": "digital-cookbook",
+    "slug": "digital-cookbook",
     "name": "Digital Cookbook",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -57,6 +61,7 @@
   },
   {
     "id": "gulito",
+    "slug": "gulito",
     "name": "Gulito",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -71,6 +76,7 @@
   },
   {
     "id": "haidama",
+    "slug": "haidama",
     "name": "Haidama",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -85,6 +91,7 @@
   },
   {
     "id": "hany-b",
+    "slug": "hany-b",
     "name": "Hany B",
     "bio": {
       "en": "Singularity DJ. Pushing the boundaries of underground bass music.",
@@ -102,6 +109,7 @@
   },
   {
     "id": "igubu",
+    "slug": "igubu",
     "name": "Igubu",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -116,6 +124,7 @@
   },
   {
     "id": "kaslex",
+    "slug": "kaslex",
     "name": "Kaslex",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -130,6 +139,7 @@
   },
   {
     "id": "kiyani",
+    "slug": "kiyani",
     "name": "KIYANI",
     "bio": {
       "en": "Played at Singularity. Bringing fresh energy to the dancefloor.",
@@ -146,6 +156,7 @@
   },
   {
     "id": "lemontek",
+    "slug": "lemontek",
     "name": "Lemontek",
     "bio": {
       "en": "Singularity DJ. High energy sets and relentless mixing.",
@@ -163,6 +174,7 @@
   },
   {
     "id": "noa",
+    "slug": "noa",
     "name": "NOA",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -177,6 +189,7 @@
   },
   {
     "id": "noise-preacher",
+    "slug": "noise-preacher",
     "name": "Noise Preacher",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -191,6 +204,7 @@
   },
   {
     "id": "nostre",
+    "slug": "nostre",
     "name": "Nostre",
     "bio": {
       "en": "Played at Singularity. Smooth transitions and heavy impact.",
@@ -208,6 +222,7 @@
   },
   {
     "id": "propagan",
+    "slug": "propagan",
     "name": "Propagan",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -222,6 +237,7 @@
   },
   {
     "id": "ross-b",
+    "slug": "ross-b",
     "name": "Ross B",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -236,6 +252,7 @@
   },
   {
     "id": "sim01",
+    "slug": "sim01",
     "name": "Sim01",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -250,6 +267,7 @@
   },
   {
     "id": "xcstnz",
+    "slug": "xcstnz",
     "name": "XCSTNZ",
     "bio": {
       "en": "Singularity Guest DJ.",
@@ -264,6 +282,7 @@
   },
   {
     "id": "yakub",
+    "slug": "yakub",
     "name": "Yakub",
     "bio": {
       "en": "Singularity DJ. Master of deep rollers and dark atmospheres.",
@@ -280,6 +299,7 @@
   },
   {
     "id": "yori",
+    "slug": "yori",
     "name": "Yori",
     "bio": {
       "en": "Singularity DJ. Bringing heavy basslines and technical precision.",

@@ -5,7 +5,7 @@ import { normalizeArtist } from '@/lib/data-normalization';
 import { useI18n } from '@/i18n';
 import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
 interface Props {
   params: { slug: string };
@@ -16,12 +16,13 @@ interface Props {
  * This ensures the bio correctly switches languages based on the current context.
  * Metadata will be handled separately in a Server-side wrapper if needed later.
  */
-export default function ArtistProfilePage({ params }: Props) {
+export default function ArtistProfilePage() {
   const { locale, t } = useI18n();
+  const params = useParams();
+  const slug = params?.slug as string;
 
-  // Find and normalize the artist
-  // We check for both slug and id for robustness
-  const rawArtist = artists.find((a) => a.slug === params.slug || a.id === params.slug);
+  // Find and normalize the artist strictly by slug
+  const rawArtist = slug ? artists.find((a) => a.slug === slug) : null;
   
   if (!rawArtist) {
     notFound();
