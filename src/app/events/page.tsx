@@ -2,82 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useI18n, Locale } from '@/i18n';
+import { Event as AppEvent } from '@/data/events';
 import EventCard from '@/components/EventCard';
+import { normalizeEvent } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
-type RawEvent = {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  venue: string | Record<string, string>;
-  type: string;
-  description: string | Record<string, string>;
-  lineup: string[];
-  posterColor?: string;
-  isFree?: boolean;
-  isPast?: boolean;
-};
-
-type EventType = 'outdoor' | 'club' | 'underground';
-
-type PageEvent = {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  venue: Record<Locale, string>;
-  type: EventType;
-  description: Record<Locale, string>;
-  lineup: string[];
-  posterColor: string;
-  isFree: boolean;
-  isPast: boolean;
-};
-
-type EventFilter = 'all' | 'club' | 'underground' | 'outdoor';
-
-function normalizeLocalizedField(field: RawEvent['venue'] | RawEvent['description']): Record<Locale, string> {
-  const fallback: Record<Locale, string> = { en: '', cs: '', no: '', pl: '', de: '' };
-  if (!field) return fallback;
-
-  if (typeof field === 'string') {
-    try {
-      const parsed = JSON.parse(field);
-      return {
-        en: parsed.en ?? field,
-        cs: parsed.cs ?? field,
-        no: parsed.no ?? field,
-        pl: parsed.pl ?? field,
-        de: parsed.de ?? field,
-      };
-    } catch {
-      return { en: field, cs: field, no: field, pl: field, de: field };
-    }
-  }
-
-  return {
-    en: field.en ?? '',
-    cs: field.cs ?? '',
-    no: field.no ?? '',
-    pl: field.pl ?? '',
-    de: field.de ?? '',
-  };
-}
-
-function normalizeEventType(value: unknown): EventType {
-  if (value === 'outdoor' || value === 'club' || value === 'underground') {
-    return value;
-  }
-
-  return 'club';
-}
+type PageEvent = AppEvent;
 
 export default function EventsPage() {
   const { t } = useI18n();
-  const [events, setEvents] = useState<RawEvent[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<EventFilter>('all');
+  const [filter, setFilter] = useState<string>('all');
   const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
@@ -104,26 +40,8 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
-  const normalizedEvents = useMemo<PageEvent[]>(() => {
-    return events.map((event) => {
-      const eventDate = new Date(event.date);
-      const now = new Date();
-      const isPast = event.isPast ?? eventDate < now;
-
-      return {
-        id: event.id,
-        title: event.title,
-        date: event.date,
-        time: event.time,
-        venue: normalizeLocalizedField(event.venue),
-        type: normalizeEventType(event.type),
-        description: normalizeLocalizedField(event.description),
-        lineup: Array.isArray(event.lineup) ? event.lineup : [],
-        posterColor: event.posterColor || 'linear-gradient(135deg, #000, #333)',
-        isFree: !!event.isFree,
-        isPast,
-      };
-    });
+  const normalizedEvents = useMemo<AppEvent[]>(() => {
+    return events.map(normalizeEvent);
   }, [events]);
 
   const filtered = useMemo(() => {
@@ -132,7 +50,7 @@ export default function EventsPage() {
     return base.filter(e => e.type === filter);
   }, [normalizedEvents, showPast, filter]);
 
-  const filters: EventFilter[] = ['all', 'club', 'underground', 'outdoor'];
+  const filters = ['all', 'club', 'underground', 'outdoor'];
 
   return (
     <div className={styles.page}>

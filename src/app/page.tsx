@@ -5,18 +5,70 @@ import Hero from '@/components/Hero';
 import EventCard from '@/components/EventCard';
 import ArtistCard from '@/components/ArtistCard';
 import MixPlayer from '@/components/MixPlayer';
-import { upcomingEvents } from '@/data/events';
-import { artists } from '@/data/artists';
-import { mixes } from '@/data/mixes';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Event as AppEvent } from '@/data/events';
+import { Artist } from '@/data/artists';
+import { Mix } from '@/data/mixes';
+import { normalizeEvent, normalizeArtist, normalizeMix } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
 export default function Home() {
   const { t } = useI18n();
   const [activeMix, setActiveMix] = useState<string | null>(null);
-  const [openEventId, setOpenEventId] = useState<string | null>('labyrinth-takeover');
-  const featuredArtists = artists;
-  const latestMixes = mixes;
+  const [openEventId, setOpenEventId] = useState<string | null>(null);
+  
+  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [mixes, setMixes] = useState<Mix[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [evRes, artRes, mixRes] = await Promise.all([
+          fetch('/api/events', { cache: 'no-store' }),
+          fetch('/api/artists', { cache: 'no-store' }),
+          fetch('/api/mixes', { cache: 'no-store' })
+        ]);
+
+        const [evData, artData, mixData] = await Promise.all([
+          evRes.json(),
+          artRes.json(),
+          mixRes.json()
+        ]);
+
+        setEvents(Array.isArray(evData) ? evData.map(normalizeEvent) : []);
+        setArtists(Array.isArray(artData) ? artData.map(normalizeArtist) : []);
+        setMixes(Array.isArray(mixData) ? mixData.map(normalizeMix) : []);
+      } catch (err) {
+        console.error('Home data fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const upcomingEvents = events.filter(e => !e.isPast);
+  const featuredArtists = artists.slice(0, 4);
+  
+  // Group mixes by eventId
+  const mixesByEvent = useMemo(() => {
+    const groups: Record<string, Mix[]> = {};
+    mixes.forEach(mix => {
+      if (!groups[mix.eventId]) groups[mix.eventId] = [];
+      groups[mix.eventId].push(mix);
+    });
+    return groups;
+  }, [mixes]);
+
+  // Auto-open first event's mixes if not already set
+  useEffect(() => {
+    if (!openEventId && Object.keys(mixesByEvent).length > 0) {
+      setOpenEventId(Object.keys(mixesByEvent)[0]);
+    }
+  }, [mixesByEvent, openEventId]);
 
   return (
     <>
@@ -61,45 +113,56 @@ export default function Home() {
       </section>
 
       {/* Latest Mixes */}
-      <section className={`section ${styles.section}`} id="latest-mixes">
-        <div className="container">
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionTag}>◈ {t('home.latestMixes')}</span>
-            <a href="/mixes" className="btn btn-ghost">{t('nav.mixes')} →</a>
-          </div>
-          
-          <div className={styles.accordionContainer}>
-            <div 
-               className={`${styles.accordionHeader} ${openEventId === 'labyrinth-takeover' ? styles.accordionOpen : ''}`} 
-               onClick={() => setOpenEventId(openEventId === 'labyrinth-takeover' ? null : 'labyrinth-takeover')}
-            >
-              <div className={styles.folderInfo}>
-                <span className={styles.folderIcon}>{openEventId === 'labyrinth-takeover' ? '📂' : '📁'}</span>
-                <span className={styles.folderTitle}>DNB Takeover Labyrinth</span>
-                <span className={styles.folderDate}>27.03.2026</span>
-              </div>
-              <span className={styles.folderToggle}>{openEventId === 'labyrinth-takeover' ? '−' : '+'}</span>
+      {Object.keys(mixesByEvent).length > 0 && (
+        <section className={`section ${styles.section}`} id="latest-mixes">
+          <div className="container">
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionTag}>◈ {t('home.latestMixes')}</span>
+              <a href="/mixes" className="btn btn-ghost">{t('nav.mixes')} →</a>
             </div>
+            
+            {Object.entries(mixesByEvent).map(([eventId, eventMixes]) => {
+              const event = events.find(e => e.id === eventId);
+              const eventTitle = event ? event.title : eventId;
+              const eventDate = event ? new Date(event.date).toLocaleDateString() : '';
+              const isOpen = openEventId === eventId;
 
-            {openEventId === 'labyrinth-takeover' && (
-              <div className={styles.accordionBody}>
-                <div className={styles.mixList}>
-                  {latestMixes.filter(m => m.eventId === 'labyrinth-takeover').map(mix => (
-                    <div key={mix.id} className={styles.mixWrapper}>
-                      <span className={styles.mixLabelBadge}>{mix.label}</span>
-                      <MixPlayer
-                        mix={mix}
-                        isActive={activeMix === mix.id}
-                        onPlay={setActiveMix}
-                      />
+              return (
+                <div key={eventId} className={styles.accordionContainer} style={{ marginBottom: 'var(--space-4)' }}>
+                  <div 
+                    className={`${styles.accordionHeader} ${isOpen ? styles.accordionOpen : ''}`} 
+                    onClick={() => setOpenEventId(isOpen ? null : eventId)}
+                  >
+                    <div className={styles.folderInfo}>
+                      <span className={styles.folderIcon}>{isOpen ? '📂' : '📁'}</span>
+                      <span className={styles.folderTitle}>{eventTitle}</span>
+                      <span className={styles.folderDate}>{eventDate}</span>
                     </div>
-                  ))}
+                    <span className={styles.folderToggle}>{isOpen ? '−' : '+'}</span>
+                  </div>
+
+                  {isOpen && (
+                    <div className={styles.accordionBody}>
+                      <div className={styles.mixList}>
+                        {eventMixes.map(mix => (
+                          <div key={mix.id} className={styles.mixWrapper}>
+                            <span className={styles.mixLabelBadge}>{mix.label}</span>
+                            <MixPlayer
+                              mix={mix}
+                              isActive={activeMix === mix.id}
+                              onPlay={setActiveMix}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Membership Teaser */}
       <section className={`section ${styles.section}`} id="membership-teaser">
@@ -114,6 +177,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {loading && (
+        <div className={styles.loadingOverlay}>
+           <div className={styles.loadingSpinner}>◈</div>
+        </div>
+      )}
     </>
   );
 }

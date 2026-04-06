@@ -238,3 +238,37 @@
   z-index: 10;
   margin-left: 12px;
 }
+
+/* Loading States */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loadingSpinner {
+  font-size: 3rem;
+  color: var(--color-accent-primary);
+  animation: spin 2s linear infinite;
+  text-shadow: 0 0 20px var(--color-accent-primary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
