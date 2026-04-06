@@ -3,7 +3,7 @@
 import { useI18n } from '@/i18n';
 import Hero from '@/components/Hero';
 import EventCard from '@/components/EventCard';
-import ArtistCardDeck from '@/components/ArtistCardDeck';
+import ArtistShowcase from '@/components/ArtistShowcase';
 import MixPlayer from '@/components/MixPlayer';
 import { useEffect, useMemo, useState } from 'react';
 import { Event as AppEvent } from '@/data/events';
@@ -52,12 +52,14 @@ export default function Home() {
 
   const upcomingEvents = events.filter(e => !e.isPast);
 
-  // Artist Sorting Logic (Unified Deck)
-  const sortedArtists = useMemo(() => {
-    const crew = artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
-    const invited = artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name));
-    return [...crew, ...invited];
-  }, [artists]);
+  // Split artists into Crew and Invited
+  const crewArtists = useMemo(() => 
+    artists.filter(a => a.isCrew).sort((a, b) => a.name.localeCompare(b.name)),
+  [artists]);
+  
+  const invitedArtists = useMemo(() => 
+    artists.filter(a => !a.isCrew).sort((a, b) => a.name.localeCompare(b.name)),
+  [artists]);
   
   // Group mixes by eventId
   const mixesByEvent = useMemo(() => {
@@ -103,20 +105,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Explore Artists - Card Deck Mode */}
-      <section className={`section ${styles.section}`} id="artist-spotlight">
+      {/* Explore Artists - Residents Row */}
+      <section className={`section ${styles.section}`} id="crew-spotlight">
         <div className="container">
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionTag}>◈ {t('home.spotlight')}</span>
-            <a href="/artists" className="btn btn-ghost">{t('nav.artists')} →</a>
-          </div>
-
-          {/* Unified Artist Deck */}
-          <div className={styles.deckSection}>
-            <ArtistCardDeck artists={sortedArtists} />
-          </div>
+          <ArtistShowcase 
+            artists={crewArtists} 
+            title={t('home.spotlight')} 
+            showDiamond 
+          />
         </div>
       </section>
+
+      {/* Invited Guests Row */}
+      {invitedArtists.length > 0 && (
+        <section className={`section ${styles.section}`} id="invited-spotlight" style={{ paddingTop: 0 }}>
+          <div className="container">
+            <ArtistShowcase 
+              artists={invitedArtists} 
+              title="INVITED GUESTS" 
+              isInvited 
+            />
+          </div>
+        </section>
+      )}
 
       {/* Latest Mixes */}
       {Object.keys(mixesByEvent).length > 0 && (
