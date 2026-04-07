@@ -112,7 +112,10 @@ export async function POST(request: Request) {
       signerKey = extracted.signerKey;
     } catch (err: any) {
       console.error('Certificate error:', err.message);
-      return NextResponse.json({ error: 'Failed to process Apple Wallet certificate' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to process Apple Wallet certificate',
+        details: err.message
+      }, { status: 500 });
     }
 
     // 5. Generate Pass

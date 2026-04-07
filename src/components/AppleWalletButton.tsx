@@ -24,7 +24,9 @@ export default function AppleWalletButton() {
         let errorMessage = 'Failed to generate pass';
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
+          errorMessage = errorData.details 
+            ? `${errorData.error}: ${errorData.details}`
+            : (errorData.error || errorMessage);
         } catch (e) {
           // Fallback if not JSON
         }
