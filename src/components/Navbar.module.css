@@ -16,6 +16,7 @@
   align-items: center;
   justify-content: space-between;
   height: 100%;
+  padding-inline: var(--space-4);
 }
 
 /* Logo */
@@ -254,8 +255,28 @@
   border-bottom-color: transparent;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
+/* Intermediate scaling for tablets / small desktops */
+@media (max-width: 1300px) {
+  .logoImage {
+    width: 240px;
+  }
+  
+  .links {
+    gap: var(--space-1);
+  }
+  
+  .link {
+    padding: var(--space-2) var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .langWrapper, .authWrapper {
+    margin-left: var(--space-2);
+  }
+}
+
+/* Mobile / Tablet Breakpoint */
+@media (max-width: 1100px) {
   .burger {
     display: flex;
   }
