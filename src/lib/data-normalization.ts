@@ -13,19 +13,33 @@ export function normalizeLocalizedField(field: any): Record<Locale, string> {
 
   if (typeof field === 'string') {
     try {
-      const parsed = JSON.parse(field);
+      let parsed = JSON.parse(field);
+      
+      // Handle the "character map" edge case (e.g., {"0":"{", "1":"\""})
+      if (parsed && typeof parsed === 'object' && !parsed.en && !parsed.cs && parsed['0']) {
+        const reconstructed = Object.values(parsed).join('');
+        try {
+          parsed = JSON.parse(reconstructed);
+        } catch {
+          // If reconstruction fails to parse, treat reconstructed as raw text
+          return { en: reconstructed, cs: reconstructed, no: reconstructed, pl: reconstructed, de: reconstructed };
+        }
+      }
+
+      const en = parsed.en || '';
       return {
-        en: parsed.en ?? field,
-        cs: parsed.cs ?? field,
-        no: parsed.no ?? field,
-        pl: parsed.pl ?? field,
-        de: parsed.de ?? field,
+        en: en,
+        cs: parsed.cs ?? en,
+        no: parsed.no ?? en,
+        pl: parsed.pl ?? en,
+        de: parsed.de ?? en,
       };
     } catch {
       return { en: field, cs: field, no: field, pl: field, de: field };
     }
   }
 
+  // If it's already an object
   return {
     en: field.en ?? '',
     cs: field.cs ?? '',

@@ -41,7 +41,8 @@ export default function ArtistProfilePage() {
     notFound();
   }
 
-  const bio = artist.bio[locale] || artist.bio['en'];
+  let bioRaw = artist.bio[locale] || artist.bio['en'] || '';
+  const bio = typeof bioRaw === 'string' ? bioRaw : JSON.stringify(bioRaw);
 
   return (
     <main className={styles.profileWrapper}>

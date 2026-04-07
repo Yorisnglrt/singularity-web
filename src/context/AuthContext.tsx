@@ -23,6 +23,7 @@ export interface User {
   memberCode?: string;
   tier?: string;
   memberSince?: string;
+  qrToken?: string;
 }
 
 export interface EventInteraction {
@@ -44,6 +45,7 @@ interface AuthContextType {
   openAuthModal: () => void;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -123,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           memberCode: data.member_code || undefined,
           tier: data.tier || undefined,
           memberSince: data.member_since || undefined,
+          qrToken: data.qr_token || undefined,
         };
         setUser(userData);
 
@@ -290,6 +293,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshProfile = async () => {
+    if (user?.id) await fetchProfile(user.id, user.email);
+  };
+
   const hasInteraction = (eventId: string, action: EventInteraction['action']) => {
     return interactions.some(i => i.eventId === eventId && i.action === action);
   };
@@ -308,7 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setShowAuthModal,
       openAuthModal,
       forgotPassword,
-      updateProfile
+      updateProfile,
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>
