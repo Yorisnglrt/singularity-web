@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     // 3. Resolve configuration
     const passTypeId = process.env.APPLE_WALLET_PASS_TYPE_ID;
     const teamId = process.env.APPLE_WALLET_TEAM_ID;
-    const p12Passphrase = process.env.APPLE_WALLET_P12_PASSPHRASE;
+    const p12Passphrase = process.env.APPLE_WALLET_P12_PASSPHRASE?.trim();
     const iconPath = process.env.APPLE_WALLET_ICON_PATH || path.join(process.cwd(), 'public', 'wallet', 'icon.png');
     const logoPath = process.env.APPLE_WALLET_LOGO_PATH || path.join(process.cwd(), 'public', 'wallet', 'logo.png');
     const wwdrPath = process.env.APPLE_WALLET_WWDR_PATH || path.join(process.cwd(), 'certs', 'AppleWWDRCAG4.pem');
