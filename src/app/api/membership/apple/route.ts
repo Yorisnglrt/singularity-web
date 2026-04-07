@@ -224,6 +224,7 @@ export async function POST(request: Request) {
     };
 
     let pass: PKPass;
+    let pkpassBuffer: Buffer;
     try {
       pass = new PKPass(buffers, {
         wwdr: fs.readFileSync(wwdrPath),
@@ -233,16 +234,29 @@ export async function POST(request: Request) {
       }, {
         serialNumber: profile.member_code || profile.id
       });
+      pkpassBuffer = pass.getAsBuffer();
+      
       console.log('[apple-wallet] PKPass created OK');
+      console.log('[apple-wallet] FINAL PASS DIAGNOSTICS:', JSON.stringify({
+        bufferSizeBytes: pkpassBuffer.length,
+        includedFiles: Object.keys(buffers),
+        passJson: {
+          passTypeIdentifier: passJson.passTypeIdentifier,
+          teamIdentifier: passJson.teamIdentifier,
+          serialNumber: profile.member_code || profile.id,
+          organizationName: passJson.organizationName,
+          description: passJson.description
+        }
+      }));
     } catch (err: any) {
       console.error('[apple-wallet] PKPass creation failed:', err.message);
       return NextResponse.json({ error: 'PKPass creation failed', details: err.message }, { status: 500 });
     }
 
-    return new Response(new Uint8Array(pass.getAsBuffer()), {
+    return new Response(new Uint8Array(pkpassBuffer), {
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': 'attachment; filename="singularity_membership.pkpass"',
+        'Content-Disposition': `attachment; filename="singularity_membership.pkpass"`,
         'Cache-Control': 'no-cache',
       },
     });
