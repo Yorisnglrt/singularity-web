@@ -89,6 +89,8 @@ async function generatePass(request: Request) {
       token = tokenParam;
     }
 
+    console.log('[apple-wallet] Request received. Token length:', token.length);
+
     if (!token) {
       return NextResponse.json({ error: 'Missing or invalid authentication. Provide Bearer token or ?token= query param.' }, { status: 401 });
     }

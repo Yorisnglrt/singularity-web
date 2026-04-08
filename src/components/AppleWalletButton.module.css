@@ -31,9 +31,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.walletBtn:disabled {
+.walletBtn:disabled,
+.walletBtn.disabled {
   opacity: 0.6;
   cursor: wait;
+  pointer-events: none;
 }
 
 .walletIcon {
