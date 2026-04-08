@@ -35,13 +35,13 @@ export default function AppleWalletButton() {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'singularity_membership.pkpass';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // On iOS Safari, window.location.assign tends to be more reliable for 
+      // triggering the native Wallet app when using Blob URLs and 'inline' headers.
+      window.location.assign(url);
+      
+      // Revoke the object URL after a short delay to allow the browser to finish processing
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (err: any) {
       console.error('Apple Wallet download error:', err);
       alert(err.message || 'An unexpected error occurred while downloading your pass.');

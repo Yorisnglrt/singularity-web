@@ -21,11 +21,20 @@ function extractFromP12(p12Buffer: Buffer, passphrase?: string) {
 
   let signerCert = '';
   let signerKey = '';
+  let meta = { ou: '', uid: '' };
 
   for (const safeContents of p12.safeContents) {
     for (const safeBag of safeContents.safeBags) {
       if (safeBag.type === forge.pki.oids.certBag) {
-        signerCert += forge.pki.certificateToPem(safeBag.cert as forge.pki.Certificate);
+        const cert = safeBag.cert as forge.pki.Certificate;
+        signerCert += forge.pki.certificateToPem(cert);
+        
+        // Extract metadata: Organizational Unit (Team ID) and UID (Pass Type ID)
+        const ouField = cert.subject.getField('OU');
+        const uidField = cert.subject.getField('UID');
+        if (ouField) meta.ou = ouField.value as string;
+        if (uidField) meta.uid = uidField.value as string;
+
       } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag || safeBag.type === forge.pki.oids.keyBag) {
         signerKey += forge.pki.privateKeyToPem(safeBag.key as forge.pki.PrivateKey);
       }
@@ -36,7 +45,7 @@ function extractFromP12(p12Buffer: Buffer, passphrase?: string) {
     throw new Error('Could not find both a certificate and a private key in the P12 source.');
   }
 
-  return { signerCert, signerKey };
+  return { signerCert, signerKey, meta };
 }
 
 /**
@@ -147,6 +156,25 @@ export async function POST(request: Request) {
       const extracted = extractFromP12(p12Buffer, p12Passphrase);
       signerCert = extracted.signerCert;
       signerKey = extracted.signerKey;
+
+      const certMeta = extracted.meta;
+      const mismatchTeam = certMeta.ou !== teamId;
+      const mismatchPassType = certMeta.uid !== passTypeId;
+
+      console.log('[apple-wallet] CERTIFICATE METADATA:', JSON.stringify({
+        extracted_OU_TeamID: certMeta.ou,
+        extracted_UID_PassTypeID: certMeta.uid,
+        env_TeamID: teamId,
+        env_PassTypeID: passTypeId,
+        mismatch_Found: mismatchTeam || mismatchPassType
+      }));
+
+      if (mismatchTeam || mismatchPassType) {
+        console.warn('!!! APPLE WALLET CONFIGURATION MISMATCH DETECTED !!!');
+        if (mismatchTeam) console.warn(`- Team ID Mismatch: Cert OU(${certMeta.ou}) vs ENV(${teamId})`);
+        if (mismatchPassType) console.warn(`- Pass Type ID Mismatch: Cert UID(${certMeta.uid}) vs ENV(${passTypeId})`);
+      }
+
       console.log('[apple-wallet] P12 extraction OK:', JSON.stringify({
         certLength: signerCert.length,
         keyLength: signerKey.length,
@@ -256,7 +284,7 @@ export async function POST(request: Request) {
     return new Response(new Uint8Array(pkpassBuffer), {
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': `attachment; filename="singularity_membership.pkpass"`,
+        'Content-Disposition': `inline; filename="singularity_membership.pkpass"`,
         'Cache-Control': 'no-cache',
       },
     });
