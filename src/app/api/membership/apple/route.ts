@@ -75,15 +75,24 @@ function getP12Buffer(): { buffer: Buffer; source: string } {
   throw new Error(`P12 not found. No APPLE_WALLET_P12_BASE64 env and file missing at: ${p12Path}`);
 }
 
-export async function POST(request: Request) {
+async function generatePass(request: Request) {
   try {
     // 1. Authenticate user
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
+    const url = new URL(request.url);
+    const tokenParam = url.searchParams.get('token');
+    
+    let token = '';
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.replace('Bearer ', '');
+    } else if (tokenParam) {
+      token = tokenParam;
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Missing or invalid authentication. Provide Bearer token or ?token= query param.' }, { status: 401 });
+    }
+
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !user) {
@@ -293,4 +302,12 @@ export async function POST(request: Request) {
     console.error('[apple-wallet] Unhandled error:', error.message, error.stack);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function POST(request: Request) {
+  return generatePass(request);
+}
+
+export async function GET(request: Request) {
+  return generatePass(request);
 }

@@ -13,39 +13,17 @@ export default function AppleWalletButton() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No active session found. Please sign in again.');
 
-      const response = await fetch('/api/membership/apple', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to generate pass';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.details 
-            ? `${errorData.error}: ${errorData.details}`
-            : (errorData.error || errorMessage);
-        } catch (e) {
-          // Fallback if not JSON
-        }
-        throw new Error(errorMessage);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Direct navigation to the GET endpoint with the token.
+      // This is the most reliable way for Safari to pick up the .pkpass MIME type
+      // and trigger the native Wallet 'Add' screen.
+      window.location.href = `/api/membership/apple?token=${session.access_token}`;
       
-      // On iOS Safari, window.location.assign tends to be more reliable for 
-      // triggering the native Wallet app when using Blob URLs and 'inline' headers.
-      window.location.assign(url);
-      
-      // Revoke the object URL after a short delay to allow the browser to finish processing
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      // Since window.location.href doesn't provide a callback, we reset 
+      // the loading state after a short delay.
+      setTimeout(() => setIsDownloading(false), 2000);
     } catch (err: any) {
       console.error('Apple Wallet download error:', err);
       alert(err.message || 'An unexpected error occurred while downloading your pass.');
-    } finally {
       setIsDownloading(false);
     }
   };
