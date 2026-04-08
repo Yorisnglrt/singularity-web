@@ -253,6 +253,43 @@
   margin-top: 0.2rem;
 }
 
+/* Favorites */
+.favoritesSection {
+  margin-bottom: 3rem;
+}
+
+.favoritesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.favoriteItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.favoriteLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.favoriteValue {
+  font-size: var(--text-sm);
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
 /* Empty */
 .empty {
   text-align: center;

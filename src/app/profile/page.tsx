@@ -126,6 +126,45 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Music & Scene Favorites */}
+        {(user.favoriteProducer || user.favoriteTrack || user.favoriteSubgenre || user.favoriteVenue || user.favoriteFestival) && (
+          <div className={styles.favoritesSection}>
+            <h2 className={styles.sectionTitle}>◈ Music & Scene</h2>
+            <div className={styles.favoritesGrid}>
+              {user.favoriteProducer && (
+                <div className={styles.favoriteItem}>
+                  <span className={styles.favoriteLabel}>Favorite Producer</span>
+                  <span className={styles.favoriteValue}>{user.favoriteProducer}</span>
+                </div>
+              )}
+              {user.favoriteTrack && (
+                <div className={styles.favoriteItem}>
+                  <span className={styles.favoriteLabel}>Favorite Track</span>
+                  <span className={styles.favoriteValue}>{user.favoriteTrack}</span>
+                </div>
+              )}
+              {user.favoriteSubgenre && (
+                <div className={styles.favoriteItem}>
+                  <span className={styles.favoriteLabel}>Favorite Subgenre</span>
+                  <span className={styles.favoriteValue}>{user.favoriteSubgenre}</span>
+                </div>
+              )}
+              {user.favoriteVenue && (
+                <div className={styles.favoriteItem}>
+                  <span className={styles.favoriteLabel}>Favorite Venue</span>
+                  <span className={styles.favoriteValue}>{user.favoriteVenue}</span>
+                </div>
+              )}
+              {user.favoriteFestival && (
+                <div className={styles.favoriteItem}>
+                  <span className={styles.favoriteLabel}>Favorite Festival</span>
+                  <span className={styles.favoriteValue}>{user.favoriteFestival}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Event sections */}
         {[
           { title: 'Attending', evs: attendingEvents, icon: '✓' },
@@ -175,6 +214,10 @@ export default function ProfilePage() {
               <div className={styles.membershipItem}>
                 <span className={styles.membershipLabel}>Member Since</span>
                 <span className={styles.membershipValue}>{user.memberSince ? new Date(user.memberSince).toLocaleDateString('en', { month: 'short', year: 'numeric' }) : '—'}</span>
+              </div>
+              <div className={styles.membershipItem}>
+                <span className={styles.membershipLabel}>Registered</span>
+                <span className={styles.membershipValue}>{new Date(user.createdAt).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
             </div>
 
