@@ -8,6 +8,7 @@ import { toSlug } from '@/lib/slug';
 import EventForm from './EventForm';
 import ImageUpload from '@/components/ImageUpload';
 import styles from './page.module.css';
+import { getFlagEmoji } from '@/lib/utils';
 
 type Tab = 'artists' | 'events' | 'mixes' | 'supporters';
 
@@ -208,6 +209,7 @@ export default function AdminPage() {
         avatarGradient: 'linear-gradient(135deg, #000, #333)',
         socialLinks: {},
         image: '',
+        countryCode: '',
         _isNew: true
       });
     } else if (activeTab === 'events') {
@@ -387,6 +389,22 @@ export default function AdminPage() {
           <input className={styles.input} value={activeItem.socialLinks?.instagram || ''} placeholder="https://instagram.com/..." onChange={e => setActiveItem({...activeItem, socialLinks: {...activeItem.socialLinks, instagram: e.target.value}})} />
         </div>
 
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Country / Flag</label>
+          <select 
+            className={styles.input} 
+            value={activeItem.countryCode || ''} 
+            onChange={e => setActiveItem({...activeItem, countryCode: e.target.value})}
+          >
+            <option value="">— No Flag —</option>
+            {COUNTRIES.map(c => (
+              <option key={c.code} value={c.code}>
+                {getFlagEmoji(c.code)} {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className={styles.formGroup} style={{flexDirection: 'row', alignItems: 'center', gap: '1rem'}}>
           <input type="checkbox" id="isCrew" checked={activeItem.isCrew || false} onChange={e => setActiveItem({...activeItem, isCrew: e.target.checked})} />
           <label htmlFor="isCrew" className={styles.label} style={{margin: 0}}>Crew member</label>
@@ -544,3 +562,24 @@ export default function AdminPage() {
     </div>
   );
 }
+
+const COUNTRIES = [
+  { code: 'CZ', name: 'Czech Republic' },
+  { code: 'SK', name: 'Slovakia' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'FR', name: 'France' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'UA', name: 'Ukraine' },
+].sort((a, b) => a.name.localeCompare(b.name));

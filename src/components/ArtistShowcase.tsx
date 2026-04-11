@@ -6,6 +6,7 @@ import styles from './ArtistShowcase.module.css';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { getFlagEmoji } from '@/lib/utils';
 
 interface ArtistShowcaseProps {
   artists: Artist[];
@@ -87,7 +88,9 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
             )}
             
             <div className={styles.brandingOverlay}>
-              <h3 className={styles.artistName}>{artist.name}</h3>
+              <h3 className={styles.artistName}>
+                {artist.name} {artist.countryCode && <span title={artist.countryCode} style={{ marginLeft: '0.2rem', fontSize: '1rem' }}>{getFlagEmoji(artist.countryCode)}</span>}
+              </h3>
               <div className={styles.divider} />
               <div className={styles.socialIcons}>
                 {artist.socialLinks.soundcloud && <SocialIcon type="soundcloud" />}

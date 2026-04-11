@@ -16,6 +16,7 @@ export interface Artist {
     mixcloud?: string;
     instagram?: string;
   };
+  countryCode?: string;
 }
 
 export const artists = artistsData as Artist[];
