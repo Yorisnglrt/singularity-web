@@ -92,7 +92,7 @@ export function normalizeArtist(artist: any): Artist {
       mixcloud: artist.socialLinks?.mixcloud || artist.mixcloud_url,
       instagram: artist.socialLinks?.instagram || artist.instagram_url,
     },
-    countryCode: artist.countryCode || artist.country_code,
+    country_code: artist.country_code || artist.countryCode,
   };
 }
 

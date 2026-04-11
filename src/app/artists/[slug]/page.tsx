@@ -88,7 +88,7 @@ export default function ArtistProfilePage() {
           </div>
 
           <h1 className={styles.artistName}>
-            {artist.name} {artist.countryCode && <span title={artist.countryCode} style={{ marginLeft: '0.4rem', filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2))' }}>{getFlagEmoji(artist.countryCode)}</span>}
+            {artist.name} {artist.country_code && <span title={artist.country_code} style={{ marginLeft: '0.4rem', filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2))' }}>{getFlagEmoji(artist.country_code)}</span>}
           </h1>
 
           <div className={styles.bioBox}>

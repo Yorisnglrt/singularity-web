@@ -76,7 +76,8 @@ export default function AdminPage() {
         setStatusMsg('Saved successfully!');
         setTimeout(() => setStatusMsg(''), 3000);
       } else {
-        setStatusMsg('Failed to save.');
+        const err = await res.json();
+        setStatusMsg(`Failed to save: ${err.error || 'Unknown error'}`);
       }
     } catch (e) {
       setStatusMsg('Error saving.');
@@ -97,7 +98,13 @@ export default function AdminPage() {
       currentArray.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
     }
     
-    saveToApi(activeTab, currentArray);
+    // Cleanup internal fields before saving
+    const cleanedArray = currentArray.map(item => {
+      const { _isNew, ...rest } = item;
+      return rest;
+    });
+    
+    saveToApi(activeTab, cleanedArray);
   };
 
   const handleDeleteItem = (id: string) => {
@@ -209,7 +216,7 @@ export default function AdminPage() {
         avatarGradient: 'linear-gradient(135deg, #000, #333)',
         socialLinks: {},
         image: '',
-        countryCode: '',
+        country_code: '',
         _isNew: true
       });
     } else if (activeTab === 'events') {
@@ -393,8 +400,8 @@ export default function AdminPage() {
           <label className={styles.label}>Country / Flag</label>
           <select 
             className={styles.input} 
-            value={activeItem.countryCode || ''} 
-            onChange={e => setActiveItem({...activeItem, countryCode: e.target.value})}
+            value={activeItem.country_code || ''} 
+            onChange={e => setActiveItem({...activeItem, country_code: e.target.value})}
           >
             <option value="">— No Flag —</option>
             {COUNTRIES.map(c => (

@@ -89,7 +89,7 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
             
             <div className={styles.brandingOverlay}>
               <h3 className={styles.artistName}>
-                {artist.name} {artist.countryCode && <span title={artist.countryCode} style={{ marginLeft: '0.2rem', fontSize: '1rem' }}>{getFlagEmoji(artist.countryCode)}</span>}
+                {artist.name} {artist.country_code && <span title={artist.country_code} style={{ marginLeft: '0.2rem', fontSize: '1rem' }}>{getFlagEmoji(artist.country_code)}</span>}
               </h3>
               <div className={styles.divider} />
               <div className={styles.socialIcons}>
