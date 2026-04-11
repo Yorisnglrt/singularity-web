@@ -6,7 +6,7 @@ import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { getFlagEmoji } from '@/lib/utils';
+import { getFlagEmoji, getFlagUrl } from '@/lib/utils';
 
 export default function ArtistProfilePage() {
   const { locale, t } = useI18n();
@@ -88,7 +88,22 @@ export default function ArtistProfilePage() {
           </div>
 
           <h1 className={styles.artistName}>
-            {artist.name} {artist.country_code && <span title={artist.country_code} style={{ marginLeft: '0.4rem', filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2))' }}>{getFlagEmoji(artist.country_code)}</span>}
+            {artist.name} 
+            {artist.country_code && (
+              <img 
+                src={getFlagUrl(artist.country_code, 40)} 
+                alt={artist.country_code}
+                title={artist.country_code}
+                style={{ 
+                  height: '1.4rem', 
+                  width: 'auto',
+                  marginLeft: '0.6rem', 
+                  verticalAlign: 'middle',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 10px rgba(255,255,255,0.1)'
+                }} 
+              />
+            )}
           </h1>
 
           <div className={styles.bioBox}>
