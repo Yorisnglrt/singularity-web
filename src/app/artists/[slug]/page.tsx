@@ -87,8 +87,8 @@ export default function ArtistProfilePage() {
             )}
           </div>
 
-          <h1 className={styles.artistName}>
-            {artist.name} 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <h1 className={styles.artistName}>{artist.name}</h1>
             {artist.country_code && (
               <img 
                 src={getFlagUrl(artist.country_code, 40)} 
@@ -97,14 +97,13 @@ export default function ArtistProfilePage() {
                 style={{ 
                   height: '1.4rem', 
                   width: 'auto',
-                  marginLeft: '0.6rem', 
-                  verticalAlign: 'middle',
                   borderRadius: '2px',
+                  display: 'block',
                   boxShadow: '0 0 10px rgba(255,255,255,0.1)'
                 }} 
               />
             )}
-          </h1>
+          </div>
 
           <div className={styles.bioBox}>
             <p>{bio}</p>

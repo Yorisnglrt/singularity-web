@@ -34,27 +34,26 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           )}
         </div>
 
-        <div className={styles.info}>
-          <h3 className={styles.name}>
-            {artist.name}
+        <div className={styles.info} style={{ alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+            <h3 className={styles.name}>{artist.name}</h3>
             {artist.country_code && (
               <img 
                 src={getFlagUrl(artist.country_code, 20)} 
                 alt={artist.country_code}
                 title={artist.country_code}
                 style={{ 
-                  height: '0.8rem', 
+                  height: '0.9rem', 
                   width: 'auto',
-                  marginLeft: '0.4rem', 
-                  verticalAlign: 'middle',
-                  borderRadius: '1px'
+                  borderRadius: '1px',
+                  display: 'block'
                 }} 
               />
             )}
-          </h3>
-          <p className={styles.bio}>{artist.bio[locale]}</p>
+          </div>
+          <p className={styles.bio} style={{ width: '100%' }}>{artist.bio[locale]}</p>
 
-          <div className={styles.links}>
+          <div className={styles.links} style={{ justifyContent: 'center', width: '100%' }}>
             {artist.socialLinks.soundcloud && (
               <span className={styles.socialLink}>SoundCloud</span>
             )}

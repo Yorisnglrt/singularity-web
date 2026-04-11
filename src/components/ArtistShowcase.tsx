@@ -88,8 +88,8 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
             )}
             
             <div className={styles.brandingOverlay}>
-              <h3 className={styles.artistName}>
-                {artist.name} 
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', textAlign: 'center' }}>
+                <h3 className={styles.artistName}>{artist.name}</h3>
                 {artist.country_code && (
                   <img 
                     src={getFlagUrl(artist.country_code, 20)} 
@@ -98,13 +98,12 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
                     style={{ 
                       height: '0.9rem', 
                       width: 'auto',
-                      marginLeft: '0.4rem', 
-                      verticalAlign: 'middle',
-                      borderRadius: '1px'
+                      borderRadius: '1px',
+                      display: 'block'
                     }} 
                   />
                 )}
-              </h3>
+              </div>
               <div className={styles.divider} />
               <div className={styles.socialIcons}>
                 {artist.socialLinks.soundcloud && <SocialIcon type="soundcloud" />}
