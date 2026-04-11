@@ -87,7 +87,7 @@ export default function ArtistProfilePage() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
             <h1 className={styles.artistName}>{artist.name}</h1>
             {artist.country_code && (
               <img 
@@ -98,7 +98,6 @@ export default function ArtistProfilePage() {
                   height: '1.4rem', 
                   width: 'auto',
                   borderRadius: '2px',
-                  display: 'block',
                   boxShadow: '0 0 10px rgba(255,255,255,0.1)'
                 }} 
               />
