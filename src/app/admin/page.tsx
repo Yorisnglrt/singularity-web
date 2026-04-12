@@ -413,7 +413,7 @@ export default function AdminPage() {
           {activeItem.country_code && (
             <div style={{marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
               <img 
-                src={getFlagUrl(activeItem.country_code, 40)} 
+                src={getFlagUrl(activeItem.country_code)} 
                 alt={activeItem.country_code} 
                 style={{ height: '1.2rem', borderRadius: '2px' }} 
               />

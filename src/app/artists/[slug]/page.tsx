@@ -91,7 +91,7 @@ export default function ArtistProfilePage() {
             <h1 className={styles.artistName}>{artist.name}</h1>
             {artist.country_code && (
               <img 
-                src={getFlagUrl(artist.country_code, 40)} 
+                src={getFlagUrl(artist.country_code)} 
                 alt={artist.country_code}
                 title={artist.country_code}
                 style={{ 

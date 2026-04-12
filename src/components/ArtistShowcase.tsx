@@ -92,7 +92,7 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
                 <h3 className={styles.artistName}>{artist.name}</h3>
                 {artist.country_code && (
                   <img 
-                    src={getFlagUrl(artist.country_code, 20)} 
+                    src={getFlagUrl(artist.country_code)} 
                     alt={artist.country_code}
                     title={artist.country_code}
                     style={{ 

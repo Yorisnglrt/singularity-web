@@ -39,7 +39,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
             <h3 className={styles.name}>{artist.name}</h3>
             {artist.country_code && (
               <img 
-                src={getFlagUrl(artist.country_code, 20)} 
+                src={getFlagUrl(artist.country_code)} 
                 alt={artist.country_code}
                 title={artist.country_code}
                 style={{ 
