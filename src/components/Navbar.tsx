@@ -60,6 +60,17 @@ export default function Navbar() {
             </Link>
           ))}
 
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              className={`${styles.link} ${pathname === '/admin' ? styles.active : ''}`}
+              id="nav-admin"
+              onClick={() => setMobileOpen(false)}
+            >
+              {t('nav.admin')}
+            </Link>
+          )}
+
           {/* Language switcher */}
           <div className={styles.langWrapper}>
             <button
