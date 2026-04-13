@@ -55,7 +55,7 @@ export function normalizeLocalizedField(field: any): Record<Locale, string> {
 export function normalizeEvent(event: any): Event {
   const eventDate = new Date(event.date);
   const now = new Date();
-  const isPast = event.isPast ?? eventDate < now;
+  const isPast = event.isPast ?? event.is_past ?? eventDate < now;
 
   return {
     ...event,
@@ -67,8 +67,8 @@ export function normalizeEvent(event: any): Event {
     type: (event.type === 'outdoor' || event.type === 'club' || event.type === 'underground') ? event.type : 'club',
     description: normalizeLocalizedField(event.description),
     lineup: Array.isArray(event.lineup) ? event.lineup : [],
-    posterColor: event.posterColor || 'linear-gradient(135deg, #000, #333)',
-    isFree: !!event.isFree,
+    posterColor: event.posterColor || event.poster_color || 'linear-gradient(135deg, #000, #333)',
+    isFree: !!(event.isFree ?? event.is_free),
     isPast,
   };
 }
