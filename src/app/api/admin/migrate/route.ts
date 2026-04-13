@@ -23,7 +23,10 @@ export async function GET(req: Request) {
         const rawData = fs.readFileSync(filePath, 'utf8');
         const data = JSON.parse(rawData);
         
-        const { error } = await supabase.from(table).upsert(data);
+        const { mapPayloadToDb } = await import('@/lib/mapping');
+        const mappedData = mapPayloadToDb(table, data);
+        
+        const { error } = await supabase.from(table).upsert(mappedData);
         if (error) {
           summary[table] = { status: 'error', message: error.message };
         } else {

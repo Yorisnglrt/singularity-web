@@ -36,49 +36,62 @@ export interface EventInput {
 
 /**
  * Maps frontend Event object (camelCase, slug-IDs) to DB Row (snake_case, UUIDs).
+ * SLots only canonical fields: id, slug, title, date, time, venue, type, description, lineup, poster_color, is_free, is_past.
  */
-export function mapEventToDb(event: EventInput, isLegacy: boolean = false) {
+export function mapEventToDb(event: any, isLegacy: boolean = false) {
   const { id: slugOrId, ...rest } = event;
   
   // Decide on correctly formatted UUID
   let id: string;
-  let slug: string = slugOrId;
+  let slug: string = rest.slug || slugOrId;
 
   // Check if slugOrId is already a UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
 
   if (isUUID) {
     id = slugOrId;
-    // If it's already a UUID, we don't have a readable slug unless it's provided elsewhere
-    // but usually in this app the slug was the ID.
   } else if (isLegacy) {
     id = generateDeterministicUUID(slugOrId);
   } else {
+    // If it's a new event from admin, we use a random UUID and slug generated from title
     id = crypto.randomUUID();
   }
 
-  // Basic mapping
+  // Strict mapping of only canonical fields
   const row: any = {
     id,
-    slug,
+    slug: slug,
     title: rest.title,
-    date: rest.date ? rest.date.split('T')[0] : null, // Ensure YYYY-MM-DD for registry 'date' type
+    date: rest.date ? rest.date.split('T')[0] : null,
     time: rest.time,
-    venue: typeof rest.venue === 'object' && rest.venue !== null ? rest.venue : { name: rest.venue || '' }, // Ensure JSONB
+    venue: typeof rest.venue === 'object' && rest.venue !== null ? rest.venue : { en: rest.venue || '' },
     type: rest.type,
-    description: typeof rest.description === 'object' && rest.description !== null ? rest.description : {}, // Ensure JSONB
-    lineup: Array.isArray(rest.lineup) ? rest.lineup.filter(item => typeof item === 'string') : [], // Ensure TEXT[] (flat string array)
-    poster_color: rest.posterColor || rest.poster_color,
-    is_free: typeof rest.isFree === 'boolean' ? rest.isFree : !!rest.is_free,
-    is_past: typeof rest.isPast === 'boolean' ? rest.isPast : !!rest.is_past,
+    description: typeof rest.description === 'object' && rest.description !== null ? rest.description : { en: rest.description || '' },
+    lineup: Array.isArray(rest.lineup) ? rest.lineup.filter((item: any) => typeof item === 'string') : [],
+    poster_color: rest.posterColor || rest.poster_color || 'linear-gradient(135deg, #000, #333)',
+    is_free: !!(rest.isFree ?? rest.is_free),
+    is_past: !!(rest.isPast ?? rest.is_past),
   };
 
   return row;
 }
 
 /**
- * Maps a list of events
+ * Generic dispatcher to map frontend payloads to DB rows based on table type.
  */
-export function mapEventsToDb(events: EventInput[], isLegacy: boolean = false) {
-  return events.map(e => mapEventToDb(e, isLegacy));
+export function mapPayloadToDb(type: string, data: any[]) {
+  if (!Array.isArray(data)) return [];
+
+  const isLegacy = type === 'events' && data.some(d => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.id));
+
+  switch (type) {
+    case 'events':
+      return data.map(d => mapEventToDb(d, isLegacy));
+    case 'artists':
+      // Basic fallback for other types if they were already mapping correctly or don't have canonical versions yet
+      // but we should eventually add specialized mappers for these too.
+      return data; 
+    default:
+      return data;
+  }
 }

@@ -9,6 +9,7 @@ import EventForm from './EventForm';
 import ImageUpload from '@/components/ImageUpload';
 import styles from './page.module.css';
 import { getFlagEmoji, getFlagUrl } from '@/lib/utils';
+import { normalizeEvent, normalizeArtist, normalizeMix } from '@/lib/data-normalization';
 
 type Tab = 'artists' | 'events' | 'mixes' | 'supporters';
 
@@ -39,7 +40,11 @@ export default function AdminPage() {
       if (res.ok) {
         let json = await res.json();
         if (type === 'artists') {
-          json = json.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+          json = json.map(normalizeArtist).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        } else if (type === 'events') {
+          json = json.map(normalizeEvent);
+        } else if (type === 'mixes') {
+          json = json.map(normalizeMix);
         }
         setData(prev => ({ ...prev, [type]: json }));
       }
@@ -72,7 +77,7 @@ export default function AdminPage() {
         body: JSON.stringify({ type, data: newData })
       });
       if (res.ok) {
-        setData(prev => ({ ...prev, [type]: newData }));
+        fetchData(type); // Re-fetch from Supabase to get real IDs and canonical data
         setStatusMsg('Saved successfully!');
         setTimeout(() => setStatusMsg(''), 3000);
       } else {
@@ -107,11 +112,33 @@ export default function AdminPage() {
     saveToApi(activeTab, cleanedArray);
   };
 
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
     if (!confirm('Delete this item?')) return;
-    const currentArray = data[activeTab].filter(i => i.id !== id);
-    saveToApi(activeTab, currentArray);
-    if (activeItem?.id === id) setActiveItem(null);
+    try {
+      setStatusMsg('Deleting...');
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/delete', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({ type: activeTab, id })
+      });
+      
+      if (res.ok) {
+        setData(prev => ({ ...prev, [activeTab]: prev[activeTab].filter(i => i.id !== id) }));
+        setStatusMsg('Deleted successfully!');
+        if (activeItem?.id === id) setActiveItem(null);
+      } else {
+        const err = await res.json();
+        setStatusMsg(`Failed to delete: ${err.error || 'Unknown error'}`);
+      }
+    } catch (e) {
+      setStatusMsg('Error deleting.');
+    } finally {
+      setTimeout(() => setStatusMsg(''), 3000);
+    }
   };
 
   const handleUploadAudio = async (file: File) => {
@@ -242,7 +269,7 @@ export default function AdminPage() {
     const eventOptions = data.events.map((e: any) => ({ id: e.id, label: e.title }));
 
     return (
-      <div>
+      <div key={activeItem.id}>
         <h2 style={{marginBottom: '2rem'}}>Edit Mix</h2>
 
         <div className={styles.formGroup}>
@@ -342,7 +369,7 @@ export default function AdminPage() {
   const renderArtistForm = () => {
     if (!activeItem) return null;
     return (
-      <div>
+      <div key={activeItem.id}>
         <h2 style={{marginBottom: '2rem'}}>Edit Artist</h2>
 
         <div className={styles.formGroup}>
@@ -550,6 +577,7 @@ export default function AdminPage() {
               isArtistTab ? renderArtistForm() :
               isEventTab ? (
                 <EventForm
+                  key={activeItem.id}
                   item={activeItem}
                   allArtists={data.artists}
                   onSave={handleEventSave}
@@ -559,7 +587,7 @@ export default function AdminPage() {
                   uploading={uploading}
                 />
               ) : (
-                <div>
+                <div key={activeItem.id}>
                   <h2 style={{marginBottom: '2rem'}}>Edit Record</h2>
                   {Object.keys(activeItem).map(key => renderField(key, activeItem[key]))}
                   <div className={styles.formActions}>

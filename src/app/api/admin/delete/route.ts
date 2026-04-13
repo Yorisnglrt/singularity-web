@@ -19,36 +19,36 @@ export async function POST(req: Request) {
     }
 
     // Check if user is admin
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.is_admin) {
-      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (!profile?.is_admin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
-    const { type, data } = body;
+    const { type, id } = body;
 
-    if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !Array.isArray(data)) {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !id) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const { mapPayloadToDb } = await import('@/lib/mapping');
-    const mappedData = mapPayloadToDb(type, data);
-
-    const { error } = await supabase.from(type).upsert(mappedData);
+    const { error } = await supabase
+      .from(type)
+      .delete()
+      .eq('id', id);
 
     if (error) {
-      console.error('Supabase save error:', error);
+      console.error(`Error deleting from ${type}:`, error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('API Save Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Delete API Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

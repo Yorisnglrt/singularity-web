@@ -36,7 +36,7 @@ interface EventLike {
   title: string;
   date: string;
   time: string;
-  venue: string;
+  venue: { en: string; cs: string; no: string; pl: string };
   type: string;
   description: { en: string; cs: string; no: string; pl: string };
   lineup: string[];
@@ -151,7 +151,20 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Venue</label>
-              <input className={styles.input} value={typeof ev.venue === 'string' ? ev.venue : ''} onChange={e => update({ venue: e.target.value })} placeholder="e.g. Faksen" />
+              <input 
+                className={styles.input} 
+                value={typeof ev.venue === 'object' ? ev.venue[descLocale] || ev.venue['en'] || '' : ev.venue || ''} 
+                onChange={e => {
+                  const val = e.target.value;
+                  if (typeof ev.venue === 'object') {
+                    update({ venue: { ...ev.venue, [descLocale]: val } });
+                  } else {
+                    update({ venue: { en: val, cs: val, no: val, pl: val } });
+                  }
+                }} 
+                placeholder="e.g. Faksen" 
+              />
+              <p style={{fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem'}}>Venue name in {descLocale.toUpperCase()}</p>
             </div>
           </div>
 
@@ -333,7 +346,7 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
           </div>
           <div className={styles.previewInfo}>
             <div className={styles.previewTitle}>{ev.title || 'Event title'}</div>
-            <div className={styles.previewMeta}>{timeStart || '22:00'} · {typeof ev.venue === 'string' ? ev.venue || 'Venue' : 'Venue'}</div>
+            <div className={styles.previewMeta}>{timeStart || '22:00'} · {typeof ev.venue === 'object' ? ev.venue['en'] || 'Venue' : ev.venue || 'Venue'}</div>
             {ev.lineup.length > 0 && (
               <div className={styles.previewLineup}>
                 <span className={styles.previewLineupLabel}>Lineup</span>

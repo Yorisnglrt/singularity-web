@@ -68,7 +68,10 @@ export function normalizeEvent(event: any): Event {
     description: normalizeLocalizedField(event.description),
     lineup: Array.isArray(event.lineup) ? event.lineup : [],
     posterColor: event.posterColor || event.poster_color || 'linear-gradient(135deg, #000, #333)',
+    posterImage: event.posterImage || event.poster_image,
     isFree: !!(event.isFree ?? event.is_free),
+    ticketUrl: event.ticketUrl || event.ticket_url,
+    isFeatured: !!(event.isFeatured ?? event.is_featured),
     isPast,
   };
 }
