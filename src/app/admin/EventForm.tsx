@@ -42,6 +42,8 @@ interface EventLike {
   lineup: string[];
   posterColor: string;
   posterImage?: string;
+  posterVertical?: string;
+  coverWide?: string;
   isFree: boolean;
   ticketUrl?: string;
   isPast: boolean;
@@ -268,6 +270,17 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
               <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.4rem' }}>JPG, PNG or WebP</p>
             </div>
           )}
+
+          {/* Dedicated image URL fields */}
+          <div className={styles.field}>
+            <label className={styles.label}>Poster Vertical (4:5 portrait — for cards / Instagram)</label>
+            <input className={styles.input} value={(ev as any).posterVertical || ''} onChange={e => update({ posterVertical: e.target.value } as any)} placeholder="https://... or /images/..." />
+            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Upload via the image uploader above, then paste the URL here, or use an external URL.</p>
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label}>Cover Wide (1.91:1 landscape — for event detail hero / Facebook)</label>
+            <input className={styles.input} value={(ev as any).coverWide || ''} onChange={e => update({ coverWide: e.target.value } as any)} placeholder="https://... or /images/..." />
+          </div>
         </section>
 
         {/* ── Lineup ── */}

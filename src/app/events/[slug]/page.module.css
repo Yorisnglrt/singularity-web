@@ -55,7 +55,21 @@
   letter-spacing: 0.1em;
 }
 
-/* Poster hero — clean image, nothing overlaid */
+/* Cover hero — wide image, ~1.91:1 Facebook event cover ratio */
+.coverHero {
+  width: 100%;
+  aspect-ratio: 1.91 / 1;
+  overflow: hidden;
+}
+
+.coverHeroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Poster hero — clean portrait image, nothing overlaid (backward compat) */
 .posterHero {
   width: 100%;
   max-width: 600px;

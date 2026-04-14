@@ -13,6 +13,8 @@ export interface Event {
   lineup: string[];
   posterColor: string;
   posterImage?: string;
+  posterVertical?: string;
+  coverWide?: string;
   isFree: boolean;
   ticketUrl?: string;
   isPast?: boolean;

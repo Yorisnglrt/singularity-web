@@ -69,6 +69,8 @@ export function normalizeEvent(event: any): Event {
     lineup: Array.isArray(event.lineup) ? event.lineup : [],
     posterColor: event.posterColor || event.poster_color || 'linear-gradient(135deg, #000, #333)',
     posterImage: event.posterImage || event.poster_image,
+    posterVertical: event.posterVertical || event.poster_vertical || null,
+    coverWide: event.coverWide || event.cover_wide || null,
     isFree: !!(event.isFree ?? event.is_free),
     ticketUrl: event.ticketUrl || event.ticket_url,
     isFeatured: !!(event.isFeatured ?? event.is_featured),

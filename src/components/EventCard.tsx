@@ -17,13 +17,15 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const month = eventDate.toLocaleString('en', { month: 'short' }).toUpperCase();
   const year = eventDate.getFullYear();
 
+  const cardImage = event.posterVertical || event.posterImage;
+
   return (
     <article className={`${styles.card} card`} id={`event-${event.id}`}>
       {/* Poster — clean 4:5, nothing overlaid */}
       <div className={styles.poster} style={{ background: event.posterColor }}>
-        {event.posterImage ? (
+        {cardImage ? (
           <img
-            src={event.posterImage}
+            src={cardImage}
             alt={event.title}
             className={styles.posterImage}
             loading="lazy"

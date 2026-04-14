@@ -70,6 +70,8 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
     lineup: Array.isArray(rest.lineup) ? rest.lineup.filter((item: any) => typeof item === 'string') : [],
     poster_color: rest.posterColor || rest.poster_color || 'linear-gradient(135deg, #000, #333)',
     poster_image: rest.posterImage || rest.poster_image || null,
+    poster_vertical: rest.posterVertical || rest.poster_vertical || null,
+    cover_wide: rest.coverWide || rest.cover_wide || null,
     is_free: !!(rest.isFree ?? rest.is_free),
     is_featured: !!(rest.isFeatured ?? rest.is_featured),
     ticket_url: rest.ticketUrl || rest.ticket_url || null,

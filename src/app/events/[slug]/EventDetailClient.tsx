@@ -17,14 +17,25 @@ export default function EventDetailClient({ event }: Props) {
   const year = eventDate.getFullYear();
   const weekday = eventDate.toLocaleString('en', { weekday: 'long' });
 
+  // Hero image resolution: coverWide for wide hero, posterVertical/posterImage for portrait fallback
+  const wideImage = event.coverWide;
+  const portraitImage = event.posterVertical || event.posterImage;
+  const hasAnyImage = wideImage || portraitImage;
+
   return (
     <div className={styles.page}>
-      {/* Poster image — shown clean, no overlay */}
-      {event.posterImage ? (
+      {/* Wide cover hero — full width, ~1.91:1 aspect */}
+      {wideImage ? (
+        <div className={styles.coverHero}>
+          <img src={wideImage} alt={event.title} className={styles.coverHeroImage} />
+        </div>
+      ) : portraitImage ? (
+        /* Portrait fallback — centered, 4:5 (existing behavior for old events) */
         <div className={styles.posterHero}>
-          <img src={event.posterImage} alt={event.title} className={styles.posterHeroImage} />
+          <img src={portraitImage} alt={event.title} className={styles.posterHeroImage} />
         </div>
       ) : (
+        /* Gradient fallback — no image at all */
         <div className={styles.hero} style={{ background: event.posterColor }}>
           <div className={styles.heroOverlay} />
           <div className={`container ${styles.heroContent}`}>
@@ -39,8 +50,8 @@ export default function EventDetailClient({ event }: Props) {
         </div>
       )}
 
-      {/* Title bar — shown below the poster image only */}
-      {event.posterImage && (
+      {/* Title bar — shown below any image hero */}
+      {hasAnyImage && (
         <div className="container">
           <div className={styles.titleBar}>
             <Link href="/events" className={styles.backLinkAlt}>← All Events</Link>
