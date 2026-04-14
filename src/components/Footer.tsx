@@ -40,7 +40,7 @@ export default function Footer() {
             <nav className={styles.links}>
               <a href="https://www.instagram.com/dnbsingularity/" target="_blank" rel="noopener noreferrer">Instagram</a>
               <a href="#" target="_blank" rel="noopener noreferrer">SoundCloud</a>
-              <a href="https://discord.gg/PewjGz7U" target="_blank" rel="noopener noreferrer">Discord</a>
+              <a href="https://discord.gg/b5D7G6Eeys" target="_blank" rel="noopener noreferrer">Discord</a>
               <a href="https://www.facebook.com/profile.php?id=61576948133549" target="_blank" rel="noopener noreferrer">Facebook</a>
             </nav>
           </div>

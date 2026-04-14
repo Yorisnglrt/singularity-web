@@ -73,7 +73,7 @@ export default function AboutPage() {
               <a href="https://www.instagram.com/dnbsingularity/" className="btn btn-outline" id="contact-instagram" target="_blank" rel="noopener noreferrer">
                 Instagram
               </a>
-              <a href="https://discord.gg/PewjGz7U" className="btn btn-outline" id="contact-discord" target="_blank" rel="noopener noreferrer">
+              <a href="https://discord.gg/b5D7G6Eeys" className="btn btn-outline" id="contact-discord" target="_blank" rel="noopener noreferrer">
                 Discord
               </a>
             </div>
