@@ -55,6 +55,55 @@
   letter-spacing: 0.1em;
 }
 
+/* Poster hero — clean image, nothing overlaid */
+.posterHero {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+
+.posterHeroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Title bar — below the poster or gradient hero */
+.titleBar {
+  padding-top: 2rem;
+  padding-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.backLinkAlt {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  align-self: flex-start;
+}
+.backLinkAlt:hover { color: var(--color-text-primary); }
+
+.titleBarHeading {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.titleBarDate {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
 /* Layout */
 .layout {
   display: grid;

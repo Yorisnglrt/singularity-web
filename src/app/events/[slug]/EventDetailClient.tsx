@@ -19,19 +19,40 @@ export default function EventDetailClient({ event }: Props) {
 
   return (
     <div className={styles.page}>
-      {/* Hero banner using posterColor */}
-      <div className={styles.hero} style={{ background: event.posterColor }}>
-        <div className={styles.heroOverlay} />
-        <div className={`container ${styles.heroContent}`}>
-          <Link href="/events" className={styles.backLink}>← All Events</Link>
-          <div className={styles.heroBadge}>
-            <span className={`tag ${event.type === 'outdoor' ? 'tag--purple' : ''}`}>{event.type}</span>
-            {event.isPast && <span className="tag">Archive</span>}
-          </div>
-          <h1 className={styles.heroTitle}>{event.title}</h1>
-          <p className={styles.heroDate}>{weekday}, {day} {month} {year}</p>
+      {/* Poster image — shown clean, no overlay */}
+      {event.posterImage ? (
+        <div className={styles.posterHero}>
+          <img src={event.posterImage} alt={event.title} className={styles.posterHeroImage} />
         </div>
-      </div>
+      ) : (
+        <div className={styles.hero} style={{ background: event.posterColor }}>
+          <div className={styles.heroOverlay} />
+          <div className={`container ${styles.heroContent}`}>
+            <Link href="/events" className={styles.backLink}>← All Events</Link>
+            <div className={styles.heroBadge}>
+              <span className={`tag ${event.type === 'outdoor' ? 'tag--purple' : ''}`}>{event.type}</span>
+              {event.isPast && <span className="tag">Archive</span>}
+            </div>
+            <h1 className={styles.heroTitle}>{event.title}</h1>
+            <p className={styles.heroDate}>{weekday}, {day} {month} {year}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Title bar — shown below the poster image only */}
+      {event.posterImage && (
+        <div className="container">
+          <div className={styles.titleBar}>
+            <Link href="/events" className={styles.backLinkAlt}>← All Events</Link>
+            <div className={styles.heroBadge}>
+              <span className={`tag ${event.type === 'outdoor' ? 'tag--purple' : ''}`}>{event.type}</span>
+              {event.isPast && <span className="tag">Archive</span>}
+            </div>
+            <h1 className={styles.titleBarHeading}>{event.title}</h1>
+            <p className={styles.titleBarDate}>{weekday}, {day} {month} {year}</p>
+          </div>
+        </div>
+      )}
 
       <div className="container">
         <div className={styles.layout}>

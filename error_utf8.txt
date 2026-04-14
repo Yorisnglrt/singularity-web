@@ -1,0 +1,42 @@
+﻿Loading files...
+Extracting P12...
+Generating pass...
+node : Pass generation failed: 
+TypeError: Cannot proceed 
+creating the pass because type 
+is missing.
+At line:1 char:1
++ node test_pass.mjs > error.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo          : No 
+   tSpecified: (Pass generation  
+  ...ype is missing.:String) [   
+ ], RemoteException
+    + FullyQualifiedErrorId : Na 
+   tiveCommandError
+ 
+    at [pass.close] (file:///C:/U
+sers/jkote/.gemini/antigravity/sc
+ratch/node_modules/passkit-genera
+tor/lib/esm/PKPass.js:484:19)
+    at PKPass.getAsBuffer (file:/
+//C:/Users/jkote/.gemini/antigrav
+ity/scratch/node_modules/passkit-
+generator/lib/esm/PKPass.js:547:3
+4)
+    at file:///C:/Users/jkote/.ge
+mini/antigravity/scratch/test_pas
+s.mjs:66:20
+    at ModuleJob.run (node:intern
+al/modules/esm/module_job:430:25)
+    at async 
+onImport.tracePromise.__proto__ (
+node:internal/modules/esm/loader:
+661:26)
+    at async 
+asyncRunEntryPointWithESMLoader (
+node:internal/modules/run_main:10
+1:5)
+

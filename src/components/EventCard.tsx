@@ -18,26 +18,47 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const year = eventDate.getFullYear();
 
   return (
-    <article className={`${styles.card} card ${featured ? styles.featured : ''}`} id={`event-${event.id}`}>
+    <article className={`${styles.card} card`} id={`event-${event.id}`}>
+      {/* Poster — clean 4:5, nothing overlaid */}
       <div className={styles.poster} style={{ background: event.posterColor }}>
-        <div className={styles.posterOverlay} />
-        <div className={styles.posterContent}>
-          <span className={styles.posterDate}>{day}</span>
-          <span className={styles.posterMonth}>{month} {year}</span>
-        </div>
-        <div className={`tag ${event.type === 'underground' ? 'tag--hot' : event.type === 'outdoor' ? 'tag--purple' : ''}`} style={{ position: 'absolute', top: 12, right: 12 }}>
-          {t(`events.filter.${event.type}`)}
-        </div>
+        {event.posterImage ? (
+          <img
+            src={event.posterImage}
+            alt={event.title}
+            className={styles.posterImage}
+            loading="lazy"
+          />
+        ) : (
+          /* When no poster image, show a subtle date watermark on the gradient */
+          <div className={styles.posterFallback}>
+            <div className={styles.posterFallbackDate}>
+              <span className={styles.posterFallbackDay}>{day}</span>
+              <span className={styles.posterFallbackMonth}>{month} {year}</span>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Info — below the poster */}
       <div className={styles.info}>
+        <div className={styles.topRow}>
+          <span className={styles.dateText}>{day} {month} {year}</span>
+          <span className={`tag ${event.type === 'underground' ? 'tag--hot' : event.type === 'outdoor' ? 'tag--purple' : ''}`}>
+            {t(`events.filter.${event.type}`)}
+          </span>
+        </div>
+
         <h3 className={styles.title}>{event.title}</h3>
+
         <p className={styles.meta}>
           <span className={styles.metaIcon}>◷</span> {event.time}
           <span className={styles.metaDivider}>·</span>
           <span className={styles.metaIcon}>◈</span> {typeof event.venue === 'string' ? event.venue : event.venue[locale]}
         </p>
-        <p className={styles.desc}>{event.description[locale]}</p>
+
+        {event.description[locale] && (
+          <p className={styles.desc}>{event.description[locale]}</p>
+        )}
 
         <div className={styles.lineup}>
           <span className={styles.lineupLabel}>{t('events.lineup')}:</span>
