@@ -69,8 +69,10 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
     description: typeof rest.description === 'object' && rest.description !== null ? rest.description : { en: rest.description || '' },
     lineup: Array.isArray(rest.lineup) ? rest.lineup.filter((item: any) => typeof item === 'string') : [],
     poster_color: rest.posterColor || rest.poster_color || 'linear-gradient(135deg, #000, #333)',
+    poster_image: rest.posterImage || rest.poster_image || null,
     is_free: !!(rest.isFree ?? rest.is_free),
-    ticket_url: rest.ticketUrl || rest.ticket_url,
+    is_featured: !!(rest.isFeatured ?? rest.is_featured),
+    ticket_url: rest.ticketUrl || rest.ticket_url || null,
     is_past: !!(rest.isPast ?? rest.is_past),
   };
 
