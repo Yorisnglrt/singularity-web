@@ -274,11 +274,22 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
           {/* Dedicated image URL fields */}
           <div className={styles.field}>
             <label className={styles.label}>Poster Vertical (4:5 portrait — for cards / Instagram)</label>
+            {(ev as any).posterVertical && (
+              <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <img src={(ev as any).posterVertical} alt="vertical" style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 4 }} />
+                <button onClick={() => update({ posterVertical: '' } as any)} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '0.85rem' }}>✕ Remove</button>
+              </div>
+            )}
             <input className={styles.input} value={(ev as any).posterVertical || ''} onChange={e => update({ posterVertical: e.target.value } as any)} placeholder="https://... or /images/..." />
-            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Upload via the image uploader above, then paste the URL here, or use an external URL.</p>
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Cover Wide (1.91:1 landscape — for event detail hero / Facebook)</label>
+            {(ev as any).coverWide && (
+              <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <img src={(ev as any).coverWide} alt="wide cover" style={{ width: 96, height: 50, objectFit: 'cover', borderRadius: 4 }} />
+                <button onClick={() => update({ coverWide: '' } as any)} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '0.85rem' }}>✕ Remove</button>
+              </div>
+            )}
             <input className={styles.input} value={(ev as any).coverWide || ''} onChange={e => update({ coverWide: e.target.value } as any)} placeholder="https://... or /images/..." />
           </div>
         </section>
