@@ -46,6 +46,8 @@ interface EventLike {
   coverWide?: string;
   isFree: boolean;
   ticketUrl?: string;
+  ticketProvider?: string;
+  ticketPriceOre?: number | null;
   isPast: boolean;
   isFeatured?: boolean;
 }
@@ -200,9 +202,29 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
 
           <div className={styles.row2}>
             <div className={styles.field}>
-              <label className={styles.label}>Ticket URL</label>
-              <input className={styles.input} value={ev.ticketUrl || ''} onChange={e => update({ ticketUrl: e.target.value })} placeholder="https://..." />
+              <label className={styles.label}>Ticket Provider</label>
+              <select className={styles.input} value={(ev as any).ticketProvider || 'external'} onChange={e => update({ ticketProvider: e.target.value } as any)}>
+                <option value="external">External URL</option>
+                <option value="vipps">Vipps (internal)</option>
+              </select>
             </div>
+            <div className={styles.field}>
+              {(ev as any).ticketProvider === 'vipps' ? (
+                <>
+                  <label className={styles.label}>Ticket Price (øre)</label>
+                  <input type="number" className={styles.input} value={(ev as any).ticketPriceOre || ''} onChange={e => update({ ticketPriceOre: e.target.value ? parseInt(e.target.value) : null } as any)} placeholder="e.g. 19900 = 199 NOK" />
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Amount in øre (19900 = 199.00 NOK)</p>
+                </>
+              ) : (
+                <>
+                  <label className={styles.label}>Ticket URL</label>
+                  <input className={styles.input} value={ev.ticketUrl || ''} onChange={e => update({ ticketUrl: e.target.value })} placeholder="https://..." />
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.row2}>
             <div className={styles.field} style={{ justifyContent: 'flex-end' }}>
               <div className={styles.toggleRow}>
                 <input type="checkbox" id="isFree" checked={ev.isFree} onChange={e => update({ isFree: e.target.checked })} />

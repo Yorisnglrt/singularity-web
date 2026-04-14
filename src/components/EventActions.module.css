@@ -20,6 +20,21 @@
   font-size: var(--text-sm);
 }
 
+.vippsBtn {
+  background: #ff5b24;
+  border-color: #ff5b24;
+}
+
+.vippsBtn:hover:not(:disabled) {
+  background: #e04e1e;
+  border-color: #e04e1e;
+}
+
+.vippsBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .actions {
   display: flex;
   gap: 0.625rem;

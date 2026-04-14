@@ -73,6 +73,8 @@ export function normalizeEvent(event: any): Event {
     coverWide: event.coverWide != null ? (event.coverWide || null) : (event.cover_wide || null),
     isFree: !!(event.isFree ?? event.is_free),
     ticketUrl: event.ticketUrl || event.ticket_url,
+    ticketProvider: event.ticketProvider || event.ticket_provider || 'external',
+    ticketPriceOre: event.ticketPriceOre ?? event.ticket_price_ore ?? null,
     isFeatured: !!(event.isFeatured ?? event.is_featured),
     isPast,
   };

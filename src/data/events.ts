@@ -17,6 +17,8 @@ export interface Event {
   coverWide?: string;
   isFree: boolean;
   ticketUrl?: string;
+  ticketProvider?: 'external' | 'vipps';
+  ticketPriceOre?: number | null;
   isPast?: boolean;
   isFeatured?: boolean;
 }

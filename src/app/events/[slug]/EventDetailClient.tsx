@@ -101,6 +101,7 @@ export default function EventDetailClient({ event }: Props) {
               <EventActions
                 eventId={event.id}
                 ticketUrl={event.ticketUrl}
+                ticketProvider={event.ticketProvider}
                 isFree={event.isFree}
                 isPast={event.isPast}
               />

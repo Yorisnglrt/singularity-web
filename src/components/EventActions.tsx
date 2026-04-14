@@ -9,6 +9,7 @@ import styles from './EventActions.module.css';
 interface EventActionsProps {
   eventId: string;
   ticketUrl?: string;
+  ticketProvider?: 'external' | 'vipps';
   isFree?: boolean;
   isPast?: boolean;
 }
@@ -26,11 +27,12 @@ interface Reactor {
   name: string;
 }
 
-export default function EventActions({ eventId, ticketUrl, isFree, isPast }: EventActionsProps) {
+export default function EventActions({ eventId, ticketUrl, ticketProvider, isFree, isPast }: EventActionsProps) {
   const { user, hasInteraction, toggleInteraction } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [pendingAction, setPendingAction] = useState<typeof actions[0]['key'] | null>(null);
   const [counts, setCounts] = useState<ReactionCounts>({ like: 0, interested: 0, attending: 0 });
+  const [purchasing, setPurchasing] = useState(false);
   const [reactors, setReactors] = useState<Reactor[]>([]);
   const [totalReactors, setTotalReactors] = useState(0);
 
@@ -123,6 +125,28 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
   const visibleReactors = reactors.slice(0, 5);
   const remainingCount = totalReactors - visibleReactors.length;
 
+  const handleVippsPurchase = async () => {
+    setPurchasing(true);
+    try {
+      const res = await fetch('/api/payments/vipps/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId }),
+      });
+      const data = await res.json();
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        alert(data.error || 'Failed to start payment');
+        setPurchasing(false);
+      }
+    } catch (err) {
+      console.error('Vipps purchase error:', err);
+      alert('Failed to start payment. Please try again.');
+      setPurchasing(false);
+    }
+  };
+
   return (
     <>
       <div className={styles.wrapper}>
@@ -130,6 +154,15 @@ export default function EventActions({ eventId, ticketUrl, isFree, isPast }: Eve
           <div className={styles.ticketRow}>
             {isFree ? (
               <span className="tag">Free entry</span>
+            ) : ticketProvider === 'vipps' ? (
+              <button
+                className={`${styles.ticketBtn} ${styles.vippsBtn} btn btn-primary`}
+                onClick={handleVippsPurchase}
+                disabled={purchasing}
+                id={`buy-vipps-${eventId}`}
+              >
+                {purchasing ? 'Redirecting…' : 'Buy with Vipps'}
+              </button>
             ) : (
               <a
                 href={ticketUrl || '#'}
