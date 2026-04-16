@@ -148,23 +148,23 @@
 @media (min-width: 769px) {
   .featured {
     flex-direction: row;
-    min-height: 500px;
+    min-height: 380px;
   }
 
   .featured .poster {
-    flex: 0 0 400px; /* Fixed width for the poster */
-    aspect-ratio: auto; /* Allow poster to fill the height */
+    flex: 0 0 300px; /* Reduced fixed width */
+    aspect-ratio: auto;
   }
   
   .featured .info {
     flex: 1;
-    padding: var(--space-8);
+    padding: var(--space-6);
     justify-content: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
   }
 
   .featured .title {
-    font-size: var(--text-4xl);
+    font-size: var(--text-3xl);
   }
 
   .featured .desc {
