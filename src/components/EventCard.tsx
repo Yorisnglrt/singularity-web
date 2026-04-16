@@ -20,7 +20,7 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const cardImage = event.posterVertical || event.posterImage;
 
   return (
-    <article className={`${styles.card} card`} id={`event-${event.id}`}>
+    <article className={`${styles.card} card ${featured ? styles.featured : ''}`} id={`event-${event.id}`}>
       {/* Poster — clean 4:5, nothing overlaid */}
       <div className={styles.poster} style={{ background: event.posterColor }}>
         {cardImage ? (

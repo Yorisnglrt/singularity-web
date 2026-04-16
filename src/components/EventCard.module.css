@@ -144,6 +144,39 @@
   }
 }
 
+/* Featured variant — horizontal layout on desktop */
+@media (min-width: 769px) {
+  .featured {
+    flex-direction: row;
+    min-height: 500px;
+  }
+
+  .featured .poster {
+    flex: 0 0 400px; /* Fixed width for the poster */
+    aspect-ratio: auto; /* Allow poster to fill the height */
+  }
+  
+  .featured .info {
+    flex: 1;
+    padding: var(--space-8);
+    justify-content: center;
+    gap: var(--space-4);
+  }
+
+  .featured .title {
+    font-size: var(--text-4xl);
+  }
+
+  .featured .desc {
+    font-size: var(--text-base);
+    max-width: 600px;
+  }
+  
+  .featured .actions {
+    margin-top: var(--space-2);
+  }
+}
+
 .card:hover {
   transform: scale(1.02);
   box-shadow: 0 10px 30px rgba(0, 255, 178, 0.1);
