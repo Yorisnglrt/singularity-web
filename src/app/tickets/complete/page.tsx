@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import styles from './page.module.css';
@@ -18,7 +18,7 @@ interface TicketData {
 
 type PageState = 'loading' | 'success' | 'failed' | 'cancelled' | 'timeout' | 'error';
 
-export default function TicketCompletePage() {
+function TicketCompleteContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference');
   const [state, setState] = useState<PageState>('loading');
@@ -197,5 +197,24 @@ export default function TicketCompletePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TicketCompletePage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.page}>
+        <div className="container">
+          <div className={styles.card}>
+            <div className={styles.center}>
+              <div className={styles.spinner}>◈</div>
+              <h2 className={styles.heading}>Connecting…</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <TicketCompleteContent />
+    </Suspense>
   );
 }
