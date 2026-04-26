@@ -98,13 +98,14 @@ export default function EventDetailClient({ event, artists }: Props) {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: 'var(--space-6)',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 180px))',
+                    gap: 'var(--space-4)',
+                    justifyContent: 'start',
                     marginTop: 'var(--space-4)',
                   }}
                 >
                   {lineupArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} />
+                    <ArtistCard key={artist.id} artist={artist} compact />
                   ))}
                 </div>
               ) : (

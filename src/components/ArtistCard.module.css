@@ -111,3 +111,47 @@
 .cardLink:hover .name {
   color: #00ffb2;
 }
+
+.compactCardLink {
+  max-width: 180px;
+  width: 100%;
+}
+
+.compactCard {
+  transform: none;
+}
+
+.compactCard .avatar {
+  aspect-ratio: 1 / 1;
+  min-height: unset;
+  height: 150px;
+}
+
+.compactCard .info {
+  padding: 0.75rem;
+}
+
+.compactCard .name {
+  font-size: 0.9rem;
+}
+
+.compactCard .bio {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  max-height: 2.8em;
+  overflow: hidden;
+}
+
+.compactCard .links {
+  gap: 0.35rem;
+}
+
+.compactCard .socialLink {
+  font-size: 0.6rem;
+  padding: 0.25rem 0.45rem;
+}
+
+.compactCard .talentBadge {
+  font-size: 0.55rem;
+  padding: 0.2rem 0.4rem;
+}
