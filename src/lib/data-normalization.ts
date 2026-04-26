@@ -121,3 +121,27 @@ export function normalizeMix(mix: any): Mix {
     soundcloudUrl: mix.soundcloudUrl || mix.soundcloud_url,
   };
 }
+
+/**
+ * Resolves a list of lineup strings to Artist objects.
+ */
+export function resolveLineupArtists(
+  lineup: string[] | null | undefined,
+  artists: Artist[]
+): Artist[] {
+  if (!Array.isArray(lineup) || !Array.isArray(artists)) return [];
+
+  return lineup
+    .map((lineupItem) => {
+      const key = String(lineupItem).toLowerCase().trim();
+
+      return artists.find((artist) => {
+        return (
+          artist.slug?.toLowerCase().trim() === key ||
+          artist.name?.toLowerCase().trim() === key ||
+          artist.id?.toLowerCase().trim() === key
+        );
+      });
+    })
+    .filter((artist): artist is Artist => Boolean(artist));
+}

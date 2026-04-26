@@ -1,16 +1,21 @@
 'use client';
 
 import Link from 'next/link';
+import { Artist } from '@/data/artists';
+import ArtistCard from '@/components/ArtistCard';
 import { Event, toSlug } from '@/data/events';
 import EventActions from '@/components/EventActions';
 import EventDiscussion from '@/components/EventDiscussion';
+import { resolveLineupArtists } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
 interface Props {
   event: Event;
+  artists: Artist[];
 }
 
-export default function EventDetailClient({ event }: Props) {
+export default function EventDetailClient({ event, artists }: Props) {
+  const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
   const day = eventDate.getDate();
   const month = eventDate.toLocaleString('en', { month: 'long' });
@@ -89,11 +94,26 @@ export default function EventDetailClient({ event }: Props) {
             {/* Lineup */}
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>Lineup</h2>
-              <div className={styles.lineupGrid}>
-                {event.lineup.map(name => (
-                  <div key={name} className={styles.lineupChip}>{name}</div>
-                ))}
-              </div>
+              {lineupArtists.length > 0 ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: 'var(--space-6)',
+                    marginTop: 'var(--space-4)',
+                  }}
+                >
+                  {lineupArtists.map((artist) => (
+                    <ArtistCard key={artist.id} artist={artist} />
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.lineupGrid}>
+                  {event.lineup.map(name => (
+                    <div key={name} className={styles.lineupChip}>{name}</div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Actions — interactions + ticket */}

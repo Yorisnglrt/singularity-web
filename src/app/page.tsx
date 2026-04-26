@@ -9,7 +9,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Event as AppEvent } from '@/data/events';
 import { Artist } from '@/data/artists';
 import { Mix } from '@/data/mixes';
-import { normalizeEvent, normalizeArtist, normalizeMix } from '@/lib/data-normalization';
+import ArtistCard from '@/components/ArtistCard';
+import { normalizeEvent, normalizeArtist, normalizeMix, resolveLineupArtists } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -51,6 +52,11 @@ export default function Home() {
   }, []);
 
   const upcomingEvents = events.filter(e => !e.isPast);
+  const nextEvent = upcomingEvents[0];
+
+  const nextEventLineupArtists = useMemo(() => {
+    return resolveLineupArtists(nextEvent?.lineup, artists);
+  }, [nextEvent, artists]);
 
   // Unified Artist List: Crew (A-Z) -> Invited (A-Z)
   const showcaseArtists = useMemo(() => {
@@ -83,13 +89,36 @@ export default function Home() {
       <Hero />
 
       {/* Next Event - Featured */}
-      {upcomingEvents[0] && (
+      {nextEvent && (
         <section className={`section ${styles.section}`} id="next-event">
           <div className="container">
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTag}>◈ {t('home.nextEvent')}</span>
             </div>
-            <EventCard event={upcomingEvents[0]} featured />
+            <EventCard event={nextEvent} featured />
+          </div>
+        </section>
+      )}
+
+      {/* Next Lineup - Artist Cards */}
+      {nextEventLineupArtists.length > 0 && (
+        <section className={`section ${styles.section}`} id="next-lineup">
+          <div className="container">
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionTag}>◈ NEXT LINEUP</span>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: 'var(--space-6)',
+              }}
+            >
+              {nextEventLineupArtists.map((artist) => (
+                <ArtistCard key={artist.id} artist={artist} />
+              ))}
+            </div>
           </div>
         </section>
       )}
