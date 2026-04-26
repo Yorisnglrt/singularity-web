@@ -92,7 +92,7 @@ export function normalizeArtist(artist: any): Artist {
     bio: normalizeLocalizedField(artist.bio),
     isCrew: !!artist.isCrew,
     isInvited: !!artist.isInvited,
-    photoUrl: [artist.image, artist.photo_url, artist.photoUrl, artist.photo].find(u => typeof u === 'string' && u.trim() !== '') || undefined,
+    photoUrl: [artist.photo_url, artist.image, artist.photoUrl, artist.photo].find(u => typeof u === 'string' && u.trim() !== '') || undefined,
     avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #333, #111)',
     socialLinks: {
       soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud_url,

@@ -308,9 +308,8 @@
 
 .membershipContent {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 1.5rem;
   margin-top: 1.25rem;
 }
 
@@ -318,7 +317,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  flex: 1;
 }
 
 .membershipItem {
@@ -341,63 +339,15 @@
   font-weight: 700;
 }
 
-.qrSection {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
+/* Member QR Section */
+.memberQrSection {
+  margin-top: 2rem;
+  max-width: 480px;
 }
 
-.qrContainer {
-  width: 140px;
-  height: 140px;
-  background: #fff;
-  padding: 8px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(0, 255, 178, 0.2);
-}
-
-.qrImage {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.qrPlaceholder {
-  width: 140px;
-  height: 140px;
-  border: 2px dashed rgba(var(--color-accent-primary-rgb), 0.3);
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 1rem;
-  gap: 0.5rem;
-}
-
-.qrPlaceholderIcon {
-  font-size: 1.5rem;
-  opacity: 0.5;
-}
-
-.qrPlaceholderText {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-@media (max-width: 768px) {
-  .membershipContent {
-    flex-direction: column-reverse;
-    align-items: flex-start;
-    gap: 2rem;
+@media (min-width: 769px) {
+  .memberQrSection {
+    max-width: 520px;
   }
 }
 

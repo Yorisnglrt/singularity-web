@@ -32,6 +32,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { type, data } = body;
 
+    console.log(`[API Save] Saving ${type}, count: ${data?.length}`);
+    if (type === 'artists') {
+      console.log(`[API Save] Artist names: ${data.map(a => a.name).join(', ')}`);
+    }
+
     if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !Array.isArray(data)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }

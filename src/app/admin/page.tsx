@@ -33,6 +33,7 @@ export default function AdminPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`/api/admin/data?type=${type}`, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${session?.access_token || ''}`
         }

@@ -84,6 +84,45 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
 }
 
 /**
+ * Maps frontend Artist object to DB Row.
+ */
+export function mapArtistToDb(artist: any) {
+  const { id, ...rest } = artist;
+  
+  return {
+    id,
+    slug: rest.slug || id,
+    name: rest.name,
+    bio: rest.bio,
+    is_crew: !!(rest.isCrew ?? rest.is_crew),
+    is_invited: !!(rest.isInvited ?? rest.is_invited),
+    photo_url: rest.image || rest.photoUrl || rest.photo_url || null,
+    avatar_gradient: rest.avatarGradient || rest.avatar_gradient || 'linear-gradient(135deg, #000, #333)',
+    social_links: rest.socialLinks || rest.social_links || {},
+    country_code: rest.country_code || rest.countryCode || null,
+  };
+}
+
+/**
+ * Maps frontend Mix object to DB Row.
+ */
+export function mapMixToDb(mix: any) {
+  const { id, ...rest } = mix;
+  return {
+    id,
+    title: rest.title,
+    artist: rest.artist,
+    event_id: rest.eventId || rest.event_id,
+    label: rest.label,
+    duration: rest.duration,
+    date: rest.date,
+    cover_gradient: rest.coverGradient || rest.cover_gradient || 'linear-gradient(135deg, #000, #333)',
+    audio_src: rest.audioSrc || rest.audio_src,
+    soundcloud_url: rest.soundcloudUrl || rest.soundcloud_url,
+  };
+}
+
+/**
  * Generic dispatcher to map frontend payloads to DB rows based on table type.
  */
 export function mapPayloadToDb(type: string, data: any[]) {
@@ -95,9 +134,9 @@ export function mapPayloadToDb(type: string, data: any[]) {
     case 'events':
       return data.map(d => mapEventToDb(d, isLegacy));
     case 'artists':
-      // Basic fallback for other types if they were already mapping correctly or don't have canonical versions yet
-      // but we should eventually add specialized mappers for these too.
-      return data; 
+      return data.map(d => mapArtistToDb(d));
+    case 'mixes':
+      return data.map(d => mapMixToDb(d));
     default:
       return data;
   }

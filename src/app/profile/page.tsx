@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { QRCodeSVG } from 'qrcode.react';
 import { events } from '@/data/events';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 import AppleWalletButton from '@/components/AppleWalletButton';
+import MemberQrCard from '@/components/MemberQrCard';
 
 type PointsHistoryItem = {
   id: string;
@@ -222,28 +222,18 @@ export default function ProfilePage() {
             </div>
 
             <AppleWalletButton />
-
-            <div className={styles.qrSection}>
-              {user.qrToken ? (
-                <div className={styles.qrContainer}>
-                  <QRCodeSVG 
-                    value={user.qrToken}
-                    size={124}
-                    bgColor={"#ffffff"}
-                    fgColor={"#000000"}
-                    level={"L"}
-                    includeMargin={false}
-                    className={styles.qrImage}
-                  />
-                </div>
-              ) : (
-                <div className={styles.qrPlaceholder}>
-                  <span className={styles.qrPlaceholderIcon}>◈</span>
-                  <span className={styles.qrPlaceholderText}>QR info missing</span>
-                </div>
-              )}
-            </div>
           </div>
+        </div>
+
+        {/* Member QR Section */}
+        <div className={styles.memberQrSection}>
+          <MemberQrCard
+            qrToken={user.qrToken || null}
+            displayName={user.displayName}
+            memberCode={user.memberCode || null}
+            tier={user.tier || null}
+            isAdmin={user.isAdmin}
+          />
         </div>
 
         {/* Membership History */}
