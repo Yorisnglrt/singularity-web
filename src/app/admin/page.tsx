@@ -270,7 +270,7 @@ export default function AdminPage() {
     const eventOptions = data.events.map((e: any) => ({ id: e.id, label: e.title }));
 
     return (
-      <div key={activeItem.id}>
+      <div>
         <h2 style={{marginBottom: '2rem'}}>Edit Mix</h2>
 
         <div className={styles.formGroup}>
@@ -370,7 +370,7 @@ export default function AdminPage() {
   const renderArtistForm = () => {
     if (!activeItem) return null;
     return (
-      <div key={activeItem.id}>
+      <div>
         <h2 style={{marginBottom: '2rem'}}>Edit Artist</h2>
 
         <div className={styles.formGroup}>
@@ -588,7 +588,7 @@ export default function AdminPage() {
                   uploading={uploading}
                 />
               ) : (
-                <div key={activeItem.id}>
+                <div>
                   <h2 style={{marginBottom: '2rem'}}>Edit Record</h2>
                   {Object.keys(activeItem).map(key => renderField(key, activeItem[key]))}
                   <div className={styles.formActions}>
