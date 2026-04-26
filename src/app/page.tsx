@@ -111,14 +111,14 @@ export default function Home() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 320px))',
-                gap: 'var(--space-6)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 160px))',
+                gap: 'var(--space-4)',
                 justifyContent: 'center',
                 alignItems: 'stretch',
               }}
             >
               {nextEventLineupArtists.map((artist) => (
-                <ArtistCard key={artist.id} artist={artist} />
+                <ArtistCard key={artist.id} artist={artist} compact />
               ))}
             </div>
           </div>
