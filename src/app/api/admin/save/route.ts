@@ -32,9 +32,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { type, data } = body;
 
-    console.log(`[API Save] Saving ${type}, count: ${data?.length}`);
-    if (type === 'artists') {
-      console.log(`[API Save] Artist names: ${data.map(a => a.name).join(', ')}`);
+    console.log(`[API Save] Saving ${type}, count: ${Array.isArray(data) ? data.length : 0}`);
+
+    if (type === 'artists' && Array.isArray(data)) {
+      console.log(
+        `[API Save] Artist names: ${data
+          .map((a: { name?: string }) => a.name ?? 'Unnamed')
+          .join(', ')}`
+      );
     }
 
     if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !Array.isArray(data)) {
