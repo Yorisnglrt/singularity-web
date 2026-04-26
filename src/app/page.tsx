@@ -111,7 +111,7 @@ export default function Home() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 160px))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 180px))',
                 gap: 'var(--space-4)',
                 justifyContent: 'center',
                 alignItems: 'stretch',
