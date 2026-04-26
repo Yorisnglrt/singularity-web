@@ -90,14 +90,14 @@ export function normalizeArtist(artist: any): Artist {
     slug: artist.slug || artist.id,
     name: artist.name || 'Unknown Artist',
     bio: normalizeLocalizedField(artist.bio),
-    isCrew: !!artist.isCrew,
-    isInvited: !!artist.isInvited,
+    isCrew: !!(artist.isCrew ?? artist.is_crew),
+    isInvited: !!(artist.isInvited ?? artist.is_invited),
     photoUrl: [artist.photo_url, artist.image, artist.photoUrl, artist.photo].find(u => typeof u === 'string' && u.trim() !== '') || undefined,
-    avatarGradient: artist.avatarGradient || 'linear-gradient(135deg, #333, #111)',
+    avatarGradient: artist.avatarGradient || artist.avatar_gradient || 'linear-gradient(135deg, #333, #111)',
     socialLinks: {
-      soundcloud: artist.socialLinks?.soundcloud || artist.soundcloud_url,
-      mixcloud: artist.socialLinks?.mixcloud || artist.mixcloud_url,
-      instagram: artist.socialLinks?.instagram || artist.instagram_url,
+      soundcloud: artist.socialLinks?.soundcloud || artist.social_links?.soundcloud || artist.soundcloud_url || artist.soundcloud,
+      mixcloud: artist.socialLinks?.mixcloud || artist.social_links?.mixcloud || artist.mixcloud_url,
+      instagram: artist.socialLinks?.instagram || artist.social_links?.instagram || artist.instagram_url || artist.instagram,
     },
     country_code: artist.country_code || artist.countryCode,
   };
@@ -114,8 +114,10 @@ export function normalizeMix(mix: any): Mix {
     artist: mix.artist || 'Unknown Artist',
     duration: mix.duration || '0:00',
     date: mix.date || new Date().toISOString(),
-    coverGradient: mix.coverGradient || 'linear-gradient(135deg, #222, #000)',
+    coverGradient: mix.coverGradient || mix.cover_gradient || 'linear-gradient(135deg, #222, #000)',
     eventId: mix.eventId || mix.event_id,
     label: mix.label || 'SINGULARITY',
+    audioSrc: mix.audioSrc || mix.audio_src,
+    soundcloudUrl: mix.soundcloudUrl || mix.soundcloud_url,
   };
 }
