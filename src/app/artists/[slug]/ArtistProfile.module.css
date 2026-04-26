@@ -165,6 +165,18 @@
   color: #00ffb2;
 }
 
+.soundcloud:hover {
+  background: rgba(255, 136, 0, 0.1);
+  border-color: #ff8800;
+  color: #ff8800;
+}
+
+.instagram:hover {
+  background: rgba(225, 48, 108, 0.1);
+  border-color: #e1306c;
+  color: #e1306c;
+}
+
 .icon {
   width: 20px;
   height: 20px;
