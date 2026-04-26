@@ -81,8 +81,6 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
     is_free: !!(rest.isFree ?? rest.is_free),
     is_featured: !!(rest.isFeatured ?? rest.is_featured),
     ticket_url: rest.ticketUrl || rest.ticket_url || null,
-    ticket_provider: rest.ticketProvider || rest.ticket_provider || 'external',
-    ticket_price_ore: rest.ticketPriceOre ?? rest.ticket_price_ore ?? null,
     is_past: !!(rest.isPast ?? rest.is_past),
   };
 
