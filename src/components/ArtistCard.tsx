@@ -6,21 +6,14 @@ import { getFlagUrl } from '@/lib/utils';
 
 interface ArtistCardProps {
   artist: Artist;
-  compact?: boolean;
 }
 
-export default function ArtistCard({ artist, compact = false }: ArtistCardProps) {
+export default function ArtistCard({ artist }: ArtistCardProps) {
   const { t, locale } = useI18n();
 
   return (
-    <Link 
-      href={`/artists/${artist.slug}`} 
-      className={`${styles.cardLink} ${compact ? styles.compactCardLink : ''}`}
-    >
-      <article 
-        className={`${styles.card} ${compact ? styles.compactCard : ''} card`} 
-        id={`artist-${artist.id}`}
-      >
+    <Link href={`/artists/${artist.slug}`} className={styles.cardLink}>
+      <article className={`${styles.card} card`} id={`artist-${artist.id}`}>
         <div
           className={styles.avatar}
           style={artist.photoUrl ? {} : { background: artist.avatarGradient }}
