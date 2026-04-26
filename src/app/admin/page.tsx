@@ -92,25 +92,12 @@ export default function AdminPage() {
 
   const handleSaveItem = () => {
     if (!activeItem) return;
-    const currentArray = [...data[activeTab]];
-    const index = currentArray.findIndex(i => i.id === activeItem.id);
-    if (index >= 0) {
-      currentArray[index] = activeItem;
-    } else {
-      currentArray.push(activeItem);
-    }
-    
-    if (activeTab === 'artists') {
-      currentArray.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-    }
     
     // Cleanup internal fields before saving
-    const cleanedArray = currentArray.map(item => {
-      const { _isNew, ...rest } = item;
-      return rest;
-    });
+    const { _isNew, ...cleanedItem } = activeItem;
     
-    saveToApi(activeTab, cleanedArray);
+    // Only send the edited item in an array to the API
+    saveToApi(activeTab, [cleanedItem]);
   };
 
   const handleDeleteItem = async (id: string) => {
@@ -248,7 +235,20 @@ export default function AdminPage() {
         _isNew: true
       });
     } else if (activeTab === 'events') {
-      setActiveItem({ id: idStr, title: 'New Event', date: new Date().toISOString().split('T')[0], time: '22:00 - 04:00', venue: 'TBA', type: 'club', description: {en:'', cs:'', no:'', pl:''}, lineup: [], posterColor: 'linear-gradient(135deg, #000, #333)', isFree: false, isPast: false });
+      setActiveItem({ 
+        id: idStr, 
+        title: 'New Event', 
+        date: new Date().toISOString().split('T')[0], 
+        time: '22:00 - 04:00', 
+        venue: {en:'TBA', cs:'TBA', no:'TBA', pl:'TBA', de:'TBA'}, 
+        type: 'club', 
+        description: {en:'', cs:'', no:'', pl:'', de:''}, 
+        lineup: [], 
+        posterColor: 'linear-gradient(135deg, #000, #333)', 
+        isFree: false, 
+        isPast: false,
+        _isNew: true
+      });
     } else if (activeTab === 'mixes') {
       setActiveItem({ id: idStr, title: '', artist: '', eventId: '', label: 'Full set', duration: '', date: new Date().toISOString().split('T')[0], coverGradient: 'linear-gradient(135deg, #000, #333)', audioSrc: '', soundcloudUrl: '' });
     } else {
@@ -514,16 +514,14 @@ export default function AdminPage() {
   const isEventTab = activeTab === 'events';
 
   const handleEventSave = (updated: any) => {
-    const currentArray = [...data.events];
-    const index = currentArray.findIndex(i => i.id === updated.id);
-    if (index >= 0) { currentArray[index] = updated; } else { currentArray.push(updated); }
-    saveToApi('events', currentArray);
+    const { _isNew, ...cleaned } = updated;
+    saveToApi('events', [cleaned]);
     setActiveItem(updated);
   };
 
   const handleEventDuplicate = (dup: any) => {
-    const currentArray = [...data.events, dup];
-    saveToApi('events', currentArray);
+    const { _isNew, ...cleaned } = dup;
+    saveToApi('events', [cleaned]);
     setActiveItem(dup);
   };
 

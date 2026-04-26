@@ -53,19 +53,26 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
   } else if (isLegacy) {
     id = generateDeterministicUUID(slugOrId);
   } else {
-    // If it's a new event from admin, we use a random UUID and slug generated from title
+    // If it's a new event from admin, we use a random UUID 
     id = crypto.randomUUID();
+  }
+
+  // Generate slug if missing or if it's the old 'new-...' ID
+  let slug: string = event.slug;
+  if (!slug || slug.startsWith('new-')) {
+    const { toSlug } = require('./slug');
+    slug = toSlug(rest.title || 'untitled-event');
   }
 
   // Strict mapping of only canonical fields
   const row: any = {
     id,
     slug: slug,
-    title: rest.title,
+    title: rest.title || 'Untitled Event',
     date: rest.date ? rest.date.split('T')[0] : null,
-    time: rest.time,
+    time: rest.time || '',
     venue: typeof rest.venue === 'object' && rest.venue !== null ? rest.venue : { en: rest.venue || '' },
-    type: rest.type,
+    type: rest.type || 'club',
     description: typeof rest.description === 'object' && rest.description !== null ? rest.description : { en: rest.description || '' },
     lineup: Array.isArray(rest.lineup) ? rest.lineup.filter((item: any) => typeof item === 'string') : [],
     poster_color: rest.posterColor || rest.poster_color || 'linear-gradient(135deg, #000, #333)',
