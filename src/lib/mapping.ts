@@ -43,7 +43,6 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
   
   // Decide on correctly formatted UUID
   let id: string;
-  let slug: string = rest.slug || slugOrId;
 
   // Check if slugOrId is already a UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
@@ -58,7 +57,7 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
   }
 
   // Generate slug if missing or if it's the old 'new-...' ID
-  let slug: string = event.slug;
+  let slug: string = event.slug || rest.slug || slugOrId;
   if (!slug || slug.startsWith('new-')) {
     const { toSlug } = require('./slug');
     slug = toSlug(rest.title || 'untitled-event');
