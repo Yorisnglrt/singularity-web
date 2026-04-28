@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { events } from '@/data/events';
+import { events, toSlug } from '@/data/events';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { normalizeEvent, getMemberTier } from '@/lib/data-normalization';
 import styles from './page.module.css';
 import AppleWalletButton from '@/components/AppleWalletButton';
 import MemberQrCard from '@/components/MemberQrCard';
@@ -22,6 +23,8 @@ export default function ProfilePage() {
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [dbEvents, setDbEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -58,6 +61,34 @@ export default function ProfilePage() {
     fetchHistory();
   }, [user?.id]);
 
+  useEffect(() => {
+    const fetchInteractedEvents = async () => {
+      if (!user?.id || interactions.length === 0) {
+        setDbEvents([]);
+        return;
+      }
+
+      setLoadingEvents(true);
+      try {
+        const eventIds = Array.from(new Set(interactions.map(i => i.eventId)));
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .in('id', eventIds);
+
+        if (!error && data) {
+          setDbEvents(data);
+        }
+      } catch (err) {
+        console.error('Error fetching interacted events:', err);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
+    fetchInteractedEvents();
+  }, [user?.id, interactions]);
+
   if (!user) {
     return (
       <div className={styles.page}>
@@ -77,9 +108,16 @@ export default function ProfilePage() {
   const interestedIds = interactions.filter(i => i.action === 'interested').map(i => i.eventId);
   const likedIds = interactions.filter(i => i.action === 'like').map(i => i.eventId);
 
-  const attendingEvents = events.filter(e => attendingIds.includes(e.id));
-  const interestedEvents = events.filter(e => interestedIds.includes(e.id));
-  const likedEvents = events.filter(e => likedIds.includes(e.id));
+  // Helper to get normalized event from either DB or static source
+  const getEventData = (id: string) => {
+    const rawDbEvent = dbEvents.find(e => e.id === id);
+    if (rawDbEvent) return normalizeEvent(rawDbEvent);
+    return events.find(e => e.id === id);
+  };
+
+  const attendingEvents = attendingIds.map(getEventData).filter(Boolean) as any[];
+  const interestedEvents = interestedIds.map(getEventData).filter(Boolean) as any[];
+  const likedEvents = likedIds.map(getEventData).filter(Boolean) as any[];
 
   return (
     <div className={styles.page}>
@@ -100,8 +138,8 @@ export default function ProfilePage() {
             {user.bio && <p className={styles.bio}>{user.bio}</p>}
             <div className={styles.pointsBadge} onClick={refreshProfile} style={{cursor: 'pointer'}}>
               <span className={styles.pointsIcon}>◈</span>
-              <span className={styles.pointsValue}>{user.points}</span>
-              <span className={styles.pointsLabel}>points</span>
+              <span className={styles.pointsValue}>{getMemberTier(user.points)}</span>
+              <span className={styles.pointsLabel}>Rank</span>
             </div>
           </div>
           <div className={styles.headerActions}>
@@ -110,26 +148,10 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{attendingEvents.length}</span>
-            <span className={styles.statLabel}>Attending</span>
-          </div>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{interestedEvents.length}</span>
-            <span className={styles.statLabel}>Interested</span>
-          </div>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{likedEvents.length}</span>
-            <span className={styles.statLabel}>Liked</span>
-          </div>
-        </div>
-
         {/* Music & Scene Favorites */}
         {(user.favoriteProducer || user.favoriteTrack || user.favoriteSubgenre || user.favoriteVenue || user.favoriteFestival) && (
-          <div className={styles.favoritesSection}>
-            <h2 className={styles.sectionTitle}>◈ Music & Scene</h2>
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>◈ Music & Scene Favorites</h2>
             <div className={styles.favoritesGrid}>
               {user.favoriteProducer && (
                 <div className={styles.favoriteItem}>
@@ -165,27 +187,71 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Event sections */}
-        {[
-          { title: 'Attending', evs: attendingEvents, icon: '✓' },
-          { title: 'Interested', evs: interestedEvents, icon: '★' },
-          { title: 'Liked', evs: likedEvents, icon: '♥' },
-        ].map(({ title, evs, icon }) => evs.length > 0 && (
-          <div key={title} className={styles.section}>
-            <h2 className={styles.sectionTitle}><span>{icon}</span> {title}</h2>
+        {/* Stats */}
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <span className={styles.statValue}>{attendingIds.length}</span>
+            <span className={styles.statLabel}>Attending</span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statValue}>{interestedIds.length}</span>
+            <span className={styles.statLabel}>Interested</span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statValue}>{likedIds.length}</span>
+            <span className={styles.statLabel}>Liked</span>
+          </div>
+        </div>
+
+        {/* Unified Event Activity */}
+        {interactions.length > 0 && (
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>◈ Your Events</h2>
             <div className={styles.eventList}>
-              {evs.map(ev => (
-                <Link key={ev.id} href={`/events/${ev.id}`} className={styles.eventRow}>
-                  <div className={styles.eventDot} style={{ background: ev.posterColor }} />
-                  <div>
-                    <div className={styles.eventName}>{ev.title}</div>
-                    <div className={styles.eventMeta}>{new Date(ev.date).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })} · {typeof ev.venue === 'string' ? ev.venue : Object.values(ev.venue)[0]}</div>
+              {Array.from(new Set(interactions.map(i => i.eventId))).map(id => {
+                const ev = getEventData(id);
+                if (!ev) return null;
+
+                const eventSlug = toSlug(ev);
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventSlug);
+                const hasValidSlug = eventSlug && !isUuid;
+                
+                const userActions = interactions.filter(i => i.eventId === id).map(i => i.action);
+                
+                const content = (
+                  <>
+                    <div className={styles.eventDot} style={{ background: ev.posterColor }} />
+                    <div style={{ flex: 1 }}>
+                      <div className={styles.eventName}>{ev.title}</div>
+                      <div className={styles.eventMeta}>
+                        {new Date(ev.date).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })} · {typeof ev.venue === 'string' ? ev.venue : Object.values(ev.venue)[0]}
+                      </div>
+                    </div>
+                    <div className={styles.badgeRow}>
+                      {userActions.includes('attending') && <span className={`${styles.miniBadge} ${styles.attendingBadge}`}>✓ Attending</span>}
+                      {userActions.includes('interested') && <span className={`${styles.miniBadge} ${styles.interestedBadge}`}>★ Interested</span>}
+                      {userActions.includes('like') && <span className={`${styles.miniBadge} ${styles.likeBadge}`}>♥ Liked</span>}
+                    </div>
+                  </>
+                );
+
+                if (hasValidSlug) {
+                  return (
+                    <Link key={ev.id} href={`/events/${eventSlug}`} className={styles.eventRow}>
+                      {content}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={ev.id} className={styles.eventRow} style={{ cursor: 'default' }}>
+                    {content}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
-        ))}
+        )}
 
         {interactions.length === 0 && (
           <div className={styles.empty}>

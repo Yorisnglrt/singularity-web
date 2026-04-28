@@ -6,19 +6,24 @@ import { getFlagUrl } from '@/lib/utils';
 
 interface ArtistCardProps {
   artist: Artist;
+  variant?: 'default' | 'compact' | 'lineup';
   compact?: boolean;
 }
 
-export default function ArtistCard({ artist, compact = false }: ArtistCardProps) {
+export default function ArtistCard({ artist, variant, compact = false }: ArtistCardProps) {
   const { t, locale } = useI18n();
+  const effectiveVariant = variant || (compact ? 'compact' : 'default');
+  const isLineup = effectiveVariant === 'lineup';
+  const isCompact = effectiveVariant === 'compact';
+  const isDefault = effectiveVariant === 'default';
 
   return (
     <Link 
       href={`/artists/${artist.slug}`} 
-      className={`${styles.cardLink} ${compact ? styles.compactCardLink : ''}`}
+      className={`${styles.cardLink} ${styles[effectiveVariant + 'CardLink']}`}
     >
       <article 
-        className={`${styles.card} ${compact ? styles.compactCard : ''} card`} 
+        className={`${styles.card} ${styles[effectiveVariant + 'Card']} card`} 
         id={`artist-${artist.id}`}
       >
         <div
@@ -41,8 +46,8 @@ export default function ArtistCard({ artist, compact = false }: ArtistCardProps)
           )}
         </div>
 
-        <div className={styles.info} style={{ alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+        <div className={styles.info}>
+          <div className={styles.nameRow}>
             <h3 className={styles.name}>{artist.name}</h3>
             {artist.country_code && (
               <img 
@@ -58,9 +63,9 @@ export default function ArtistCard({ artist, compact = false }: ArtistCardProps)
               />
             )}
           </div>
-          <p className={styles.bio} style={{ width: '100%' }}>{artist.bio[locale]}</p>
+          <p className={styles.bio}>{artist.bio[locale]}</p>
 
-          <div className={styles.links} style={{ justifyContent: 'center', width: '100%' }}>
+          <div className={styles.links}>
             {artist.socialLinks.soundcloud && (
               <span className={styles.socialLink}>SoundCloud</span>
             )}

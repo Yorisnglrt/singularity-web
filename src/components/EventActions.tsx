@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
@@ -8,6 +9,7 @@ import styles from './EventActions.module.css';
 
 interface EventActionsProps {
   eventId: string;
+  eventSlug?: string;
   ticketUrl?: string;
   ticketProvider?: 'external' | 'vipps';
   isFree?: boolean;
@@ -25,9 +27,10 @@ type ReactionCounts = Record<typeof actions[number]['key'], number>;
 interface Reactor {
   id: string;
   name: string;
+  avatarUrl?: string;
 }
 
-export default function EventActions({ eventId, ticketUrl, ticketProvider, isFree, isPast }: EventActionsProps) {
+export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProvider, isFree, isPast }: EventActionsProps) {
   const { user, hasInteraction, toggleInteraction } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [pendingAction, setPendingAction] = useState<typeof actions[0]['key'] | null>(null);
@@ -65,7 +68,8 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
         .select(`
           user_id,
           profiles (
-            display_name
+            display_name,
+            avatar_url
           )
         `)
         .eq('event_id', eventId)
@@ -78,7 +82,8 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
         if (!uniqueUserMap.has(row.user_id) && row.profiles?.display_name) {
           uniqueUserMap.set(row.user_id, {
             id: row.user_id,
-            name: row.profiles.display_name
+            name: row.profiles.display_name,
+            avatarUrl: row.profiles.avatar_url
           });
         }
       });
@@ -110,7 +115,7 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
       [key]: isActive ? Math.max(0, prev[key] - 1) : prev[key] + 1
     }));
 
-    await toggleInteraction(eventId, key);
+    await toggleInteraction(eventId, key, eventSlug);
     // Refresh to get full reactor list and correct server-side counts
     fetchInteractionStats();
   };
@@ -203,9 +208,19 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
           <div className={styles.socialRow}>
             <div className={styles.avatarStack}>
               {visibleReactors.map(reactor => (
-                <div key={reactor.id} className={styles.avatarCircle} title={reactor.name}>
-                  <span className={styles.avatarInitial}>{reactor.name[0].toUpperCase()}</span>
-                </div>
+                <Link 
+                  key={reactor.id} 
+                  href={`/profile/${reactor.id}`}
+                  className={styles.avatarCircle} 
+                  title={`View ${reactor.name}'s profile`}
+                  aria-label={`View ${reactor.name}'s profile`}
+                >
+                  {reactor.avatarUrl ? (
+                    <img src={reactor.avatarUrl} alt={reactor.name} className={styles.avatarImg} />
+                  ) : (
+                    <span className={styles.avatarInitial}>{reactor.name[0].toUpperCase()}</span>
+                  )}
+                </Link>
               ))}
               {remainingCount > 0 && (
                 <div className={`${styles.avatarCircle} ${styles.avatarMore}`}>

@@ -116,9 +116,44 @@
   margin-bottom: 0.5rem;
 }
 
+.authorWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.authorWrapper:hover .author {
+  color: var(--color-accent-primary);
+}
+
+.authorAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .author {
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-sm);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 

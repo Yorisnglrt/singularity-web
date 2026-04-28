@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import styles from './EventDiscussion.module.css';
@@ -12,6 +13,7 @@ interface Comment {
   user_id: string;
   profiles?: {
     display_name: string;
+    avatar_url?: string;
   };
 }
 
@@ -37,7 +39,8 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
           created_at,
           user_id,
           profiles (
-            display_name
+            display_name,
+            avatar_url
           )
         `)
         .eq('event_id', eventId)
@@ -173,9 +176,18 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
             return (
               <div key={comment.id} className={styles.comment}>
                 <div className={styles.commentHeader}>
-                  <span className={styles.author}>
-                    {comment.profiles?.display_name || 'User'}
-                  </span>
+                  <Link href={`/profile/${comment.user_id}`} className={styles.authorWrapper}>
+                    <div className={styles.authorAvatar}>
+                      {comment.profiles?.avatar_url ? (
+                        <img src={comment.profiles.avatar_url} alt="" className={styles.avatarImg} />
+                      ) : (
+                        (comment.profiles?.display_name || '?')[0].toUpperCase()
+                      )}
+                    </div>
+                    <span className={styles.author}>
+                      {comment.profiles?.display_name || 'User'}
+                    </span>
+                  </Link>
                   <span className={styles.timestamp}>
                     {formatDate(comment.created_at)}
                   </span>

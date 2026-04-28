@@ -109,8 +109,8 @@
 }
 
 .avatarCircle {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
   background: var(--color-bg-card);
   border: 2px solid var(--color-bg-secondary);
@@ -118,15 +118,17 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-left: -8px;
+  margin-left: -12px;
   position: relative;
   transition: transform 0.2s ease;
   user-select: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .avatarCircle:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.1);
   z-index: 10;
+  border-color: var(--color-accent-primary);
 }
 
 .avatarImg {
@@ -137,7 +139,7 @@
 
 .avatarInitial {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
 }
@@ -145,7 +147,7 @@
 .avatarMore {
   background: var(--color-surface);
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
   font-weight: var(--weight-semibold);
 }

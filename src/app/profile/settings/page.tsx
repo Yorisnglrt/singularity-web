@@ -22,6 +22,7 @@ export default function ProfileSettingsPage() {
     favoriteFestival: '',
     city: '',
     favoriteSubgenre: '',
+    marketingConsent: false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -41,6 +42,7 @@ export default function ProfileSettingsPage() {
         favoriteFestival: user.favoriteFestival || '',
         city: user.city || '',
         favoriteSubgenre: user.favoriteSubgenre || '',
+        marketingConsent: user.marketingConsent || false,
       });
     }
   }, [user]);
@@ -92,6 +94,13 @@ export default function ProfileSettingsPage() {
       favoriteFestival: formData.favoriteFestival.trim() || undefined,
       city: formData.city.trim() || undefined,
       favoriteSubgenre: formData.favoriteSubgenre.trim() || undefined,
+      marketingConsent: formData.marketingConsent,
+      marketingConsentAt: formData.marketingConsent 
+        ? (user.marketingConsentAt || new Date().toISOString()) 
+        : user.marketingConsentAt,
+      marketingUnsubscribedAt: !formData.marketingConsent 
+        ? new Date().toISOString() 
+        : null,
     });
 
     if (error) {
@@ -239,6 +248,28 @@ export default function ProfileSettingsPage() {
                 onChange={handleChange}
                 placeholder="Where are you based?"
               />
+            </div>
+          </section>
+          
+          {/* Group 4: Email Preferences */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Email Preferences</h2>
+            <div className={styles.checkboxField}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="marketingConsent"
+                  checked={formData.marketingConsent}
+                  onChange={(e) => setFormData(prev => ({ ...prev, marketingConsent: e.target.checked }))}
+                  className={styles.checkbox}
+                />
+                <span className={styles.checkboxText}>
+                  Receive event announcements and updates from Singularity.
+                </span>
+              </label>
+              <p className={styles.helperText}>
+                Optional marketing emails only. Transactional emails related to your account, tickets, payments, refunds, or event changes may still be sent.
+              </p>
             </div>
           </section>
 

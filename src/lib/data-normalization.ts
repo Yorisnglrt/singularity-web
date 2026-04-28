@@ -2,6 +2,7 @@ import { Locale } from '@/i18n';
 import { Event, EventTicketType } from '@/data/events';
 import { Artist } from '@/data/artists';
 import { Mix } from '@/data/mixes';
+import { User } from '@/data/profiles';
 
 /**
  * Normalizes a potentially localized field from Supabase.
@@ -165,4 +166,44 @@ export function normalizeTicketType(tt: any): EventTicketType {
     saleEndsAt: tt.saleEndsAt || tt.sale_ends_at || null,
     sortOrder: tt.sortOrder ?? tt.sort_order ?? 0,
   };
+}
+
+/**
+ * Normalizes a profile from the API/Supabase to the User format.
+ */
+export function normalizeProfile(data: any, email?: string): User {
+  const fallbackEmail = email || data.email || '';
+  return {
+    id: data.id,
+    email: data.email || fallbackEmail,
+    displayName: data.display_name || fallbackEmail.split('@')[0],
+    avatarInitial: (data.display_name || fallbackEmail)[0]?.toUpperCase() || '?',
+    avatarUrl: data.avatar_url || undefined,
+    bio: data.bio || undefined,
+    favoriteProducer: data.favorite_producer || undefined,
+    favoriteTrack: data.favorite_track || undefined,
+    favoriteVenue: data.favorite_venue || undefined,
+    favoriteFestival: data.favorite_festival || undefined,
+    city: data.city || undefined,
+    favoriteSubgenre: data.favorite_subgenre || undefined,
+    points: data.points || 0,
+    isAdmin: data.is_admin || false,
+    createdAt: data.created_at || new Date().toISOString(),
+    memberCode: data.member_code || undefined,
+    tier: data.tier || undefined,
+    memberSince: data.member_since || undefined,
+    qrToken: data.qr_token || undefined,
+    marketingConsent: data.marketing_consent || false,
+    marketingConsentAt: data.marketing_consent_at || null,
+    marketingUnsubscribedAt: data.marketing_unsubscribed_at || null,
+  };
+}
+
+/**
+ * Maps Rave Points to community tiers.
+ */
+export function getMemberTier(points: number): string {
+  if (points >= 1500) return 'Core Member';
+  if (points >= 500) return 'Resident';
+  return 'Observer';
 }

@@ -21,6 +21,7 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +38,7 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
         }
         onClose();
       } else if (mode === 'register') {
-        const result = await register(email, password, displayName);
+        const result = await register(email, password, displayName, marketingConsent);
         if (result?.error) {
           setError(result.error);
           return;
@@ -130,6 +131,25 @@ export default function AuthModal({ onClose, defaultMode = 'login' }: AuthModalP
                 required
               />
             </div>
+          )}
+
+          {mode === 'register' && (
+            <label className={styles.checkboxField}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+              />
+              <div className={styles.checkboxText}>
+                <span className={styles.checkboxLabel}>
+                  I want to receive event announcements and updates from Singularity.
+                </span>
+                <span className={styles.checkboxHelper}>
+                  Optional. You can unsubscribe at any time. Transactional emails related to your account or tickets may still be sent.
+                </span>
+              </div>
+            </label>
           )}
 
           {error && <div className={styles.error}>{error}</div>}

@@ -4,27 +4,9 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  avatarInitial: string;
-  avatarUrl?: string;
-  bio?: string;
-  favoriteProducer?: string;
-  favoriteTrack?: string;
-  favoriteVenue?: string;
-  favoriteFestival?: string;
-  city?: string;
-  favoriteSubgenre?: string;
-  points: number;
-  isAdmin: boolean;
-  createdAt: string;
-  memberCode?: string;
-  tier?: string;
-  memberSince?: string;
-  qrToken?: string;
-}
+import { User } from '@/data/profiles';
+export type { User };
+import { normalizeProfile } from '@/lib/data-normalization';
 
 export interface EventInteraction {
   eventId: string;
@@ -35,9 +17,9 @@ interface AuthContextType {
   user: User | null;
   interactions: EventInteraction[];
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  register: (email: string, password: string, displayName: string) => Promise<{ error?: string }>;
+  register: (email: string, password: string, displayName: string, marketingConsent: boolean) => Promise<{ error?: string }>;
   logout: () => void;
-  toggleInteraction: (eventId: string, action: EventInteraction['action']) => void;
+  toggleInteraction: (eventId: string, action: EventInteraction['action'], eventLegacyId?: string) => Promise<void>;
   hasInteraction: (eventId: string, action: EventInteraction['action']) => boolean;
   isLoading: boolean;
   showAuthModal: boolean;
@@ -106,38 +88,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
-        const userData: User = {
-          id: data.id,
-          email: data.email || email,
-          displayName: data.display_name || email.split('@')[0],
-          avatarInitial: (data.display_name || email)[0].toUpperCase(),
-          avatarUrl: data.avatar_url,
-          bio: data.bio,
-          favoriteProducer: data.favorite_producer,
-          favoriteTrack: data.favorite_track,
-          favoriteVenue: data.favorite_venue,
-          favoriteFestival: data.favorite_festival,
-          city: data.city,
-          favoriteSubgenre: data.favorite_subgenre,
-          points: data.points || 0,
-          isAdmin: data.is_admin || false,
-          createdAt: data.created_at || new Date().toISOString(),
-          memberCode: data.member_code || undefined,
-          tier: data.tier || undefined,
-          memberSince: data.member_since || undefined,
-          qrToken: data.qr_token || undefined,
-        };
+        const userData = normalizeProfile(data, email);
         setUser(userData);
 
         // Load interactions from Supabase
         const { data: interactionsData } = await supabase
           .from('event_reactions')
-          .select('event_id, action')
+          .select('event_id, event_id_legacy, action')
           .eq('user_id', data.id);
         
         if (interactionsData) {
           setInteractions(interactionsData.map(i => ({
-            eventId: i.event_id,
+            eventId: (i.event_id || i.event_id_legacy) as string,
             action: i.action as EventInteraction['action']
           })));
         }
@@ -147,9 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, displayName: string): Promise<{ error?: string }> => {
+  const register = async (
+    email: string, 
+    password: string, 
+    displayName: string, 
+    marketingConsent: boolean
+  ): Promise<{ error?: string }> => {
     try {
-      console.log('REGISTER START', { email, displayName });
+      console.log('REGISTER START', { email, displayName, marketingConsent });
 
       // 1. Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -177,6 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           display_name: displayName || '',
           points: 0,
           created_at: new Date().toISOString(),
+          marketing_consent: marketingConsent,
+          marketing_consent_at: marketingConsent ? new Date().toISOString() : null,
         });
 
       if (profileError) {
@@ -229,7 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.refresh();
   };
 
-  const toggleInteraction = async (eventId: string, action: EventInteraction['action']) => {
+  const toggleInteraction = async (
+    eventId: string, 
+    action: EventInteraction['action'],
+    eventLegacyId?: string
+  ) => {
     if (!user) return;
     
     // Check if it exists in local state
@@ -245,14 +218,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       if (exists) {
+        // For deletion, we try to match either column to be safe
+        const match: any = { user_id: user.id, action: action };
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
+        
+        if (isUuid) {
+          match.event_id = eventId;
+        } else {
+          match.event_id_legacy = eventId;
+        }
+
         await supabase
           .from('event_reactions')
           .delete()
-          .match({ event_id: eventId, user_id: user.id, action: action });
+          .match(match);
       } else {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
+        const payload: any = { 
+          user_id: user.id, 
+          action: action,
+          event_id_legacy: eventLegacyId || eventId // Must be provided as it's NOT NULL
+        };
+        
+        if (isUuid) {
+          payload.event_id = eventId;
+        }
+
         await supabase
           .from('event_reactions')
-          .insert({ event_id: eventId, user_id: user.id, action: action });
+          .insert(payload);
       }
     } catch (e) {
       console.error('Failed to toggle interaction in Supabase:', e);
@@ -276,6 +270,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.favoriteFestival !== undefined) dbUpdate.favorite_festival = data.favoriteFestival;
       if (data.city !== undefined) dbUpdate.city = data.city;
       if (data.favoriteSubgenre !== undefined) dbUpdate.favorite_subgenre = data.favoriteSubgenre;
+      if (data.marketingConsent !== undefined) dbUpdate.marketing_consent = data.marketingConsent;
+      if (data.marketingConsentAt !== undefined) dbUpdate.marketing_consent_at = data.marketingConsentAt;
+      if (data.marketingUnsubscribedAt !== undefined) dbUpdate.marketing_unsubscribed_at = data.marketingUnsubscribedAt;
 
       const { error } = await supabase
         .from('profiles')

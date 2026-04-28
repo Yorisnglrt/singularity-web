@@ -101,6 +101,28 @@
   border-radius: var(--radius-full);
   width: fit-content;
 }
+
+.rankBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-top: 1rem;
+}
+
+.rankLabel {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-text-muted);
+}
+
+.rankValue {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-primary);
+  letter-spacing: 0.02em;
+}
 .pointsIcon { color: var(--color-accent-primary); font-size: 0.75rem; }
 .pointsValue { font-family: var(--font-heading); font-weight: var(--weight-bold); color: var(--color-accent-primary); }
 .pointsLabel { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -159,7 +181,7 @@
 /* Stats */
 .stats {
   display: flex;
-  gap: 2rem;
+  gap: 1.25rem;
   margin-bottom: 3rem;
   flex-wrap: wrap;
 }
@@ -167,29 +189,69 @@
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 1.25rem 2rem;
+  gap: 0.15rem;
+  padding: 0.75rem 1.25rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   text-align: center;
   flex: 1;
-  min-width: 100px;
+  min-width: 90px;
+  transition: border-color 0.2s;
+}
+
+.stat:hover {
+  border-color: rgba(var(--color-accent-primary-rgb), 0.2);
 }
 
 .statValue {
   font-family: var(--font-heading);
-  font-size: var(--text-4xl);
+  font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
 }
 
 .statLabel {
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   color: var(--color-text-muted);
+}
+
+.badgeRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.miniBadge {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.attendingBadge {
+  background: rgba(0, 255, 178, 0.1);
+  color: var(--color-accent-primary);
+  border: 1px solid rgba(0, 255, 178, 0.2);
+}
+
+.interestedBadge {
+  background: rgba(255, 204, 0, 0.1);
+  color: #ffcc00;
+  border: 1px solid rgba(255, 204, 0, 0.2);
+}
+
+.likeBadge {
+  background: rgba(255, 59, 92, 0.1);
+  color: #ff3b5c;
+  border: 1px solid rgba(255, 59, 92, 0.2);
 }
 
 /* Sections */
@@ -254,14 +316,10 @@
 }
 
 /* Favorites */
-.favoritesSection {
-  margin-bottom: 3rem;
-}
-
 .favoritesGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: 1rem;
   margin-top: 1rem;
 }
 
@@ -269,25 +327,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 1rem;
+  padding: 1.25rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  transition: border-color 0.2s;
+}
+
+.favoriteItem:hover {
+  border-color: rgba(var(--color-accent-primary-rgb), 0.2);
 }
 
 .favoriteLabel {
-  font-size: var(--text-xs);
+  font-size: 10px;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font-mono);
 }
 
 .favoriteValue {
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   color: #fff;
   font-weight: 700;
   font-family: var(--font-heading);
+  line-height: 1.2;
 }
 
 /* Empty */

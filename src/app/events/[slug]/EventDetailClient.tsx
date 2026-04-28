@@ -101,15 +101,15 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 180px))',
-                    gap: 'var(--space-4)',
-                    justifyContent: 'center',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                    gap: 'var(--space-3)',
+                    justifyContent: 'flex-start',
                     alignItems: 'stretch',
                     marginTop: 'var(--space-4)',
                   }}
                 >
                   {lineupArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} compact />
+                    <ArtistCard key={artist.id} artist={artist} variant="lineup" />
                   ))}
                 </div>
               ) : (
@@ -125,6 +125,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
             <div className={styles.section}>
               <EventActions
                 eventId={event.id}
+                eventSlug={event.slug}
                 ticketUrl={event.ticketUrl}
                 ticketProvider={event.ticketProvider}
                 isFree={event.isFree}
