@@ -235,6 +235,38 @@ select.input option:focus {
   background: rgba(var(--color-accent-primary-rgb), 0.2);
 }
 
+/* Ticket-type name preset chips */
+.presetRow {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.presetChip {
+  padding: 0.2rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetChip:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.presetChipActive {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+  background: rgba(var(--color-accent-primary-rgb), 0.08);
+}
+
 /* Locale tabs */
 .localeTabs {
   display: flex;

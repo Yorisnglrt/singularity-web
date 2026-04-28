@@ -6,6 +6,9 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+const ALLOWED_TYPES = ['artists', 'events', 'mixes', 'supporters', 'event_ticket_types'] as const;
+type AllowedType = typeof ALLOWED_TYPES[number];
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
@@ -30,20 +33,26 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type');
+    const type = searchParams.get('type') as AllowedType | null;
 
-    if (!['artists', 'events', 'mixes', 'supporters'].includes(type || '')) {
+    if (!type || !ALLOWED_TYPES.includes(type)) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
-    let query = supabase.from(type!).select('*');
-    
+    let query = supabase.from(type).select('*');
+
     if (type === 'artists') {
       query = query.order('name', { ascending: true });
     } else if (type === 'events') {
       query = query.order('date', { ascending: false });
     } else if (type === 'mixes') {
       query = query.order('date', { ascending: false });
+    } else if (type === 'event_ticket_types') {
+      // Order by event grouping, then sort_order, then name
+      query = (query as any)
+        .order('event_id', { ascending: true })
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
     }
 
     const { data, error } = await query;

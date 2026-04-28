@@ -13,6 +13,22 @@ import { normalizeEvent, normalizeArtist, normalizeMix } from '@/lib/data-normal
 
 type Tab = 'artists' | 'events' | 'mixes' | 'supporters';
 
+export interface EventTicketType {
+  id: string;
+  eventId: string;   // camelCase from DB event_id after normalization
+  event_id?: string; // raw DB field
+  name: string;
+  description?: string | null;
+  priceNok: number;
+  currency: string;
+  totalQuantity?: number | null;
+  soldQuantity: number;
+  isActive: boolean;
+  saleStartsAt?: string | null;
+  saleEndsAt?: string | null;
+  sortOrder: number;
+}
+
 export default function AdminPage() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
@@ -28,6 +44,7 @@ export default function AdminPage() {
   const [activeItem, setActiveItem] = useState<any>(null);
   const [statusMsg, setStatusMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [ticketTypes, setTicketTypes] = useState<EventTicketType[]>([]);
 
   const fetchData = async (type: Tab) => {
     try {
@@ -54,6 +71,37 @@ export default function AdminPage() {
     }
   };
 
+  const fetchTicketTypes = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/data?type=event_ticket_types`, {
+        cache: 'no-store',
+        headers: { 'Authorization': `Bearer ${session?.access_token || ''}` }
+      });
+      if (res.ok) {
+        const json: any[] = await res.json();
+        // Normalize snake_case → camelCase
+        const normalized: EventTicketType[] = json.map(tt => ({
+          id: tt.id,
+          eventId: tt.event_id,
+          name: tt.name,
+          description: tt.description ?? null,
+          priceNok: tt.price_nok ?? 0,
+          currency: tt.currency ?? 'NOK',
+          totalQuantity: tt.total_quantity ?? null,
+          soldQuantity: tt.sold_quantity ?? 0,
+          isActive: tt.is_active ?? true,
+          saleStartsAt: tt.sale_starts_at ?? null,
+          saleEndsAt: tt.sale_ends_at ?? null,
+          sortOrder: tt.sort_order ?? 0,
+        }));
+        setTicketTypes(normalized);
+      }
+    } catch (e) {
+      console.error('Failed to load ticket types:', e);
+    }
+  };
+
   useEffect(() => {
     if (!isLoading && (!user || !user.isAdmin)) {
       router.push('/');
@@ -62,6 +110,7 @@ export default function AdminPage() {
       fetchData('events');
       fetchData('mixes');
       fetchData('supporters');
+      fetchTicketTypes();
     }
   }, [user, isLoading, router]);
 
@@ -87,6 +136,55 @@ export default function AdminPage() {
       }
     } catch (e) {
       setStatusMsg('Error saving.');
+    }
+  };
+
+  // Save a single ticket type (create or update)
+  const saveTicketType = async (tt: EventTicketType) => {
+    try {
+      setStatusMsg('Saving ticket type...');
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ type: 'event_ticket_types', data: [tt] })
+      });
+      if (res.ok) {
+        await fetchTicketTypes();
+        setStatusMsg('Ticket type saved!');
+        setTimeout(() => setStatusMsg(''), 3000);
+      } else {
+        const err = await res.json();
+        setStatusMsg(`Failed to save ticket type: ${err.error || 'Unknown error'}`);
+      }
+    } catch (e) {
+      setStatusMsg('Error saving ticket type.');
+    }
+  };
+
+  // Delete a single ticket type
+  const deleteTicketType = async (id: string) => {
+    if (!confirm('Delete this ticket type?')) return;
+    try {
+      setStatusMsg('Deleting ticket type...');
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ type: 'event_ticket_types', id })
+      });
+      if (res.ok) {
+        setTicketTypes(prev => prev.filter(t => t.id !== id));
+        setStatusMsg('Ticket type deleted.');
+        setTimeout(() => setStatusMsg(''), 3000);
+      } else {
+        const err = await res.json();
+        setStatusMsg(`Failed to delete: ${err.error || 'Unknown error'}`);
+      }
+    } catch (e) {
+      setStatusMsg('Error deleting ticket type.');
+    } finally {
+      setTimeout(() => setStatusMsg(''), 3000);
     }
   };
 
@@ -579,11 +677,14 @@ export default function AdminPage() {
                   key={activeItem.id}
                   item={activeItem}
                   allArtists={data.artists}
+                  ticketTypes={ticketTypes.filter((tt: EventTicketType) => tt.eventId === activeItem.id)}
                   onSave={handleEventSave}
                   onDuplicate={handleEventDuplicate}
                   onCancel={() => setActiveItem(null)}
                   onUpload={handleUploadFile}
                   uploading={uploading}
+                  onSaveTicketType={saveTicketType}
+                  onDeleteTicketType={deleteTicketType}
                 />
               ) : (
                 <div>

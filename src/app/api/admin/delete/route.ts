@@ -32,7 +32,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { type, id } = body;
 
-    if (!['artists', 'events', 'mixes', 'supporters'].includes(type) || !id) {
+    // ticket_orders and ticket_order_items are intentionally not deletable here
+    if (!['artists', 'events', 'mixes', 'supporters', 'event_ticket_types'].includes(type) || !id) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 

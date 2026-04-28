@@ -97,5 +97,6 @@
   "membership.how.presale": "+150 RP za lístek v předprodeji",
   "membership.how.friend": "+100 RP když přivedeš kámoše",
   "membership.qr.scan": "NASKENUJ PRO REGISTRACI",
-  "membership.qr.add": "PŘIDAT DO WALLETU"
+  "membership.qr.add": "PŘIDAT DO WALLETU",
+  "termsOfSale.title": "Obchodní podmínky"
 }

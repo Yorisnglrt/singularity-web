@@ -1,5 +1,5 @@
 import { Locale } from '@/i18n';
-import { Event } from '@/data/events';
+import { Event, EventTicketType } from '@/data/events';
 import { Artist } from '@/data/artists';
 import { Mix } from '@/data/mixes';
 
@@ -77,6 +77,7 @@ export function normalizeEvent(event: any): Event {
     ticketPriceOre: event.ticketPriceOre ?? event.ticket_price_ore ?? null,
     isFeatured: !!(event.isFeatured ?? event.is_featured),
     isPast,
+    ageRestriction: (event.ageRestriction ?? event.age_restriction ?? '18+') as '18+' | '20+' | '21+',
   };
 }
 
@@ -144,4 +145,24 @@ export function resolveLineupArtists(
       });
     })
     .filter((artist): artist is Artist => Boolean(artist));
+}
+
+/**
+ * Normalizes a ticket type from the API/Supabase.
+ */
+export function normalizeTicketType(tt: any): EventTicketType {
+  return {
+    id: tt.id,
+    eventId: tt.eventId || tt.event_id,
+    name: tt.name || 'Standard Ticket',
+    description: tt.description || null,
+    priceNok: tt.priceNok ?? tt.price_nok ?? 0,
+    currency: tt.currency || 'NOK',
+    totalQuantity: tt.totalQuantity ?? tt.total_quantity ?? null,
+    soldQuantity: tt.soldQuantity ?? tt.sold_quantity ?? 0,
+    isActive: !!(tt.isActive ?? tt.is_active),
+    saleStartsAt: tt.saleStartsAt || tt.sale_starts_at || null,
+    saleEndsAt: tt.saleEndsAt || tt.sale_ends_at || null,
+    sortOrder: tt.sortOrder ?? tt.sort_order ?? 0,
+  };
 }

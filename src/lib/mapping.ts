@@ -84,6 +84,7 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
     ticket_provider: rest.ticketProvider || rest.ticket_provider || 'external',
     ticket_price_ore: rest.ticketPriceOre ?? rest.ticket_price_ore ?? null,
     is_past: !!(rest.isPast ?? rest.is_past),
+    age_restriction: rest.ageRestriction ?? rest.age_restriction ?? '18+',
   };
 
   return row;
@@ -131,6 +132,40 @@ export function mapMixToDb(mix: any) {
 /**
  * Generic dispatcher to map frontend payloads to DB rows based on table type.
  */
+/**
+ * Maps frontend EventTicketType object to DB Row for public.event_ticket_types.
+ */
+export function mapTicketTypeToDb(tt: any) {
+  const priceNok = parseInt(String(tt.priceNok ?? tt.price_nok ?? 0), 10);
+  const totalQuantity = tt.totalQuantity != null && tt.totalQuantity !== ''
+    ? parseInt(String(tt.totalQuantity ?? tt.total_quantity), 10)
+    : (tt.total_quantity != null ? parseInt(String(tt.total_quantity), 10) : null);
+
+  // Generate a proper UUID for new ticket types (frontend uses 'new-tt-...' temp IDs)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tt.id);
+  const id = isUUID ? tt.id : crypto.randomUUID();
+
+  // event_id may also be a non-UUID slug; resolve it the same way events do
+  const eventIdRaw = tt.eventId ?? tt.event_id;
+  const eventIdIsUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventIdRaw);
+  const event_id = eventIdIsUUID ? eventIdRaw : generateDeterministicUUID(eventIdRaw);
+
+  return {
+    id,
+    event_id,
+    name: tt.name,
+    description: tt.description ?? null,
+    price_nok: isNaN(priceNok) ? 0 : Math.max(0, priceNok),
+    currency: tt.currency ?? 'NOK',
+    total_quantity: totalQuantity != null && !isNaN(totalQuantity) ? Math.max(0, totalQuantity) : null,
+    sold_quantity: parseInt(String(tt.soldQuantity ?? tt.sold_quantity ?? 0), 10) || 0,
+    is_active: tt.isActive ?? tt.is_active ?? true,
+    sale_starts_at: tt.saleStartsAt ?? tt.sale_starts_at ?? null,
+    sale_ends_at: tt.saleEndsAt ?? tt.sale_ends_at ?? null,
+    sort_order: parseInt(String(tt.sortOrder ?? tt.sort_order ?? 0), 10) || 0,
+  };
+}
+
 export function mapPayloadToDb(type: string, data: any[]) {
   if (!Array.isArray(data)) return [];
 
@@ -143,6 +178,8 @@ export function mapPayloadToDb(type: string, data: any[]) {
       return data.map(d => mapArtistToDb(d));
     case 'mixes':
       return data.map(d => mapMixToDb(d));
+    case 'event_ticket_types':
+      return data.map(d => mapTicketTypeToDb(d));
     default:
       return data;
   }

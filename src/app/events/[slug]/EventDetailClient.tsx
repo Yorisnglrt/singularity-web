@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { Artist } from '@/data/artists';
 import ArtistCard from '@/components/ArtistCard';
-import { Event, toSlug } from '@/data/events';
+import { Event, EventTicketType, toSlug } from '@/data/events';
 import EventActions from '@/components/EventActions';
 import EventDiscussion from '@/components/EventDiscussion';
+import TicketPurchaseSection from '@/components/TicketPurchaseSection';
 import { resolveLineupArtists } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
 interface Props {
   event: Event;
   artists: Artist[];
+  ticketTypes: EventTicketType[];
 }
 
-export default function EventDetailClient({ event, artists }: Props) {
+export default function EventDetailClient({ event, artists, ticketTypes }: Props) {
+  const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
   const day = eventDate.getDate();
@@ -128,6 +131,16 @@ export default function EventDetailClient({ event, artists }: Props) {
                 isPast={event.isPast}
               />
             </div>
+
+            {/* Ticket Checkout Section (Feature Flagged) */}
+            {enableCheckout && ticketTypes.length > 0 && !event.isPast && (
+              <div className={styles.section} id="tickets">
+                <TicketPurchaseSection 
+                  event={event} 
+                  ticketTypes={ticketTypes} 
+                />
+              </div>
+            )}
 
             {/* Discussion Section */}
             <EventDiscussion eventId={event.id} />

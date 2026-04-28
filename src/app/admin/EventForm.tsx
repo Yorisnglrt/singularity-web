@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import styles from './EventForm.module.css';
+import type { EventTicketType } from './page';
 
 // Helper to extract colors from existing posterColor gradient
 function parseGradient(css: string): { colorA: string; colorB: string; dir: string } {
@@ -50,16 +51,20 @@ interface EventLike {
   ticketPriceOre?: number | null;
   isPast: boolean;
   isFeatured?: boolean;
+  ageRestriction?: '18+' | '20+' | '21+';
 }
 
 interface Props {
   item: EventLike;
   allArtists: Artist[];
+  ticketTypes: EventTicketType[];
   onSave: (item: EventLike) => void;
   onDuplicate: (item: EventLike) => void;
   onCancel: () => void;
   onUpload: (file: File) => Promise<string>;
   uploading: boolean;
+  onSaveTicketType: (tt: EventTicketType) => void;
+  onDeleteTicketType: (id: string) => void;
 }
 
 const LOCALES = [
@@ -71,9 +76,13 @@ const LOCALES = [
 
 type Locale = typeof LOCALES[number]['key'];
 
-export default function EventForm({ item, allArtists, onSave, onDuplicate, onCancel, onUpload, uploading }: Props) {
+export default function EventForm({ item, allArtists, ticketTypes, onSave, onDuplicate, onCancel, onUpload, uploading, onSaveTicketType, onDeleteTicketType }: Props) {
   const [ev, setEv] = useState<EventLike>(item);
   const [descLocale, setDescLocale] = useState<Locale>('en');
+
+  // ── Ticket-type editing state ──
+  const [editingTT, setEditingTT] = useState<EventTicketType | null>(null);
+  const [ttErrors, setTtErrors] = useState<Record<string, string>>({});
 
   // Parse out date/time parts
   const dateOnly = ev.date?.split('T')[0] || '';
@@ -128,6 +137,56 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
   const handleDuplicate = () => {
     const dup = { ...ev, id: `event-${Date.now()}`, title: ev.title + ' (copy)' };
     onDuplicate(dup);
+  };
+
+  // ── Ticket-type helpers ──
+  const newBlankTT = (): EventTicketType => ({
+    id: `new-tt-${Date.now()}`,
+    eventId: ev.id,
+    name: '',
+    description: '',
+    priceNok: 0,
+    currency: 'NOK',
+    totalQuantity: null,
+    soldQuantity: 0,
+    isActive: true,
+    saleStartsAt: null,
+    saleEndsAt: null,
+    sortOrder: (ticketTypes.length + 1) * 10,
+  });
+
+  const validateTT = (tt: EventTicketType): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!tt.name.trim()) errs.name = 'Name is required';
+    const price = Number(tt.priceNok);
+    if (!Number.isInteger(price) || price < 0) errs.priceNok = 'Must be an integer ≥ 0';
+    if (tt.totalQuantity != null && tt.totalQuantity !== ('' as any)) {
+      const qty = Number(tt.totalQuantity);
+      if (!Number.isInteger(qty) || qty < tt.soldQuantity) {
+        errs.totalQuantity = `Must be an integer ≥ ${tt.soldQuantity} (sold)`;
+      }
+    }
+    if (tt.saleStartsAt && tt.saleEndsAt && tt.saleEndsAt < tt.saleStartsAt) {
+      errs.saleEndsAt = 'End cannot be before start';
+    }
+    return errs;
+  };
+
+  const handleSaveTT = () => {
+    if (!editingTT) return;
+    const errs = validateTT(editingTT);
+    setTtErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    // Normalize empty-string sentinel back to null for the DB
+    const toSave = { ...editingTT, saleEndsAt: editingTT.saleEndsAt || null };
+    onSaveTicketType(toSave);
+    setEditingTT(null);
+    setTtErrors({});
+  };
+
+  const handleCancelTT = () => {
+    setEditingTT(null);
+    setTtErrors({});
   };
 
   const currentGradient = buildGradient(colorA, colorB, gradDir);
@@ -198,6 +257,15 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
                 <option value="archive">Archive</option>
               </select>
             </div>
+          </div>
+
+          <div className={styles.field} style={{ marginBottom: '1rem' }}>
+            <label className={styles.label}>Age Restriction</label>
+            <select className={styles.input} value={ev.ageRestriction || '18+'} onChange={e => update({ ageRestriction: e.target.value as '18+' | '20+' | '21+' })}>
+              <option value="18+">18+</option>
+              <option value="20+">20+</option>
+              <option value="21+">21+</option>
+            </select>
           </div>
 
           <div className={styles.row2}>
@@ -350,6 +418,128 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
           </div>
         </section>
 
+        {/* ── Ticket Types ── */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Ticket Types</h3>
+
+          {/* List existing ticket types */}
+          {ticketTypes.length === 0 && !editingTT && (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>No ticket types yet.</p>
+          )}
+
+          {ticketTypes.map(tt => (
+            <div key={tt.id} className={styles.lineupChip} style={{ marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span className={styles.lineupName} style={{ flex: 1, minWidth: 120 }}>
+                <strong>{tt.name}</strong>{' '}
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+                  {tt.priceNok} NOK · {tt.isActive ? '✓ Active' : '✗ Inactive'}
+                  {tt.totalQuantity != null ? ` · ${tt.soldQuantity}/${tt.totalQuantity} sold` : ` · ${tt.soldQuantity} sold`}
+                </span>
+              </span>
+              <button
+                className={styles.addBtn}
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                onClick={() => { setEditingTT({ ...tt }); setTtErrors({}); }}
+              >Edit</button>
+              <button className={styles.removeBtn} onClick={() => onDeleteTicketType(tt.id)}>✕</button>
+            </div>
+          ))}
+
+          {/* Editing / adding form */}
+          {editingTT ? (
+            <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)' }}>
+              <h4 style={{ fontSize: '0.85rem', marginBottom: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                {editingTT.id.startsWith('new-tt-') ? 'New Ticket Type' : `Edit: ${editingTT.name || '…'}`}
+              </h4>
+
+              <div className={styles.row2}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Name *</label>
+                  <input className={styles.input} value={editingTT.name} onChange={e => setEditingTT({ ...editingTT, name: e.target.value })} placeholder="e.g. Early Bird" />
+                  <div className={styles.presetRow}>
+                    {['Early Bird', 'Regular', 'Final Release'].map(preset => (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={`${styles.presetChip} ${editingTT.name === preset ? styles.presetChipActive : ''}`}
+                        onClick={() => setEditingTT({ ...editingTT, name: preset })}
+                      >{preset}</button>
+                    ))}
+                  </div>
+                  {ttErrors.name && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.name}</span>}
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Description</label>
+                  <input className={styles.input} value={editingTT.description || ''} onChange={e => setEditingTT({ ...editingTT, description: e.target.value })} placeholder="Optional description" />
+                </div>
+              </div>
+
+              <div className={styles.row2} style={{ marginTop: '0.5rem' }}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Price (NOK) *</label>
+                  <input type="number" className={styles.input} value={editingTT.priceNok} onChange={e => setEditingTT({ ...editingTT, priceNok: e.target.value === '' ? 0 : parseInt(e.target.value) })} min={0} step={1} />
+                  {ttErrors.priceNok && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.priceNok}</span>}
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Total Quantity</label>
+                  <input type="number" className={styles.input} value={editingTT.totalQuantity ?? ''} onChange={e => setEditingTT({ ...editingTT, totalQuantity: e.target.value === '' ? null : parseInt(e.target.value) })} min={0} step={1} placeholder="Unlimited if empty" />
+                  {ttErrors.totalQuantity && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.totalQuantity}</span>}
+                </div>
+              </div>
+
+              <div className={styles.row2} style={{ marginTop: '0.5rem' }}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Sold Quantity</label>
+                  <input type="number" className={styles.input} value={editingTT.soldQuantity} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Read-only (managed by system)</p>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Sort Order</label>
+                  <input type="number" className={styles.input} value={editingTT.sortOrder} onChange={e => setEditingTT({ ...editingTT, sortOrder: parseInt(e.target.value) || 0 })} step={1} />
+                </div>
+              </div>
+
+              <div className={styles.row2} style={{ marginTop: '0.5rem' }}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Sale Starts At</label>
+                  <input type="datetime-local" className={styles.input} value={editingTT.saleStartsAt ? editingTT.saleStartsAt.slice(0, 16) : ''} onChange={e => setEditingTT({ ...editingTT, saleStartsAt: e.target.value ? e.target.value + ':00Z' : null })} />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Sale Ends At</label>
+                  <div className={styles.toggleRow} style={{ marginBottom: '0.35rem' }}>
+                    <input type="checkbox" id="ttSellUntilSoldOut" checked={!editingTT.saleEndsAt} onChange={e => {
+                      if (e.target.checked) {
+                        setEditingTT({ ...editingTT, saleEndsAt: null });
+                      } else {
+                        // Enable the date picker with a placeholder value so admin can set a date
+                        setEditingTT({ ...editingTT, saleEndsAt: '' as any });
+                      }
+                    }} />
+                    <label htmlFor="ttSellUntilSoldOut" style={{ fontSize: '0.78rem' }}>Sell until sold out</label>
+                  </div>
+                  <input type="datetime-local" className={styles.input} value={editingTT.saleEndsAt ? editingTT.saleEndsAt.slice(0, 16) : ''} disabled={!editingTT.saleEndsAt && editingTT.saleEndsAt !== ''} style={!editingTT.saleEndsAt && editingTT.saleEndsAt !== '' ? { opacity: 0.4, cursor: 'not-allowed' } : {}} onChange={e => setEditingTT({ ...editingTT, saleEndsAt: e.target.value ? e.target.value + ':00Z' : null })} />
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Leave empty to sell until sold out or manually disabled.</p>
+                  {ttErrors.saleEndsAt && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.saleEndsAt}</span>}
+                </div>
+              </div>
+
+              <div className={styles.toggleRow} style={{ marginTop: '0.75rem' }}>
+                <input type="checkbox" id="ttIsActive" checked={editingTT.isActive} onChange={e => setEditingTT({ ...editingTT, isActive: e.target.checked })} />
+                <label htmlFor="ttIsActive">Active (visible for purchase)</label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button className={styles.saveBtn} style={{ padding: '0.5rem 1.25rem' }} onClick={handleSaveTT}>Save Ticket Type</button>
+                <button className={styles.cancelBtn} onClick={handleCancelTT}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className={styles.addBtn} style={{ marginTop: '0.75rem' }} onClick={() => setEditingTT(newBlankTT())}>
+              + Add Ticket Type
+            </button>
+          )}
+        </section>
+
         {/* ── Description ── */}
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Description <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional)</span></h3>
@@ -389,6 +579,7 @@ export default function EventForm({ item, allArtists, onSave, onDuplicate, onCan
               <span className={styles.previewMonth}>{previewDate ? previewDate.toLocaleString('en', { month: 'short' }).toUpperCase() : '—'}</span>
             </div>
             <span className={`${styles.previewTag} ${ev.type === 'outdoor' ? styles.previewTagPurple : ''}`}>{ev.type || 'club'}</span>
+            <span className={styles.previewTag} style={{ marginLeft: '0.25rem' }}>{ev.ageRestriction || '18+'}</span>
           </div>
           <div className={styles.previewInfo}>
             <div className={styles.previewTitle}>{ev.title || 'Event title'}</div>

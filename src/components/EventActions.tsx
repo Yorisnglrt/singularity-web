@@ -35,6 +35,7 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
   const [purchasing, setPurchasing] = useState(false);
   const [reactors, setReactors] = useState<Reactor[]>([]);
   const [totalReactors, setTotalReactors] = useState(0);
+  const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
 
   const fetchInteractionStats = async () => {
     // 1. Fetch Counts (Robust, no join)
@@ -150,7 +151,7 @@ export default function EventActions({ eventId, ticketUrl, ticketProvider, isFre
   return (
     <>
       <div className={styles.wrapper}>
-        {!isPast && (
+        {!isPast && !enableCheckout && (
           <div className={styles.ticketRow}>
             {isFree ? (
               <span className="tag">Free entry</span>

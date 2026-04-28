@@ -45,9 +45,14 @@ export default function EventCard({ event, featured }: EventCardProps) {
       <div className={styles.info}>
         <div className={styles.topRow}>
           <span className={styles.dateText}>{day} {month} {year}</span>
-          <span className={`tag ${event.type === 'underground' ? 'tag--hot' : event.type === 'outdoor' ? 'tag--purple' : ''}`}>
-            {t(`events.filter.${event.type}`)}
-          </span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            {event.ageRestriction && (
+              <span className="tag" style={{ fontSize: 'var(--text-xs)', padding: '0.15em 0.5em' }}>{event.ageRestriction}</span>
+            )}
+            <span className={`tag ${event.type === 'underground' ? 'tag--hot' : event.type === 'outdoor' ? 'tag--purple' : ''}`}>
+              {t(`events.filter.${event.type}`)}
+            </span>
+          </div>
         </div>
 
         <h3 className={styles.title}>{event.title}</h3>

@@ -21,6 +21,22 @@ export interface Event {
   ticketPriceOre?: number | null;
   isPast?: boolean;
   isFeatured?: boolean;
+  ageRestriction?: '18+' | '20+' | '21+';
+}
+
+export interface EventTicketType {
+  id: string;
+  eventId: string;
+  name: string;
+  description: string | null;
+  priceNok: number;
+  currency: string;
+  totalQuantity: number | null;
+  soldQuantity: number;
+  isActive: boolean;
+  saleStartsAt: string | null;
+  saleEndsAt: string | null;
+  sortOrder: number;
 }
 
 /** Generate a stable URL slug from the event title, falling back to the id */

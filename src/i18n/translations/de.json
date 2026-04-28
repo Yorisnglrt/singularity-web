@@ -97,5 +97,6 @@
   "membership.how.presale": "+150 RP für Vorverkauf-Ticket",
   "membership.how.friend": "+100 RP, wenn du einen Freund mitbringst",
   "membership.qr.scan": "ZUM REGISTRIEREN SCANNEN",
-  "membership.qr.add": "ZUM WALLET HINZUFÜGEN"
+  "membership.qr.add": "ZUM WALLET HINZUFÜGEN",
+  "termsOfSale.title": "Verkaufsbedingungen"
 }

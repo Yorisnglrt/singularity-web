@@ -54,6 +54,7 @@ export default function Footer() {
             <div className={styles.legalLinks}>
               <Link href="/privacy-policy">{t('privacy.title')}</Link>
               <Link href="/cookies">{t('cookies.title')}</Link>
+              <Link href="/terms-of-sale">{t('termsOfSale.title')}</Link>
             </div>
           </div>
           <p className={styles.location}>OSLO, NORWAY</p>
