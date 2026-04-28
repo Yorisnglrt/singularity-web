@@ -136,9 +136,15 @@ export default function TermsOfSale() {
         </section>
 
         {/* 13. Contact */}
-        <div className={styles.contact}>
-          For any questions about these terms or your purchase, contact us at: info@singularity-oslo.no
-        </div>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>13. Contact</h2>
+          <p className={styles.text}>
+            For any questions about these Terms of Sale, payments, refunds, tickets, or event access, contact:
+          </p>
+          <p className={styles.text}>
+            info@singularity-oslo.no
+          </p>
+        </section>
       </div>
     </div>
   );
