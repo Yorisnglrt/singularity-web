@@ -51,7 +51,13 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const upcomingEvents = events.filter(e => !e.isPast);
+  const upcomingEvents = useMemo(() => {
+    const yesterday = Date.now() - 24 * 60 * 60 * 1000;
+    return [...events]
+      .filter(e => !e.isPast && new Date(e.date).getTime() > yesterday)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [events]);
+
   const nextEvent = upcomingEvents[0];
 
   const nextEventLineupArtists = useMemo(() => {
@@ -77,16 +83,19 @@ export default function Home() {
     return groups;
   }, [mixes]);
 
-  // Auto-open first event's mixes if not already set
+  // Auto-open first event's mixes once data is available — depends only on mixesByEvent, not openEventId
   useEffect(() => {
-    if (!openEventId && Object.keys(mixesByEvent).length > 0) {
-      setOpenEventId(Object.keys(mixesByEvent)[0]);
+    const keys = Object.keys(mixesByEvent);
+    if (keys.length > 0 && !openEventId) {
+      setOpenEventId(keys[0]);
     }
-  }, [mixesByEvent, openEventId]);
+  // openEventId intentionally excluded: we only want to auto-open once on initial load
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mixesByEvent]);
 
   return (
     <>
-      <Hero />
+      <Hero nextEvent={nextEvent} />
 
       {/* Next Event - Featured */}
       {nextEvent && (

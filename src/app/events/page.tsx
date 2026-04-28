@@ -13,6 +13,7 @@ export default function EventsPage() {
   const { t } = useI18n();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [showPast, setShowPast] = useState(false);
 
@@ -24,13 +25,15 @@ export default function EventsPage() {
 
         if (!res.ok) {
           console.error('Failed to load events:', data?.error);
+          setError(data?.error || 'Failed to load events');
           setEvents([]);
           return;
         }
 
         setEvents(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Events fetch error:', err);
+        setError(err?.message || 'Network error');
         setEvents([]);
       } finally {
         setLoading(false);
@@ -90,8 +93,14 @@ export default function EventsPage() {
         <div className={styles.eventList}>
           {loading ? (
              <div className={styles.empty}>
+               <span className={styles.emptyIcon}>◈</span>
                <p>Loading events...</p>
              </div>
+          ) : error ? (
+            <div className={styles.empty}>
+              <span className={styles.emptyIcon}>⚠</span>
+              <p>Could not load events. Please try again later.</p>
+            </div>
           ) : filtered.length > 0 ? (
             filtered.map(event => (
               <EventCard key={event.id} event={event} />

@@ -22,6 +22,7 @@ export default function MixesPage() {
   const { t } = useI18n();
   const [mixes, setMixes] = useState<RawMix[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeMix, setActiveMix] = useState<string | null>(null);
   const [openEventId, setOpenEventId] = useState<string | null>(null);
 
@@ -33,6 +34,7 @@ export default function MixesPage() {
 
         if (!res.ok) {
           console.error('Failed to load mixes:', data?.error);
+          setError(data?.error || 'Failed to load mixes');
           setMixes([]);
           return;
         }
@@ -40,12 +42,13 @@ export default function MixesPage() {
         const mixesData = Array.isArray(data) ? data : [];
         setMixes(mixesData);
         
-        // Auto-open the first event category if exists
-        if (mixesData.length > 0 && !openEventId) {
-          setOpenEventId(mixesData[0].eventId);
+        // Auto-open the first event category once
+        if (mixesData.length > 0) {
+          setOpenEventId(mixesData[0].eventId ?? mixesData[0].event_id ?? null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Mixes fetch error:', err);
+        setError(err?.message || 'Network error');
         setMixes([]);
       } finally {
         setLoading(false);
@@ -53,11 +56,13 @@ export default function MixesPage() {
     };
 
     loadMixes();
-  }, [openEventId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const normalizedMixes = useMemo(() => {
     return mixes.map(mix => ({
       ...mix,
+      eventId: mix.eventId ?? (mix as any).event_id ?? 'unknown',
       label: mix.label || 'Full set',
       coverGradient: mix.coverGradient || 'linear-gradient(135deg, #222, #444)',
     }));
@@ -97,7 +102,13 @@ export default function MixesPage() {
 
         {loading ? (
           <div className={styles.empty}>
+            <span className={styles.emptyIcon}>◈</span>
             <p>Loading archive...</p>
+          </div>
+        ) : error ? (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>⚠</span>
+            <p>Could not load mixes. Please try again.</p>
           </div>
         ) : Object.keys(groupedByEvent).length > 0 ? (
           Object.entries(groupedByEvent).map(([eventId, group]) => (

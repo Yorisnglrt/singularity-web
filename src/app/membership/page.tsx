@@ -82,7 +82,7 @@ export default function MembershipPage() {
 
             <div className={styles.qrFooter}>
               {t('membership.qr.scan')}<br />
-              <strong>{t('membership.qr.add')}</strong>
+              <strong style={{ fontSize: '0.75rem', opacity: 0.7 }}>Complete registration and add your pass to Apple Wallet or Google Wallet</strong>
             </div>
 
           </div>

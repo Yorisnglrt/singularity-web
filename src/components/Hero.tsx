@@ -1,17 +1,18 @@
 'use client';
 
 import { useI18n } from '@/i18n';
-import { upcomingEvents } from '@/data/events';
 import { useEffect, useState } from 'react';
 import styles from './Hero.module.css';
+import { Event as AppEvent } from '@/data/events';
 
 function useCountdown(targetDate: string) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
 
   useEffect(() => {
     const tick = () => {
+      if (!targetDate) return;
       const diff = new Date(targetDate).getTime() - Date.now();
-      if (diff <= 0) {
+      if (isNaN(diff) || diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, mins: 0, secs: 0 });
         return;
       }
@@ -30,10 +31,14 @@ function useCountdown(targetDate: string) {
   return timeLeft;
 }
 
-export default function Hero() {
+export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
   const { t } = useI18n();
-  const nextEvent = upcomingEvents[0];
   const countdown = useCountdown(nextEvent?.date || '');
+
+  // A valid upcoming event is one in the future (countdown has at least some time left)
+  const hasUpcomingEvent = !!nextEvent && (
+    countdown.days > 0 || countdown.hours > 0 || countdown.mins > 0 || countdown.secs > 0
+  );
 
   return (
     <section className={styles.hero} id="hero">
@@ -70,7 +75,7 @@ export default function Hero() {
         <p className={styles.subtitle}>{t('hero.subtitle')}</p>
         <p className={styles.tagline}>{t('hero.tagline')}</p>
 
-        {nextEvent && (
+        {hasUpcomingEvent ? (
           <div className={styles.countdown}>
             <div className={styles.countdownUnit}>
               <span className={styles.countdownValue}>{countdown.days}</span>
@@ -88,6 +93,11 @@ export default function Hero() {
               <span className={styles.countdownValue}>{countdown.secs}</span>
               <span className={styles.countdownLabelSmall}>{t('home.countdown.secs')}</span>
             </div>
+          </div>
+        ) : (
+          <div className={styles.countdownTba}>
+            <span className={styles.countdownTbaIcon}>◈</span>
+            <span className={styles.countdownTbaText}>Next event to be announced</span>
           </div>
         )}
 

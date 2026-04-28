@@ -39,7 +39,7 @@ export default function Footer() {
             <h4 className={styles.colTitle}>{t('footer.social')}</h4>
             <nav className={styles.links}>
               <a href="https://www.instagram.com/dnbsingularity/" target="_blank" rel="noopener noreferrer">Instagram</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">SoundCloud</a>
+              <a href="https://soundcloud.com/singularity-oslo" target="_blank" rel="noopener noreferrer">SoundCloud</a>
               <a href="https://discord.gg/b5D7G6Eeys" target="_blank" rel="noopener noreferrer">Discord</a>
               <a href="https://www.facebook.com/profile.php?id=61576948133549" target="_blank" rel="noopener noreferrer">Facebook</a>
             </nav>

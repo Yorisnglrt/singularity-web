@@ -11,6 +11,7 @@ export default function ArtistsPage() {
   const { t } = useI18n();
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadArtists = async () => {
@@ -20,13 +21,15 @@ export default function ArtistsPage() {
 
         if (!res.ok) {
           console.error('Failed to load artists:', data?.error);
+          setError(data?.error || 'Failed to load artists');
           setArtists([]);
           return;
         }
 
         setArtists(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Artists fetch error:', err);
+        setError(err?.message || 'Network error');
         setArtists([]);
       } finally {
         setLoading(false);
@@ -52,18 +55,22 @@ export default function ArtistsPage() {
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionTag}>◈ {t('artists.allArtists')}</span>
-            <span className={styles.sectionCount}>{allSortedArtists.length}</span>
+            <span className={styles.sectionCount}>{loading ? '...' : allSortedArtists.length}</span>
           </div>
-          <div className={styles.grid}>
-            {allSortedArtists.map((artist) => (
-              <ArtistCard key={artist.id} artist={artist} />
-            ))}
-          </div>
+          {loading ? (
+            <p style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Loading artists...</p>
+          ) : error ? (
+            <p style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Could not load artists. Please try again later.</p>
+          ) : allSortedArtists.length === 0 ? (
+            <p style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>No artists found.</p>
+          ) : (
+            <div className={styles.grid}>
+              {allSortedArtists.map((artist) => (
+                <ArtistCard key={artist.id} artist={artist} />
+              ))}
+            </div>
+          )}
         </section>
-
-        {!loading && allSortedArtists.length === 0 && (
-          <p className={styles.noData}>No artists found.</p>
-        )}
       </div>
     </div>
   );

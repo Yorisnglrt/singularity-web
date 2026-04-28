@@ -196,6 +196,32 @@
   letter-spacing: var(--tracking-wide);
 }
 
+/* No-event TBA state */
+.countdownTba {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-6);
+  animation: fadeInUp 0.8s ease 0.4s both;
+}
+
+.countdownTbaIcon {
+  color: var(--color-accent-primary);
+  font-size: var(--text-base);
+}
+
+.countdownTbaText {
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-widest);
+}
+
 /* CTAs */
 .ctas {
   display: flex;

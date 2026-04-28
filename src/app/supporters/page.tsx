@@ -14,6 +14,7 @@ export default function SupportersPage() {
   const { t } = useI18n();
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSupporters = async () => {
@@ -23,13 +24,15 @@ export default function SupportersPage() {
 
         if (!res.ok) {
           console.error('Failed to load supporters:', data?.error);
+          setError(data?.error || 'Failed to load supporters');
           setSupporters([]);
           return;
         }
 
         setSupporters(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Supporters fetch error:', err);
+        setError(err?.message || 'Network error');
         setSupporters([]);
       } finally {
         setLoading(false);
@@ -51,6 +54,8 @@ export default function SupportersPage() {
           <div className={styles.supportersList}>
             {loading ? (
               <p>Loading supporters...</p>
+            ) : error ? (
+              <p style={{ color: 'var(--color-text-muted)' }}>Could not load supporters. Please try again later.</p>
             ) : supporters.length > 0 ? (
               supporters.map(supporter => (
                 <article key={supporter.id} className={styles.supporterCard}>
