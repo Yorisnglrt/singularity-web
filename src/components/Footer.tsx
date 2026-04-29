@@ -49,7 +49,7 @@ export default function Footer() {
         <div className={styles.bottom}>
           <div className={styles.legalInfo}>
             <p className={styles.copyright}>
-              © {year} Singularity Collective. {t('footer.rights')}
+              © {year} Singularity. {t('footer.rights')}
             </p>
             <div className={styles.legalLinks}>
               <Link href="/privacy-policy">{t('privacy.title')}</Link>
