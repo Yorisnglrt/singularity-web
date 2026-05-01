@@ -510,7 +510,13 @@
   color: #ff3b5c;
 }
 
-/* My Tickets & Active Ticket */
+.activeTicketsGrid {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
 .activeTicketCard {
   width: 180px;
   height: 180px;

@@ -5,6 +5,7 @@
 
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import QRCode from 'qrcode';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -106,13 +107,36 @@ export async function sendOrderTicketsEmail(orderId: string): Promise<{ sent: bo
 
   const eventVenue = getEventVenue(event);
 
-  // 3. Construct email content
-  const ticketListHtml = tickets.map(t => `
-    <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 4px; background: #111;">
-      <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px;">Ticket Code: ${t.ticket_code}</div>
-      <div style="color: #888; font-size: 0.8rem; word-break: break-all;">QR Payload: ${t.qr_payload}</div>
-    </div>
-  `).join('');
+  // 3. Generate QR codes and construct email content
+  const attachments: any[] = [];
+  const ticketListHtml = await Promise.all(tickets.map(async (t) => {
+    const qrBuffer = await QRCode.toBuffer(t.qr_payload, {
+      margin: 1,
+      width: 400,
+      color: {
+        dark: '#000000',
+        light: '#ffffff',
+      },
+    });
+
+    const cid = `qr-${t.ticket_code}`;
+    attachments.push({
+      filename: `${t.ticket_code}.png`,
+      content: qrBuffer,
+      cid: cid,
+    });
+
+    return `
+      <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
+        <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">Ticket: ${t.ticket_code}</div>
+        <div style="margin-bottom: 16px;">
+          <img src="cid:${cid}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 4px; display: block; margin: 0 auto;" />
+        </div>
+        <div style="color: #fff; font-size: 0.9rem; font-weight: bold; margin-bottom: 4px;">Show this QR at the entrance</div>
+        <div style="color: #888; font-size: 0.7rem; word-break: break-all; opacity: 0.5;">${t.qr_payload}</div>
+      </div>
+    `;
+  })).then(htmls => htmls.join(''));
 
   const ticketListText = tickets.map(t => `Ticket Code: ${t.ticket_code}\nQR Payload: ${t.qr_payload}`).join('\n\n');
 
@@ -122,6 +146,7 @@ export async function sendOrderTicketsEmail(orderId: string): Promise<{ sent: bo
     to: [order.customer_email],
     replyTo,
     subject: `Your Tickets: ${eventTitle} (${order.order_reference})`,
+    attachments,
     html: `
       <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
         <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px;">Singularity</h1>

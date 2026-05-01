@@ -172,7 +172,7 @@ export default function ProfilePage() {
     if (user?.id) refreshProfile();
   };
 
-  const activeTicket = userTickets.find(t => t.status === 'valid');
+  const activeTickets = userTickets.filter(t => t.status === 'valid');
 
   if (!user) {
     return (
@@ -228,24 +228,28 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className={styles.headerActions}>
-            {activeTicket && (
-              <div className={styles.activeTicketCard}>
-                <div className={styles.activeTicketHeader}>
-                  <span className={styles.activeLabel}>◈ Active Ticket</span>
-                  <div className={styles.activeTypeBadge}>{activeTicket.event_ticket_types?.name || 'Standard'}</div>
-                </div>
-                
-                <div className={styles.activeTicketBody}>
-                  <h3 className={styles.activeEventTitle}>{activeTicket.events?.title || 'Unknown Event'}</h3>
-                  <div className={styles.activeTicketCode}>{activeTicket.ticket_code}</div>
-                </div>
+            {activeTickets.length > 0 && (
+              <div className={styles.activeTicketsGrid}>
+                {activeTickets.map(ticket => (
+                  <div key={ticket.id} className={styles.activeTicketCard}>
+                    <div className={styles.activeTicketHeader}>
+                      <span className={styles.activeLabel}>◈ Active Ticket</span>
+                      <div className={styles.activeTypeBadge}>{ticket.event_ticket_types?.name || 'Standard'}</div>
+                    </div>
+                    
+                    <div className={styles.activeTicketBody}>
+                      <h3 className={styles.activeEventTitle}>{ticket.events?.title || 'Unknown Event'}</h3>
+                      <div className={styles.activeTicketCode}>{ticket.ticket_code}</div>
+                    </div>
 
-                <div className={styles.activeTicketFooter}>
-                  <div className={`${styles.statusBadge} ${styles.valid}`}>VALID</div>
-                  <Link href={`/tickets/${activeTicket.ticket_code}`} className={styles.activeActionBtn}>
-                    VIEW TICKET
-                  </Link>
-                </div>
+                    <div className={styles.activeTicketFooter}>
+                      <div className={`${styles.statusBadge} ${styles.valid}`}>VALID</div>
+                      <Link href={`/tickets/${ticket.ticket_code}`} className={styles.activeActionBtn}>
+                        VIEW TICKET
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             <div className={styles.actionButtons}>
