@@ -349,7 +349,20 @@ export default function AdminPage() {
         _isNew: true
       });
     } else if (activeTab === 'mixes') {
-      setActiveItem({ id: idStr, title: '', artist: '', eventId: '', label: 'Full set', duration: '', date: new Date().toISOString().split('T')[0], coverGradient: 'linear-gradient(135deg, #000, #333)', audioSrc: '', soundcloudUrl: '' });
+      setActiveItem({ 
+        id: idStr, 
+        slug: '', 
+        title: '', 
+        artist: '', 
+        eventId: '', 
+        label: 'Full set', 
+        duration: '', 
+        date: new Date().toISOString().split('T')[0], 
+        coverGradient: 'linear-gradient(135deg, #000, #333)', 
+        audioSrc: '', 
+        soundcloudUrl: '',
+        _isNew: true
+      });
     } else {
       setActiveItem({ id: idStr, name: 'New Supporter', amount: 0 });
     }
@@ -373,8 +386,13 @@ export default function AdminPage() {
         <h2 style={{marginBottom: '2rem'}}>Edit Mix</h2>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>ID (Unique slug)</label>
-          <input className={styles.input} value={activeItem.id} onChange={e => setActiveItem({...activeItem, id: e.target.value})} />
+          <label className={styles.label}>Slug (Unique)</label>
+          <input 
+            className={styles.input} 
+            value={activeItem.slug || ''} 
+            placeholder="e.g. dnb-takeover-labyrinth-kiyani"
+            onChange={e => setActiveItem({...activeItem, slug: e.target.value})} 
+          />
         </div>
 
         <div className={styles.formGroup}>
@@ -384,7 +402,19 @@ export default function AdminPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.label}>Mix title</label>
-          <input className={styles.input} value={activeItem.title} placeholder="e.g. 27. 3. 26 DNB Takeover Labyrinth" onChange={e => setActiveItem({...activeItem, title: e.target.value})} />
+          <input 
+            className={styles.input} 
+            value={activeItem.title} 
+            placeholder="e.g. 27. 3. 26 DNB Takeover Labyrinth" 
+            onChange={e => {
+              const newTitle = e.target.value;
+              const updates: any = { title: newTitle };
+              if (activeItem._isNew && (!activeItem.slug || activeItem.slug === toSlug(activeItem.title || ''))) {
+                updates.slug = toSlug(newTitle);
+              }
+              setActiveItem({...activeItem, ...updates});
+            }} 
+          />
         </div>
 
         <div className={styles.formGroup}>
@@ -399,14 +429,13 @@ export default function AdminPage() {
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Event folder</label>
+          <label className={styles.label}>Linked event</label>
           <select className={styles.input} value={activeItem.eventId} onChange={e => setActiveItem({...activeItem, eventId: e.target.value})}>
-            <option value="">— select event —</option>
+            <option value="">— none —</option>
             {eventOptions.map((opt: any) => (
               <option key={opt.id} value={opt.id}>{opt.label}</option>
             ))}
           </select>
-          <input className={styles.input} style={{marginTop: '0.5rem'}} value={activeItem.eventId} placeholder="Or type a custom event ID" onChange={e => setActiveItem({...activeItem, eventId: e.target.value})} />
         </div>
 
         <div className={styles.formGroup}>
@@ -420,39 +449,14 @@ export default function AdminPage() {
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>SoundCloud URL (Primary)</label>
+          <label className={styles.label}>SoundCloud URL</label>
           <input 
             className={styles.input} 
             value={activeItem.soundcloudUrl || ''} 
             placeholder="https://soundcloud.com/artist/track" 
             onChange={e => setActiveItem({...activeItem, soundcloudUrl: e.target.value})} 
           />
-          <p style={{fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem'}}>When provided, this will use the SoundCloud mini-widget for playback.</p>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Audio file (MP3 or WAV)</label>
-          {activeItem.audioSrc && (
-            <div style={{marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(0,255,178,0.08)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '1rem'}}>
-              <span style={{fontSize: '0.85rem', color: 'var(--color-accent-primary)', fontFamily: 'monospace'}}>{activeItem.audioSrc}</span>
-              <button onClick={() => setActiveItem({...activeItem, audioSrc: ''})} style={{background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '1rem'}}>✕ Remove</button>
-            </div>
-          )}
-          <input
-            type="file"
-            accept=".mp3,.wav,audio/mpeg,audio/wav"
-            disabled={uploading}
-            onChange={e => {
-              const file = e.target.files?.[0];
-              if (file) handleUploadAudio(file);
-            }}
-            style={{color: 'var(--color-text-primary)', fontSize: '0.9rem'}}
-          />
-          <p style={{fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem'}}>Supports MP3 and WAV. File will be saved to /public/audio/</p>
-          <div style={{marginTop: '0.5rem'}}>
-            <label className={styles.label} style={{marginBottom: '0.25rem', display: 'block'}}>Or paste a URL / path directly</label>
-            <input className={styles.input} value={activeItem.audioSrc || ''} placeholder="/audio/filename.mp3" onChange={e => setActiveItem({...activeItem, audioSrc: e.target.value})} />
-          </div>
+          <p style={{fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem'}}>Paste a SoundCloud track URL. The embedded player will be shown on the public Mixes page.</p>
         </div>
 
         <div className={styles.formActions}>

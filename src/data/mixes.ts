@@ -2,6 +2,7 @@ import mixesData from './mixes.json';
 
 export interface Mix {
   id: string;
+  slug: string;
   title: string;
   artist: string;
   duration: string;

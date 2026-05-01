@@ -115,8 +115,16 @@ export function mapArtistToDb(artist: any) {
  */
 export function mapMixToDb(mix: any) {
   const { id, ...rest } = mix;
-  return {
-    id,
+  
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
+  let slug = mix.slug || rest.slug;
+  if (!slug || slug.startsWith('new-')) {
+    const { toSlug } = require('./slug');
+    slug = toSlug(rest.title || 'untitled-mix');
+  }
+
+  const row: any = {
     title: rest.title,
     artist: rest.artist,
     event_id: rest.eventId || rest.event_id,
@@ -126,7 +134,16 @@ export function mapMixToDb(mix: any) {
     coverGradient: rest.coverGradient || rest.cover_gradient || 'linear-gradient(135deg, #000, #333)',
     audioSrc: rest.audioSrc || rest.audio_src,
     soundcloudUrl: rest.soundcloudUrl || rest.soundcloud_url,
+    slug: slug,
   };
+
+  // Only include id if it's a valid UUID (for updates)
+  // For new items (new-...), omit id to let Supabase generate a fresh UUID
+  if (isUUID) {
+    row.id = id;
+  }
+
+  return row;
 }
 
 /**

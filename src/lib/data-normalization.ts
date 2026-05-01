@@ -112,6 +112,7 @@ export function normalizeMix(mix: any): Mix {
   return {
     ...mix,
     id: mix.id,
+    slug: mix.slug || '',
     title: mix.title || 'Untitled Mix',
     artist: mix.artist || 'Unknown Artist',
     duration: mix.duration || '0:00',
