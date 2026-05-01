@@ -1,18 +1,24 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState, use, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 
-export default function TicketDetailPage({ params }: { params: Promise<{ ticketCode: string }> }) {
-  const { ticketCode } = use(params);
+function TicketContent({ ticketCode }: { ticketCode: string }) {
   const { user, isLoading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
+  
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const backHref = from === 'admin-sales' ? '/admin/ticket-sales' : '/profile';
+  const backLabel = from === 'admin-sales' ? '← Back to Ticket Sales' : '← Back to Profile';
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -74,7 +80,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketC
         <div className={styles.error}>
           <h2 className={styles.errorTitle}>Error</h2>
           <p>{error || 'Ticket not found.'}</p>
-          <Link href="/profile" className={styles.backLink}>← Back to Profile</Link>
+          <Link href={backHref} className={styles.backLink}>{backLabel}</Link>
         </div>
       </div>
     );
@@ -88,7 +94,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketC
 
   return (
     <div className={styles.page}>
-      <Link href="/profile" className={styles.backLink}>← Back to Profile</Link>
+      <Link href={backHref} className={styles.backLink}>{backLabel}</Link>
       
       <div className={styles.ticketContainer}>
         <div className={styles.ticketHeader}>
@@ -148,5 +154,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketC
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TicketDetailPage({ params }: { params: Promise<{ ticketCode: string }> }) {
+  const { ticketCode } = use(params);
+
+  return (
+    <Suspense fallback={<div className={styles.page}><div className={styles.loading}>Loading...</div></div>}>
+      <TicketContent ticketCode={ticketCode} />
+    </Suspense>
   );
 }

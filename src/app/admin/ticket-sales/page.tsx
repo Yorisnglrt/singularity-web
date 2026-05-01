@@ -270,7 +270,7 @@ export default function TicketSalesPage() {
                       {order.tickets.map((t, i) => (
                         <Link 
                           key={t.id}
-                          href={`/tickets/${t.ticket_code}`}
+                          href={`/tickets/${t.ticket_code}?from=admin-sales`}
                           className={`${styles.button} ${styles.buttonOutline}`}
                           target="_blank"
                           style={{ textDecoration: 'none', fontSize: '0.75rem', padding: '0.4rem' }}
