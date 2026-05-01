@@ -6,7 +6,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.2fr;
   gap: var(--space-16);
   align-items: center;
 }
@@ -109,7 +109,7 @@
   color: var(--color-accent-primary);
 }
 
-/* Wallet Card */
+/* Membership Form Card */
 .cardCol {
   display: flex;
   justify-content: center;
@@ -122,12 +122,11 @@
   border-radius: var(--radius-xl);
   padding: var(--space-10) var(--space-8);
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   backdrop-filter: blur(10px);
   box-shadow: 0 20px 50px rgba(var(--color-accent-primary-rgb), 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-8);
 }
 
@@ -167,39 +166,214 @@
   font-family: var(--font-mono);
 }
 
-/* Real QR Code container */
-.qrWrapper {
-  display: block;
-  width: 220px;
-  height: 220px;
-  background: #fff;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.qrWrapper:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 40px rgba(var(--color-accent-primary-rgb), 0.3);
-}
-
-.qrImage {
+/* Form Styles */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
-.qrFooter {
-  text-align: center;
+.formTitle {
   font-family: var(--font-heading);
-  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  color: #fff;
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-wider);
+  letter-spacing: 0.1em;
+}
+
+.input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  color: #fff;
+  font-size: var(--text-sm);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.checkboxField {
+  display: flex;
+  gap: var(--space-3);
+  cursor: pointer;
+  padding: var(--space-2) 0;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent-primary);
+  margin-top: 2px;
+}
+
+.checkboxText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.checkboxLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
-.qrFooter strong {
+.checkboxHelper {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.submitBtn {
+  background: var(--color-accent-primary);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: var(--space-2);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(var(--color-accent-primary-rgb), 0.3);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.switchMode {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.switchBtn {
+  background: none;
+  border: none;
   color: var(--color-accent-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.switchBtn:hover {
+  text-decoration: underline;
+}
+
+.error {
+  background: rgba(255, 59, 92, 0.1);
+  border: 1px solid rgba(255, 59, 92, 0.2);
+  color: #ff3b5c;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.successMessage {
+  background: rgba(0, 255, 178, 0.1);
+  border: 1px solid rgba(0, 255, 178, 0.2);
+  color: var(--color-accent-primary);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* Authenticated Status */
+.statusGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.statusItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.statusLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.statusValue {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: #fff;
+}
+
+.viewProfileBtn {
+  width: 100%;
+  display: block;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  text-decoration: none;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.viewProfileBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.legalNote {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.legalNote a {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
 }

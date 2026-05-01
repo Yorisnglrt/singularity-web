@@ -109,64 +109,74 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
     ? venue 
     : (venue?.en && venue.en !== 'TB' ? venue.en : (venue?.no && venue.no !== 'TB' ? venue.no : 'Oslo'));
 
+  const formattedDate = ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { 
+    weekday: 'short',
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  }) : 'Date TBA';
+
   return (
     <div className={styles.page}>
       <Link href={backHref} className={styles.backLink}>{backLabel}</Link>
       
-      <div className={styles.ticketContainer}>
-        <div className={styles.ticketHeader}>
-          <h1 className={styles.eventTitle}>{ticket.events?.title || 'Unknown Event'}</h1>
-          <div className={styles.eventDate}>
-            {ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { 
-              weekday: 'short',
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            }) : 'Date TBA'}
-          </div>
-          <div className={styles.venueName}>{resolvedVenue}</div>
+      <div className={`${styles.ticketContainer} ${styles[ticket.status] || ''}`}>
+        {/* Top Status Row */}
+        <div className={styles.ticketStatusRow}>
+          <span className={`${styles.statusBadge} ${styles[ticket.status] || ''}`}>
+            {ticket.status.toUpperCase()}
+          </span>
+          <span className={styles.ticketTypePill}>
+            {ticket.event_ticket_types?.name || 'Standard Entry'}
+          </span>
         </div>
 
+        {/* QR Section (High priority on mobile) */}
         <div className={styles.qrSection}>
-          <div className={styles.qrWrapper}>
-            <QRCodeSVG 
-              value={ticket.qr_payload || ticket.ticket_code} 
-              size={200}
-              level="H"
-              includeMargin={false}
-            />
+          <div className={styles.qrPanel}>
+            <div className={styles.qrWrapper}>
+              <QRCodeSVG 
+                value={ticket.qr_payload || ticket.ticket_code} 
+                size={180}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
           </div>
           <div className={styles.qrInstruction}>Show this QR at the entrance</div>
           <div className={styles.ticketCode}>{ticket.ticket_code}</div>
         </div>
 
-        <div className={styles.ticketInfo}>
-          <div className={styles.infoGrid}>
-            <div className={styles.infoItem}>
-              <span className={styles.label}>Ticket Type</span>
-              <span className={styles.value}>{ticket.event_ticket_types?.name || 'Standard Entry'}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.label}>Status</span>
-              <span className={`${styles.statusBadge} ${styles[ticket.status] || ''}`}>
-                {ticket.status.toUpperCase()}
+        {/* Event Info */}
+        <div className={styles.eventHeader}>
+          <h1 className={styles.eventTitle}>{ticket.events?.title || 'Unknown Event'}</h1>
+          <div className={styles.eventDate}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {formattedDate}
+          </div>
+          <div className={styles.venueName}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {resolvedVenue}
+          </div>
+        </div>
+
+        {/* Secondary Details */}
+        <div className={styles.ticketDetails}>
+          <div className={styles.detailRow}>
+            <span className={styles.label}>Ticket Holder</span>
+            <div className={styles.holderInfo}>
+              <span className={styles.value}>
+                {ticket.holder_name || ticket.holder_email || 'Ticket holder'}
               </span>
+              {ticket.holder_name && ticket.holder_email && (
+                <span className={styles.holderSecondary}>{ticket.holder_email}</span>
+              )}
             </div>
-            <div className={styles.infoItem}>
-              <span className={styles.label}>Holder</span>
-              <div className={styles.holderInfo}>
-                <span className={styles.value}>
-                  {ticket.holder_name || ticket.holder_email || 'Ticket holder'}
-                </span>
-                {ticket.holder_name && ticket.holder_email && (
-                  <span className={styles.holderSecondary}>{ticket.holder_email}</span>
-                )}
-              </div>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.label}>Order Ref</span>
-              <span className={styles.value}>{ticket.ticket_orders?.order_reference || '—'}</span>
-            </div>
+          </div>
+          
+          <div className={styles.detailRow}>
+            <span className={styles.label}>Order Reference</span>
+            <span className={styles.value}>{ticket.ticket_orders?.order_reference || '—'}</span>
           </div>
         </div>
       </div>
