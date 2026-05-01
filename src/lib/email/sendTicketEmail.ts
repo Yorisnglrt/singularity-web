@@ -12,7 +12,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL || 'https://www.singularity-oslo.no').replace(/\/$/, '');
 
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
@@ -133,7 +133,7 @@ export async function sendOrderTicketsEmail(
       contentId: cid, // Some clients prefer contentId
     });
 
-    const ticketUrl = `${BASE_URL}/tickets/${t.ticket_code}`;
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}`;
 
     return `
       <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
@@ -158,7 +158,7 @@ export async function sendOrderTicketsEmail(
   })).then(htmls => htmls.join(''));
 
   const ticketListText = tickets.map(t => {
-    const ticketUrl = `${BASE_URL}/tickets/${t.ticket_code}`;
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}`;
     return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
   }).join('\n\n');
 
