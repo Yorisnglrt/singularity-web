@@ -122,3 +122,38 @@ export async function getPaymentStatus(reference: string): Promise<{ state: stri
   const data = await res.json();
   return { state: data.state, aggregate: data.aggregate };
 }
+
+/**
+ * Capture an authorized Vipps ePayment.
+ * Must be called after payment reaches AUTHORIZED state.
+ * Uses Idempotency-Key so duplicate calls are safe.
+ */
+export async function capturePayment(
+  reference: string,
+  amountOre: number,
+  idempotencyKey: string,
+): Promise<void> {
+  const headers = await vippsHeaders();
+  headers['Idempotency-Key'] = idempotencyKey;
+
+  const body = {
+    modificationAmount: {
+      value: amountOre,
+      currency: 'NOK',
+    },
+  };
+
+  const res = await fetch(`${VIPPS_API_BASE}/epayment/v1/payments/${reference}/capture`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    console.error('[vipps] Capture payment failed:', res.status, errorBody);
+    throw new Error(`Vipps capture payment failed: ${res.status}`);
+  }
+
+  console.log(`[vipps] Capture initiated for ${reference}, amount ${amountOre} øre`);
+}

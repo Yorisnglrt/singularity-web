@@ -18,6 +18,28 @@ type PointsHistoryItem = {
   created_at: string;
 };
 
+type UserTicket = {
+  id: string;
+  ticket_code: string;
+  status: string;
+  created_at: string;
+  events: {
+    id: string;
+    title: string;
+    date: string;
+    venue: any;
+  } | null;
+  event_ticket_types: {
+    name: string;
+  } | null;
+  ticket_orders: {
+    id: string;
+    order_reference: string;
+    payment_status: string;
+    created_at: string;
+  } | null;
+};
+
 export default function ProfilePage() {
   const { user, interactions, logout, openAuthModal, refreshProfile } = useAuth();
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryItem[]>([]);
@@ -25,6 +47,15 @@ export default function ProfilePage() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [dbEvents, setDbEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [userTickets, setUserTickets] = useState<UserTicket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+  
+  // Refresh profile on mount to ensure points and tier are up-to-date
+  useEffect(() => {
+    if (user?.id) {
+      refreshProfile();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -89,6 +120,60 @@ export default function ProfilePage() {
     fetchInteractedEvents();
   }, [user?.id, interactions]);
 
+  useEffect(() => {
+    const fetchUserTickets = async () => {
+      if (!user?.id) {
+        setLoadingTickets(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select(`
+            id,
+            ticket_code,
+            status,
+            created_at,
+            events (
+              id,
+              title,
+              date,
+              venue
+            ),
+            event_ticket_types (
+              name
+            ),
+            ticket_orders (
+              id,
+              order_reference,
+              payment_status,
+              created_at
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching user tickets:', error);
+        } else {
+          setUserTickets((data as any[]) || []);
+        }
+      } catch (err) {
+        console.error('User tickets exception:', err);
+      } finally {
+        setLoadingTickets(false);
+      }
+    };
+
+    fetchUserTickets();
+  }, [user?.id]);
+
+  const fetchUserTickets = async () => {
+    if (user?.id) refreshProfile();
+  };
+
+  const activeTicket = userTickets.find(t => t.status === 'valid');
+
   if (!user) {
     return (
       <div className={styles.page}>
@@ -143,8 +228,30 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className={styles.headerActions}>
-            <Link href="/profile/settings" className={styles.editBtn}>Edit Profile</Link>
-            <button onClick={logout} className={styles.logoutBtn}>Sign out</button>
+            {activeTicket && (
+              <div className={styles.activeTicketCard}>
+                <div className={styles.activeTicketHeader}>
+                  <span className={styles.activeLabel}>◈ Active Ticket</span>
+                  <div className={styles.activeTypeBadge}>{activeTicket.event_ticket_types?.name || 'Standard'}</div>
+                </div>
+                
+                <div className={styles.activeTicketBody}>
+                  <h3 className={styles.activeEventTitle}>{activeTicket.events?.title || 'Unknown Event'}</h3>
+                  <div className={styles.activeTicketCode}>{activeTicket.ticket_code}</div>
+                </div>
+
+                <div className={styles.activeTicketFooter}>
+                  <div className={`${styles.statusBadge} ${styles.valid}`}>VALID</div>
+                  <Link href={`/tickets/${activeTicket.ticket_code}`} className={styles.activeActionBtn}>
+                    VIEW TICKET
+                  </Link>
+                </div>
+              </div>
+            )}
+            <div className={styles.actionButtons}>
+              <button className={styles.editBtn}>Edit Profile</button>
+              <button className={styles.logoutBtn} onClick={logout}>Sign Out</button>
+            </div>
           </div>
         </div>
 
@@ -200,6 +307,41 @@ export default function ProfilePage() {
           <div className={styles.stat}>
             <span className={styles.statValue}>{likedIds.length}</span>
             <span className={styles.statLabel}>Liked</span>
+          </div>
+        </div>
+
+        {/* Ticket History Section */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>◈ Ticket History</h2>
+          <div className={styles.historyList}>
+            {loadingTickets ? (
+              <div className={styles.loading}>↻ Loading ticket history...</div>
+            ) : userTickets.length > 0 ? (
+              userTickets.map((ticket) => (
+                <Link key={ticket.id} href={`/tickets/${ticket.ticket_code}`} className={styles.compactTicketRow}>
+                  <div className={styles.ticketRowMain}>
+                    <div className={styles.ticketRowEvent}>
+                      <span className={styles.ticketRowTitle}>{ticket.events?.title || 'Unknown Event'}</span>
+                      <span className={styles.ticketRowMeta}>
+                        {ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—'}
+                        {' · '}
+                        {ticket.event_ticket_types?.name || 'Ticket'}
+                      </span>
+                    </div>
+                    <div className={styles.ticketRowDetails}>
+                      <span className={styles.ticketRowCode}>{ticket.ticket_code}</span>
+                      <span className={`${styles.statusBadge} ${styles[ticket.status] || ''}`}>
+                        {ticket.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className={styles.empty}>
+                <p>No ticket history found.</p>
+              </div>
+            )}
           </div>
         </div>
 

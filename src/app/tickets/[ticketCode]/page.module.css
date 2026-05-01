@@ -1,0 +1,194 @@
+.page {
+  padding: 4rem 1.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.ticketContainer {
+  width: 100%;
+  max-width: 400px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.ticketHeader {
+  background: linear-gradient(135deg, rgba(var(--color-accent-primary-rgb), 0.15), rgba(var(--color-accent-primary-rgb), 0.05));
+  padding: 2rem;
+  text-align: center;
+  border-bottom: 1px dashed var(--color-border);
+  position: relative;
+}
+
+/* Scalloped edges for ticket feel */
+.ticketHeader::before, .ticketHeader::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  width: 20px;
+  height: 20px;
+  background: var(--color-bg);
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+}
+.ticketHeader::before { left: -11px; }
+.ticketHeader::after { right: -11px; }
+
+.eventTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  margin: 0;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.eventDate {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-accent-primary);
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.venueName {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+.qrSection {
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: #fff; /* White background for QR code scanability */
+  margin: 1.5rem;
+  border-radius: var(--radius-lg);
+}
+
+.qrWrapper {
+  padding: 1rem;
+  background: #fff;
+}
+
+.ticketCode {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 0.1em;
+}
+
+.ticketInfo {
+  padding: 0 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.value {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #fff;
+}
+
+.statusBadge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  width: fit-content;
+  font-weight: 700;
+}
+
+.valid { background: rgba(0, 255, 178, 0.15); color: #00ffb2; border: 1px solid rgba(0, 255, 178, 0.3); }
+.used { background: rgba(255, 255, 255, 0.1); color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.void { background: rgba(255, 59, 92, 0.15); color: #ff3b5c; border: 1px solid rgba(255, 59, 92, 0.3); }
+
+.backLink {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.backLink:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+  transform: translateX(-4px);
+}
+
+.qrInstruction {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.holderInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.holderSecondary {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 8rem 2rem;
+}
+
+.errorTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  color: #ff3b5c;
+  margin-bottom: 1rem;
+}

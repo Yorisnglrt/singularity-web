@@ -12,67 +12,91 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 export async function POST(request: Request) {
   try {
-    const { eventId, customerName } = await request.json();
+    const body = await request.json();
+    const { orderReference, orderId } = body;
 
-    if (!eventId) {
-      return NextResponse.json({ error: 'Missing eventId' }, { status: 400 });
+    if (!orderReference && !orderId) {
+      return NextResponse.json({ error: 'Missing orderReference or orderId' }, { status: 400 });
     }
 
-    // 1. Fetch event from DB — never trust frontend for price/title
-    const { data: event, error: eventError } = await supabaseAdmin
-      .from('events')
-      .select('id, title, ticket_provider, ticket_price_ore')
-      .eq('id', eventId)
-      .single();
+    // 1. Load the existing pending order from ticket_orders
+    let query = supabaseAdmin
+      .from('ticket_orders')
+      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name');
 
-    if (eventError || !event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    if (orderReference) {
+      query = query.eq('order_reference', orderReference);
+    } else {
+      query = query.eq('id', orderId);
     }
 
-    if (event.ticket_provider !== 'vipps') {
-      return NextResponse.json({ error: 'Event does not use Vipps tickets' }, { status: 400 });
+    const { data: order, error: orderError } = await query.single();
+
+    if (orderError || !order) {
+      console.error('[vipps/create] Order not found:', orderError);
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    if (!event.ticket_price_ore || event.ticket_price_ore <= 0) {
-      return NextResponse.json({ error: 'Event has no valid ticket price' }, { status: 400 });
+    // 2. Validate the order is still pending
+    if (order.payment_status !== 'pending') {
+      return NextResponse.json(
+        { error: `Order is not pending (current status: ${order.payment_status})` },
+        { status: 409 }
+      );
     }
 
-    // 2. Generate unique reference
-    const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
-    const reference = `SNG-${Date.now()}-${randomPart}`;
+    // 3. Validate amount
+    if (!order.total_amount_nok || order.total_amount_nok <= 0) {
+      return NextResponse.json({ error: 'Order has no valid amount' }, { status: 400 });
+    }
+
+    // 4. If Vipps payment was already created for this order, reuse the reference
+    if (order.vipps_reference) {
+      return NextResponse.json(
+        { error: 'Vipps payment already initiated for this order' },
+        { status: 409 }
+      );
+    }
+
+    // 5. Generate Vipps reference and idempotency key
+    const vippsReference = order.order_reference;
     const idempotencyKey = crypto.randomUUID();
 
-    // 3. Create order in DB before calling Vipps  
-    const { error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert({
-        reference,
-        event_id: event.id,
-        amount: event.ticket_price_ore,
-        currency: 'NOK',
-        status: 'CREATED',
-        customer_name: customerName || null,
-      });
+    // 6. Convert NOK to øre for Vipps (total_amount_nok is in whole NOK)
+    const amountOre = order.total_amount_nok * 100;
 
-    if (orderError) {
-      console.error('[vipps/create] Order insert failed:', orderError);
-      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
-    }
+    // 7. Build return URL
+    const returnUrl = `${BASE_URL}/tickets/complete?reference=${encodeURIComponent(vippsReference)}`;
 
-    // 4. Call Vipps to create payment
-    const returnUrl = `${BASE_URL}/tickets/complete?reference=${reference}`;
-
+    // 8. Create Vipps ePayment
     const redirectUrl = await createPayment(
-      reference,
-      event.ticket_price_ore,
+      vippsReference,
+      amountOre,
       returnUrl,
       idempotencyKey,
     );
 
-    return NextResponse.json({ redirectUrl });
+    // 9. Update ticket_orders with Vipps metadata
+    const { error: updateError } = await supabaseAdmin
+      .from('ticket_orders')
+      .update({
+        vipps_reference: vippsReference,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', order.id);
+
+    if (updateError) {
+      console.error('[vipps/create] Failed to update order with Vipps reference:', updateError);
+      // Payment was already created at Vipps, so we still return the redirect
+    }
+
+    return NextResponse.json({ redirectUrl, reference: vippsReference });
 
   } catch (error: any) {
     console.error('[vipps/create] Error:', error.message);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create Vipps payment' },
+      { status: 500 }
+    );
   }
 }

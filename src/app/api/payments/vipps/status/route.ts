@@ -1,39 +1,60 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getPaymentStatus } from '@/lib/vipps';
-import crypto from 'crypto';
+import { getPaymentStatus, capturePayment } from '@/lib/vipps';
+import { issueTicketsForOrder } from '@/lib/tickets/issueTicketsForOrder';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Vipps states we consider valid for ticket issuance
-const PAID_STATES = ['AUTHORIZED', 'CHARGED'];
-const FAILED_STATES = ['FAILED', 'ABORTED', 'EXPIRED', 'TERMINATED'];
-const CANCELLED_STATES = ['CANCELLED'];
+/**
+ * Map Vipps payment state to local ticket_orders.payment_status.
+ *
+ * payment_status CHECK constraint allows:
+ *   'pending', 'authorized', 'paid', 'cancelled', 'failed', 'refunded', 'partially_refunded'
+ */
+function mapVippsStateToLocal(vippsState: string): string | null {
+  switch (vippsState) {
+    case 'AUTHORIZED':
+      return 'authorized';
+    case 'CHARGED':
+    case 'CAPTURED':
+      return 'paid';
+    case 'CANCELLED':
+      return 'cancelled';
+    case 'FAILED':
+    case 'EXPIRED':
+    case 'TERMINATED':
+    case 'ABORTED':
+      return 'failed';
+    default:
+      return null; // Unknown or still pending — do not update
+  }
+}
 
 /**
- * Generate a collision-safe 8-char uppercase alphanumeric ticket code.
- * Retries up to 5 times on collision.
+ * Determine effective local status by checking both Vipps state AND aggregate captured amount.
+ *
+ * Vipps may report state=AUTHORIZED even after a successful capture.
+ * The captured amount in the aggregate is the authoritative signal that funds were captured.
  */
-async function generateTicketCode(): Promise<string> {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I, O, 0, 1 to avoid confusion
-  for (let attempt = 0; attempt < 5; attempt++) {
-    let code = '';
-    const bytes = crypto.randomBytes(8);
-    for (let i = 0; i < 8; i++) {
-      code += chars[bytes[i] % chars.length];
-    }
-    // Check uniqueness
-    const { data } = await supabaseAdmin
-      .from('tickets')
-      .select('id')
-      .eq('ticket_code', code)
-      .maybeSingle();
-    if (!data) return code;
+function resolveEffectiveStatus(
+  vippsState: string,
+  aggregate: any,
+  totalAmountOre: number,
+): { localStatus: string | null; fullyCaptured: boolean } {
+  const capturedValue: number = aggregate?.capturedAmount?.value ?? 0;
+  const fullyCaptured = capturedValue >= totalAmountOre && totalAmountOre > 0;
+
+  // Captured amount takes priority over state
+  if (fullyCaptured) {
+    return { localStatus: 'paid', fullyCaptured: true };
   }
-  throw new Error('Failed to generate unique ticket code after 5 attempts');
+
+  // Fall back to state-based mapping
+  const localStatus = mapVippsStateToLocal(vippsState);
+  return { localStatus, fullyCaptured: false };
 }
 
 export async function GET(request: Request) {
@@ -45,164 +66,117 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing reference' }, { status: 400 });
     }
 
-    // 1. Find order
+    // 1. Find order in ticket_orders by order_reference or vipps_reference
     const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .select('*, events(id, title, date, time, venue)')
-      .eq('reference', reference)
+      .from('ticket_orders')
+      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name, customer_email, paid_at, tickets_issued')
+      .or(`order_reference.eq.${reference},vipps_reference.eq.${reference}`)
       .single();
 
     if (orderError || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // 2. Idempotency: if already PAID and ticket exists, return it
-    if (order.status === 'PAID') {
-      const { data: existingTicket } = await supabaseAdmin
-        .from('tickets')
-        .select('*')
-        .eq('order_id', order.id)
-        .single();
-
-      if (existingTicket) {
-        return NextResponse.json({
-          status: 'PAID',
-          ticket: {
-            id: existingTicket.id,
-            ticketCode: existingTicket.ticket_code,
-            qrPayload: existingTicket.qr_payload,
-            holderName: existingTicket.holder_name,
-            eventTitle: order.events?.title,
-            eventDate: order.events?.date,
-            eventTime: order.events?.time,
-            eventVenue: order.events?.venue,
-          },
-        });
+    // 2. If already in a terminal state, return immediately
+    if (order.payment_status === 'paid') {
+      console.log(`[vipps/status] Order ${order.order_reference} already paid, triggering idempotent issuance/email...`);
+      try {
+        await issueTicketsForOrder(order.id);
+      } catch (issueErr: any) {
+        console.error('[vipps/status] Ticket/Email fallback failed:', issueErr.message);
       }
-    }
-
-    // 3. Check with Vipps
-    const vippsStatus = await getPaymentStatus(reference);
-    const vippsState = vippsStatus.state;
-
-    // 4. Handle states
-    if (PAID_STATES.includes(vippsState)) {
-      // Update order
-      await supabaseAdmin
-        .from('orders')
-        .update({
-          status: 'PAID',
-          vipps_state: vippsState,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', order.id);
-
-      // Check if ticket already exists (race condition guard)
-      const { data: existingTicket } = await supabaseAdmin
-        .from('tickets')
-        .select('*')
-        .eq('order_id', order.id)
-        .maybeSingle();
-
-      if (existingTicket) {
-        return NextResponse.json({
-          status: 'PAID',
-          ticket: {
-            id: existingTicket.id,
-            ticketCode: existingTicket.ticket_code,
-            qrPayload: existingTicket.qr_payload,
-            holderName: existingTicket.holder_name,
-            eventTitle: order.events?.title,
-            eventDate: order.events?.date,
-            eventTime: order.events?.time,
-            eventVenue: order.events?.venue,
-          },
-        });
-      }
-
-      // Create ticket
-      const ticketCode = await generateTicketCode();
-      const ticketId = crypto.randomUUID();
-      const qrPayload = `SNG-TICKET:${ticketCode}`;
-
-      const { data: newTicket, error: ticketError } = await supabaseAdmin
-        .from('tickets')
-        .insert({
-          id: ticketId,
-          order_id: order.id,
-          event_id: order.event_id,
-          ticket_code: ticketCode,
-          qr_payload: qrPayload,
-          holder_name: order.customer_name || null,
-          status: 'VALID',
-        })
-        .select()
-        .single();
-
-      if (ticketError) {
-        // If unique constraint violation on order_id, ticket was created by concurrent request
-        if (ticketError.code === '23505') {
-          const { data: raceTicket } = await supabaseAdmin
-            .from('tickets')
-            .select('*')
-            .eq('order_id', order.id)
-            .single();
-          if (raceTicket) {
-            return NextResponse.json({
-              status: 'PAID',
-              ticket: {
-                id: raceTicket.id,
-                ticketCode: raceTicket.ticket_code,
-                qrPayload: raceTicket.qr_payload,
-                holderName: raceTicket.holder_name,
-                eventTitle: order.events?.title,
-                eventDate: order.events?.date,
-                eventTime: order.events?.time,
-                eventVenue: order.events?.venue,
-              },
-            });
-          }
-        }
-        console.error('[vipps/status] Ticket insert failed:', ticketError);
-        return NextResponse.json({ error: 'Failed to create ticket' }, { status: 500 });
-      }
-
       return NextResponse.json({
-        status: 'PAID',
-        ticket: {
-          id: newTicket.id,
-          ticketCode: newTicket.ticket_code,
-          qrPayload: newTicket.qr_payload,
-          holderName: newTicket.holder_name,
-          eventTitle: order.events?.title,
-          eventDate: order.events?.date,
-          eventTime: order.events?.time,
-          eventVenue: order.events?.venue,
-        },
+        status: 'paid',
+        orderReference: order.order_reference,
       });
     }
 
-    if (FAILED_STATES.includes(vippsState)) {
-      await supabaseAdmin
-        .from('orders')
-        .update({ status: 'FAILED', vipps_state: vippsState, updated_at: new Date().toISOString() })
-        .eq('id', order.id);
-      return NextResponse.json({ status: 'FAILED' });
+    if (order.payment_status === 'cancelled') {
+      return NextResponse.json({ status: 'cancelled', orderReference: order.order_reference });
     }
 
-    if (CANCELLED_STATES.includes(vippsState)) {
-      await supabaseAdmin
-        .from('orders')
-        .update({ status: 'CANCELLED', vipps_state: vippsState, updated_at: new Date().toISOString() })
-        .eq('id', order.id);
-      return NextResponse.json({ status: 'CANCELLED' });
+    if (order.payment_status === 'failed') {
+      return NextResponse.json({ status: 'failed', orderReference: order.order_reference });
     }
 
-    // Still pending
-    return NextResponse.json({ status: 'PENDING' });
+    // 3. Query Vipps for current payment state
+    const vippsRef = order.vipps_reference || order.order_reference;
+    const vippsStatus = await getPaymentStatus(vippsRef);
+    const vippsState = vippsStatus.state;
+    const totalAmountOre = order.total_amount_nok * 100;
+
+    // 4. Resolve effective status using both state and captured amount
+    const { localStatus, fullyCaptured } = resolveEffectiveStatus(
+      vippsState,
+      vippsStatus.aggregate,
+      totalAmountOre,
+    );
+
+    if (!localStatus) {
+      // Still in a pending/unknown state at Vipps
+      return NextResponse.json({ status: 'pending', orderReference: order.order_reference });
+    }
+
+    // 5. Build update payload using only existing ticket_orders columns
+    const updatePayload: Record<string, any> = {
+      payment_status: localStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (localStatus === 'paid') {
+      updatePayload.paid_at = new Date().toISOString();
+    }
+
+    if (localStatus === 'cancelled') {
+      updatePayload.cancelled_at = new Date().toISOString();
+    }
+
+    // 6. Update ticket_orders
+    const { error: updateError } = await supabaseAdmin
+      .from('ticket_orders')
+      .update(updatePayload)
+      .eq('id', order.id);
+
+    if (updateError) {
+      console.error('[vipps/status] Failed to update order:', updateError);
+      // Still return the status even if DB update failed
+    }
+
+    // 7. If status is PAID, issue tickets (idempotent)
+    if (localStatus === 'paid') {
+      try {
+        await issueTicketsForOrder(order.id);
+      } catch (issueErr: any) {
+        console.error('[vipps/status] Ticket issuance failed:', issueErr.message);
+        // Do not fail the status response, we can retry issuance later
+      }
+    }
+
+    // 8. If AUTHORIZED and NOT fully captured, initiate capture (reserve-capture flow)
+    //    Skip capture if full amount is already captured (avoids unnecessary API calls).
+    //    Uses stable idempotency key so duplicate calls are safe.
+    if (localStatus === 'authorized' && !fullyCaptured) {
+      const captureIdempotencyKey = `capture-${order.order_reference}`;
+      try {
+        await capturePayment(vippsRef, totalAmountOre, captureIdempotencyKey);
+        console.log(`[vipps/status] Capture initiated for order ${order.order_reference}`);
+      } catch (captureErr: any) {
+        // Log but do not fail the status response — next poll will retry
+        console.error('[vipps/status] Capture attempt failed (will retry on next poll):', captureErr.message);
+      }
+    }
+
+    // 9. Return status to frontend
+    return NextResponse.json({
+      status: localStatus,
+      orderReference: order.order_reference,
+    });
 
   } catch (error: any) {
     console.error('[vipps/status] Error:', error.message);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to check payment status' },
+      { status: 500 }
+    );
   }
 }

@@ -66,7 +66,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const res = await fetch('/api/checkout/create-pending-order', {
+      // Step 1: Create pending order in ticket_orders
+      const orderRes = await fetch('/api/checkout/create-pending-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,15 +83,37 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         })
       });
 
-      const data = await res.json();
+      const orderData = await orderRes.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create order');
+      if (!orderRes.ok) {
+        throw new Error(orderData.error || 'Failed to create order');
       }
 
-      setSuccess(data);
+      // Step 2: Initiate Vipps payment
+      setSuccess({ redirecting: true, orderReference: orderData.orderReference });
+
+      const vippsRes = await fetch('/api/payments/vipps/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderReference: orderData.orderReference })
+      });
+
+      const vippsData = await vippsRes.json();
+
+      if (!vippsRes.ok) {
+        throw new Error(vippsData.error || 'Failed to start Vipps payment');
+      }
+
+      if (vippsData.redirectUrl) {
+        // Step 3: Redirect to Vipps
+        window.location.href = vippsData.redirectUrl;
+        return;
+      } else {
+        throw new Error('No redirect URL received from Vipps');
+      }
     } catch (err: any) {
       setError(err.message);
+      setSuccess(null);
     } finally {
       setLoading(false);
     }
@@ -99,25 +122,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   if (success) {
     return (
       <div className={styles.success}>
-        <h3 className={styles.successTitle}>Order Created!</h3>
+        <h3 className={styles.successTitle}>Redirecting to Vipps…</h3>
         <p className={styles.successText}>
-          Your pending order has been successfully created. Vipps payment will be connected next.
+          Your order has been created. You are being redirected to Vipps to complete payment.
         </p>
         <div className={styles.orderRef}>{success.orderReference}</div>
-        <div className={styles.orderSummary}>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryLabel}>Total Amount:</span>
-            <span className={styles.summaryValue}>{success.totalAmountNok} {success.currency}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryLabel}>Rave Points:</span>
-            <span className={styles.summaryValue}>+{success.ravePointsEarned} RP</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryLabel}>Status:</span>
-            <span className={styles.summaryValue} style={{ textTransform: 'capitalize' }}>{success.paymentStatus}</span>
-          </div>
-        </div>
       </div>
     );
   }

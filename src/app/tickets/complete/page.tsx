@@ -2,27 +2,15 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
 import styles from './page.module.css';
 
-interface TicketData {
-  id: string;
-  ticketCode: string;
-  qrPayload: string;
-  holderName?: string;
-  eventTitle?: string;
-  eventDate?: string;
-  eventTime?: string;
-  eventVenue?: any;
-}
-
-type PageState = 'loading' | 'success' | 'failed' | 'cancelled' | 'timeout' | 'error';
+type PageState = 'loading' | 'authorized' | 'paid' | 'failed' | 'cancelled' | 'timeout' | 'error';
 
 function TicketCompleteContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference');
   const [state, setState] = useState<PageState>('loading');
-  const [ticket, setTicket] = useState<TicketData | null>(null);
+  const [orderRef, setOrderRef] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const pollCount = useRef(0);
   const maxPolls = 15; // 15 × 2s = 30s
@@ -39,23 +27,31 @@ function TicketCompleteContent() {
         const res = await fetch(`/api/payments/vipps/status?reference=${encodeURIComponent(reference)}`);
         const data = await res.json();
 
-        if (data.status === 'PAID' && data.ticket) {
-          setTicket(data.ticket);
-          setState('success');
+        if (data.orderReference) {
+          setOrderRef(data.orderReference);
+        }
+
+        if (data.status === 'paid') {
+          setState('paid');
           return;
         }
 
-        if (data.status === 'FAILED') {
+        if (data.status === 'authorized') {
+          setState('authorized');
+          return;
+        }
+
+        if (data.status === 'failed') {
           setState('failed');
           return;
         }
 
-        if (data.status === 'CANCELLED') {
+        if (data.status === 'cancelled') {
           setState('cancelled');
           return;
         }
 
-        // Still PENDING
+        // Still pending
         pollCount.current++;
         if (pollCount.current >= maxPolls) {
           setState('timeout');
@@ -74,15 +70,6 @@ function TicketCompleteContent() {
     poll();
   }, [reference]);
 
-  const venue = ticket?.eventVenue
-    ? (typeof ticket.eventVenue === 'object' ? ticket.eventVenue.en || Object.values(ticket.eventVenue)[0] : ticket.eventVenue)
-    : null;
-
-  const eventDate = ticket?.eventDate ? new Date(ticket.eventDate) : null;
-  const formattedDate = eventDate
-    ? eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    : '';
-
   return (
     <div className={styles.page}>
       <div className="container">
@@ -95,50 +82,39 @@ function TicketCompleteContent() {
             </div>
           )}
 
-          {state === 'success' && ticket && (
+          {state === 'paid' && (
             <div className={styles.center}>
               <div className={styles.successIcon}>✓</div>
-              <h2 className={styles.heading}>Payment successful!</h2>
-              <p className={styles.sub}>Your ticket is ready.</p>
-
-              <div className={styles.ticketCard}>
-                <div className={styles.ticketHeader}>
-                  <span className={styles.ticketLabel}>SINGULARITY COLLECTIVE</span>
-                </div>
-                <h3 className={styles.eventTitle}>{ticket.eventTitle}</h3>
-                <div className={styles.eventMeta}>
-                  {formattedDate && <span>{formattedDate}</span>}
-                  {ticket.eventTime && <span>{ticket.eventTime}</span>}
-                  {venue && <span>{venue as string}</span>}
-                </div>
-
-                <div className={styles.qrSection}>
-                  <QRCodeSVG
-                    value={ticket.qrPayload}
-                    size={180}
-                    level="M"
-                    bgColor="transparent"
-                    fgColor="#ffffff"
-                  />
-                </div>
-
-                <div className={styles.ticketCode}>{ticket.ticketCode}</div>
-
-                {ticket.holderName && (
-                  <p className={styles.holderName}>{ticket.holderName}</p>
-                )}
-              </div>
-
+              <h2 className={styles.heading}>Payment confirmed!</h2>
+              <p className={styles.sub}>
+                Your payment has been successfully processed.
+              </p>
+              {orderRef && (
+                <p className={styles.ref}>Order reference: <code>{orderRef}</code></p>
+              )}
+              {/* TODO: Show ticket details once the tickets table is created and ticket issuance is implemented */}
               <div className={styles.actions}>
-                <a
-                  href={`/api/tickets/${ticket.id}/view`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-primary"
-                >
-                  View / Print Ticket
+                <a href="/events" className="btn btn-primary">
+                  Back to Events
                 </a>
-                <a href="/events" className="btn" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
+              </div>
+            </div>
+          )}
+
+          {state === 'authorized' && (
+            <div className={styles.center}>
+              <div className={styles.successIcon}>✓</div>
+              <h2 className={styles.heading}>Payment authorized</h2>
+              <p className={styles.sub}>
+                Your payment has been authorized. Final confirmation is pending.
+                <br />
+                You will receive a confirmation once the payment is fully captured.
+              </p>
+              {orderRef && (
+                <p className={styles.ref}>Order reference: <code>{orderRef}</code></p>
+              )}
+              <div className={styles.actions}>
+                <a href="/events" className="btn btn-primary">
                   Back to Events
                 </a>
               </div>
@@ -173,7 +149,7 @@ function TicketCompleteContent() {
               <h2 className={styles.heading}>Still processing</h2>
               <p className={styles.sub}>
                 Your payment may still be processing.<br />
-                You can reopen this page later with the same link to check your ticket status.
+                You can reopen this page later with the same link to check your payment status.
               </p>
               {reference && (
                 <p className={styles.ref}>Reference: <code>{reference}</code></p>
