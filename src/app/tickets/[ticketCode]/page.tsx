@@ -12,6 +12,7 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
   const { user, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
+  const accessToken = searchParams.get('access');
   
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,48 +24,64 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
   useEffect(() => {
     const fetchTicket = async () => {
       if (authLoading) return;
-      if (!user) {
+
+      // If no user AND no accessToken, then block
+      if (!user && !accessToken) {
         setError('Please sign in to view your ticket.');
         setLoading(false);
         return;
       }
 
       try {
-        const { data, error } = await supabase
-          .from('tickets')
-          .select(`
-            *,
-            events (
-              title,
-              date,
-              venue
-            ),
-            event_ticket_types (
-              name
-            ),
-            ticket_orders (
-              order_reference
-            )
-          `)
-          .eq('ticket_code', ticketCode)
-          .single();
+        let ticketData;
 
-        if (error) {
-          console.error('Error fetching ticket:', error);
+        if (accessToken) {
+          // Guest fetch via internal API
+          const response = await fetch(`/api/tickets/guest-view?ticketCode=${encodeURIComponent(ticketCode)}&accessToken=${accessToken}`);
+          if (!response.ok) {
+            throw new Error('Ticket not found or access denied');
+          }
+          ticketData = await response.json();
+        } else if (user) {
+          // Standard fetch via Supabase client (RLS enforced)
+          const { data, error } = await supabase
+            .from('tickets')
+            .select(`
+              *,
+              events (
+                title,
+                date,
+                venue
+              ),
+              event_ticket_types (
+                name
+              ),
+              ticket_orders (
+                order_reference
+              )
+            `)
+            .eq('ticket_code', ticketCode)
+            .single();
+
+          if (error) throw error;
+          ticketData = data;
+        }
+
+        if (!ticketData) {
           setError('Ticket not found or access denied.');
         } else {
-          setTicket(data);
+          setTicket(ticketData);
         }
       } catch (err) {
-        console.error('Ticket fetch exception:', err);
-        setError('An unexpected error occurred.');
+        console.error('Ticket fetch error:', err);
+        setError('Ticket not found or access denied.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchTicket();
-  }, [ticketCode, user, authLoading]);
+  }, [ticketCode, user, authLoading, accessToken]);
 
   if (loading || authLoading) {
     return (

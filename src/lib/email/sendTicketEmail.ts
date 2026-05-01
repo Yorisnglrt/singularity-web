@@ -79,6 +79,7 @@ export async function sendOrderTicketsEmail(
     .from('tickets')
     .select(`
       ticket_code,
+      access_token,
       qr_payload,
       event_id,
       events (
@@ -133,7 +134,7 @@ export async function sendOrderTicketsEmail(
       contentId: cid, // Some clients prefer contentId
     });
 
-    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}`;
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
 
     return `
       <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
@@ -158,7 +159,7 @@ export async function sendOrderTicketsEmail(
   })).then(htmls => htmls.join(''));
 
   const ticketListText = tickets.map(t => {
-    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}`;
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
     return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
   }).join('\n\n');
 
