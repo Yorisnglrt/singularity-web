@@ -123,9 +123,9 @@ export function mapMixToDb(mix: any) {
     label: rest.label,
     duration: rest.duration,
     date: rest.date,
-    cover_gradient: rest.coverGradient || rest.cover_gradient || 'linear-gradient(135deg, #000, #333)',
-    audio_src: rest.audioSrc || rest.audio_src,
-    soundcloud_url: rest.soundcloudUrl || rest.soundcloud_url,
+    coverGradient: rest.coverGradient || rest.cover_gradient || 'linear-gradient(135deg, #000, #333)',
+    audioSrc: rest.audioSrc || rest.audio_src,
+    soundcloudUrl: rest.soundcloudUrl || rest.soundcloud_url,
   };
 }
 
