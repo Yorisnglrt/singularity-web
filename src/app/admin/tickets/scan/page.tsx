@@ -24,6 +24,7 @@ export default function TicketScannerPage() {
   const scannerRef = useRef<any>(null);
   const scannerContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const lastScannedRef = useRef<string>('');
 
   useEffect(() => {
@@ -32,11 +33,17 @@ export default function TicketScannerPage() {
     }
   }, [user, isLoading, router]);
 
+  // Auto-scroll to top of result when result state is entered
+  useEffect(() => {
+    if (scanState === 'result') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [scanState]);
+
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
       try {
         const state = scannerRef.current.getState();
-        // Html5QrcodeScanner states: NOT_STARTED=1, SCANNING=2, PAUSED=3
         if (state === 2) {
           await scannerRef.current.stop();
         }
@@ -88,14 +95,11 @@ export default function TicketScannerPage() {
     if (!scannerContainerRef.current) return;
     setCameraError(null);
 
-    // Dynamically import html5-qrcode to avoid SSR issues
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
 
-      // Clean up any existing scanner
       await stopScanner();
 
-      // Clear the container
       if (scannerContainerRef.current) {
         scannerContainerRef.current.innerHTML = '';
       }
@@ -108,40 +112,36 @@ export default function TicketScannerPage() {
       const html5QrCode = new Html5Qrcode(scannerId);
       scannerRef.current = html5QrCode;
 
+      const containerWidth = scannerContainerRef.current?.clientWidth || 300;
+      const qrBoxSize = Math.min(200, Math.floor(containerWidth * 0.55));
+
       await html5QrCode.start(
         { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
+          qrbox: { width: qrBoxSize, height: qrBoxSize },
+          aspectRatio: 4 / 3,
         },
         (decodedText: string) => {
-          // Prevent duplicate rapid scans
           if (decodedText === lastScannedRef.current) return;
           lastScannedRef.current = decodedText;
-
-          // Stop scanning and look up ticket
           html5QrCode.stop().catch(() => {});
           lookupTicket(decodedText);
         },
-        () => {
-          // QR code not found in frame - expected, no action needed
-        }
+        () => {}
       );
     } catch (err: any) {
       console.error('Camera error:', err);
       setCameraError(
         err?.message?.includes('NotAllowedError') || err?.message?.includes('Permission')
-          ? 'Camera access denied. Please allow camera access and reload.'
+          ? 'Camera access denied. Allow camera and reload.'
           : 'Camera not available. Use manual input below.'
       );
     }
   }, [stopScanner, lookupTicket]);
 
-  // Start camera scanner when in scanning state
   useEffect(() => {
     if (scanState === 'scanning' && user?.isAdmin) {
-      // Small delay to let DOM render
       const timer = setTimeout(() => startScanner(), 300);
       return () => {
         clearTimeout(timer);
@@ -150,7 +150,6 @@ export default function TicketScannerPage() {
     }
   }, [scanState, user?.isAdmin, startScanner, stopScanner]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => { stopScanner(); };
   }, [stopScanner]);
@@ -223,164 +222,136 @@ export default function TicketScannerPage() {
     <div className={styles.page}>
       <div className={styles.container}>
 
-        {/* Header */}
+        {/* Compact Header */}
         <header className={styles.header}>
-          <div>
-            <Link href="/admin" className={styles.backLink}>← Dashboard</Link>
-            <h1 className={styles.title}>Ticket Scanner</h1>
-          </div>
+          <Link href="/admin" className={styles.backLink}>← Admin</Link>
+          <h1 className={styles.title}>Scanner</h1>
           <div className={styles.adminBadge}>
             <span className={styles.adminDot} />
-            {user.displayName}
           </div>
         </header>
 
-        {/* Scanning State */}
+        {/* ── SCANNING STATE ── */}
         {scanState === 'scanning' && (
           <>
             <div className={styles.cameraSection}>
-              <div className={styles.viewfinderWrapper}>
-                <div ref={scannerContainerRef} className={styles.viewfinder} />
-                {!cameraError && (
-                  <div className={styles.viewfinderOverlay}>
-                    <div className={styles.cornerTL} />
-                    <div className={styles.cornerTR} />
-                    <div className={styles.cornerBL} />
-                    <div className={styles.cornerBR} />
-                  </div>
-                )}
-              </div>
+              <div ref={scannerContainerRef} className={styles.viewfinder} />
               {cameraError && (
                 <div className={styles.cameraErrorMsg}>{cameraError}</div>
               )}
-              <p className={styles.scanHint}>Point camera at ticket QR code</p>
+              <p className={styles.scanHint}>Point camera at QR code</p>
             </div>
 
-            <div className={styles.divider}>
-              <span>OR ENTER MANUALLY</span>
-            </div>
+            <div className={styles.divider}><span>or type code</span></div>
 
             <form onSubmit={handleManualLookup} className={styles.manualForm}>
               <input
                 ref={inputRef}
                 type="text"
                 className={styles.manualInput}
-                placeholder="Ticket code or QR payload..."
+                placeholder="Ticket code..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 autoComplete="off"
               />
               <button type="submit" className={styles.manualBtn} disabled={!query.trim()}>
-                Lookup
+                Go
               </button>
             </form>
           </>
         )}
 
-        {/* Loading State */}
+        {/* ── LOADING STATE ── */}
         {scanState === 'loading' && (
           <div className={styles.loadingState}>
             <div className={styles.spinner} />
-            <p>Looking up ticket...</p>
+            <p>Looking up...</p>
           </div>
         )}
 
-        {/* Result State */}
+        {/* ── RESULT STATE ── */}
         {scanState === 'result' && (
-          <div className={styles.resultSection}>
+          <div className={styles.resultSection} ref={resultRef}>
 
-            {/* Error: INVALID */}
+            {/* ── INVALID ── */}
             {error && !ticket && (
-              <div className={styles.bigState}>
-                <div className={`${styles.bigBadge} ${styles.badgeInvalid}`}>INVALID</div>
-                <p className={styles.bigMessage}>{error}</p>
-              </div>
-            )}
-
-            {/* Success check-in */}
-            {success && (
-              <div className={styles.bigState}>
-                <div className={`${styles.bigBadge} ${styles.badgeCheckedIn}`}>✓ CHECKED IN</div>
-                <p className={styles.bigMessage}>Entry granted</p>
-              </div>
-            )}
-
-            {/* Ticket found */}
-            {ticket && !success && (
               <>
-                {/* Status badge */}
-                {ticket.status === 'valid' && (
-                  <div className={styles.bigState}>
-                    <div className={`${styles.bigBadge} ${styles.badgeValid}`}>VALID</div>
-                  </div>
-                )}
-                {ticket.status === 'used' && (
-                  <div className={styles.bigState}>
-                    <div className={`${styles.bigBadge} ${styles.badgeUsed}`}>ALREADY USED</div>
-                    <p className={styles.bigMessage}>
-                      Scanned: {new Date(ticket.used_at).toLocaleString('en-GB')}
-                    </p>
-                  </div>
-                )}
-                {ticket.status === 'void' && (
-                  <div className={styles.bigState}>
-                    <div className={`${styles.bigBadge} ${styles.badgeVoid}`}>VOID</div>
-                    <p className={styles.bigMessage}>Entry denied — ticket is void</p>
-                  </div>
-                )}
+                <div className={`${styles.bigBadge} ${styles.badgeInvalid}`}>INVALID</div>
+                <p className={styles.resultMessage}>{error}</p>
               </>
             )}
 
-            {/* Ticket details card */}
+            {/* ── SUCCESS CHECK-IN ── */}
+            {success && (
+              <>
+                <div className={`${styles.bigBadge} ${styles.badgeCheckedIn}`}>✓ CHECKED IN</div>
+                <p className={styles.resultMessage}>Entry granted</p>
+              </>
+            )}
+
+            {/* ── VALID ticket: badge → CHECK IN → details ── */}
+            {ticket && ticket.status === 'valid' && !success && (
+              <>
+                <div className={`${styles.bigBadge} ${styles.badgeValid}`}>VALID</div>
+                <button
+                  className={styles.checkInBtn}
+                  onClick={handleCheckIn}
+                  disabled={checkingIn}
+                >
+                  {checkingIn ? 'Processing...' : 'CHECK IN'}
+                </button>
+              </>
+            )}
+
+            {/* ── ALREADY USED ── */}
+            {ticket && ticket.status === 'used' && !success && (
+              <>
+                <div className={`${styles.bigBadge} ${styles.badgeUsed}`}>ALREADY USED</div>
+                <p className={styles.resultMessage}>
+                  Scanned {new Date(ticket.used_at).toLocaleString('en-GB')}
+                </p>
+              </>
+            )}
+
+            {/* ── VOID ── */}
+            {ticket && ticket.status === 'void' && !success && (
+              <>
+                <div className={`${styles.bigBadge} ${styles.badgeVoid}`}>VOID</div>
+                <p className={styles.resultMessage}>Entry denied</p>
+              </>
+            )}
+
+            {/* ── Compact Details ── */}
             {ticket && (
               <div className={styles.detailsCard}>
-                <div className={styles.detailRow}>
-                  <label>Event</label>
-                  <div className={styles.detailValue}>{ticket.events?.title}</div>
-                  <div className={styles.detailSub}>
-                    {ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                    {' · '}
-                    {resolveVenue(ticket.events?.venue)}
+                <div className={styles.detailsGrid}>
+                  <div className={styles.detailCell}>
+                    <span className={styles.detailLabel}>Event</span>
+                    <span className={styles.detailVal}>{ticket.events?.title || '—'}</span>
+                  </div>
+                  <div className={styles.detailCell}>
+                    <span className={styles.detailLabel}>Type</span>
+                    <span className={styles.detailVal}>{ticket.event_ticket_types?.name || '—'}</span>
+                  </div>
+                  <div className={styles.detailCell}>
+                    <span className={styles.detailLabel}>Code</span>
+                    <span className={`${styles.detailVal} ${styles.mono}`}>{ticket.ticket_code}</span>
+                  </div>
+                  <div className={styles.detailCell}>
+                    <span className={styles.detailLabel}>Holder</span>
+                    <span className={styles.detailVal}>{ticket.holder_name || ticket.holder_email || '—'}</span>
                   </div>
                 </div>
-
-                <div className={styles.detailRow}>
-                  <label>Ticket Type</label>
-                  <div className={styles.detailValue}>{ticket.event_ticket_types?.name || '—'}</div>
-                </div>
-
-                <div className={styles.detailRow}>
-                  <label>Ticket Code</label>
-                  <div className={styles.detailValueMono}>{ticket.ticket_code}</div>
-                </div>
-
-                <div className={styles.detailRow}>
-                  <label>Holder</label>
-                  <div className={styles.detailValue}>{ticket.holder_name || ticket.holder_email || '—'}</div>
-                  {ticket.holder_name && ticket.holder_email && (
-                    <div className={styles.detailSub}>{ticket.holder_email}</div>
-                  )}
-                </div>
-
-                <div className={styles.detailRow}>
-                  <label>Order</label>
-                  <div className={styles.detailValueMono}>{ticket.ticket_orders?.order_reference || '—'}</div>
+                <div className={styles.detailsFooter}>
+                  {ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
+                  {' · '}
+                  {resolveVenue(ticket.events?.venue)}
+                  {ticket.ticket_orders?.order_reference ? ` · ${ticket.ticket_orders.order_reference}` : ''}
                 </div>
               </div>
             )}
 
-            {/* Check In button */}
-            {ticket && ticket.status === 'valid' && !success && (
-              <button
-                className={styles.checkInBtn}
-                onClick={handleCheckIn}
-                disabled={checkingIn}
-              >
-                {checkingIn ? 'Processing...' : 'CHECK IN'}
-              </button>
-            )}
-
-            {/* Scan Another */}
+            {/* ── Scan Another ── */}
             <button className={styles.scanAnotherBtn} onClick={handleScanAnother}>
               ◈ Scan Another Ticket
             </button>
