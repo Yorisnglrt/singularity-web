@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { toSlug } from '@/lib/slug';
 import EventForm from './EventForm';
 import ImageUpload from '@/components/ImageUpload';
@@ -628,7 +629,12 @@ export default function AdminPage() {
       <div className={styles.dashboard}>
         <header className={styles.header}>
           <h1 className={styles.authTitle}>System Console</h1>
-          <button onClick={logout} className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto'}}>Logout</button>
+          <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
+            <Link href="/admin/tickets/scan" className={`${styles.button}`} style={{width: 'auto', padding: '0.6rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', textDecoration: 'none'}}>
+              🎫 Scan Tickets
+            </Link>
+            <button onClick={logout} className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto'}}>Logout</button>
+          </div>
         </header>
 
         {statusMsg && <div className={styles.alert}>{statusMsg}</div>}

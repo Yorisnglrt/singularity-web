@@ -1,34 +1,38 @@
-.adminPage {
+.page {
   min-height: 100vh;
-  padding: 4rem 2rem;
+  padding: 3rem 1rem;
   background: var(--color-bg-base);
   color: var(--color-text-primary);
   display: flex;
   justify-content: center;
 }
 
-.scannerContainer {
+.container {
   width: 100%;
-  max-width: 600px;
+  max-width: 520px;
 }
+
+/* ── Header ────────────────────────────────────────────── */
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 2rem;
-  border-bottom: 1px solid var(--color-border);
   padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .backLink {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--color-text-muted);
   text-decoration: none;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.4rem;
   display: block;
+  transition: color 0.2s;
 }
 
 .backLink:hover {
@@ -37,160 +41,297 @@
 
 .title {
   font-family: var(--font-heading);
-  font-size: 2rem;
+  font-size: 1.8rem;
   margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.statusIndicator {
+.adminBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--color-accent-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.scanSection {
-  margin-bottom: 2rem;
+.adminDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  animation: pulse 2s infinite;
 }
 
-.scanForm {
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Camera Section ────────────────────────────────────── */
+
+.cameraSection {
+  margin-bottom: 1.5rem;
+}
+
+.viewfinderWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 380px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0a0a0a;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+.viewfinder {
+  width: 100%;
+  height: 100%;
+}
+
+/* Override html5-qrcode internal styles */
+.viewfinder :global(video) {
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.viewfinder :global(#qr-shaded-region) {
+  border-color: rgba(0, 255, 178, 0.4) !important;
+}
+
+.viewfinderOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cornerTL, .cornerTR, .cornerBL, .cornerBR {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-color: var(--color-accent-primary);
+  border-style: solid;
+  border-width: 0;
+}
+
+.cornerTL { top: 20%; left: 20%; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 4px; }
+.cornerTR { top: 20%; right: 20%; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 4px; }
+.cornerBL { bottom: 20%; left: 20%; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 4px; }
+.cornerBR { bottom: 20%; right: 20%; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 4px; }
+
+.cameraErrorMsg {
+  padding: 1rem;
+  margin-top: 1rem;
+  background: rgba(255, 59, 92, 0.08);
+  border: 1px solid rgba(255, 59, 92, 0.3);
+  border-radius: 8px;
+  color: #ff6b82;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.scanHint {
+  text-align: center;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Divider ───────────────────────────────────────────── */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.divider span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ── Manual Input ──────────────────────────────────────── */
+
+.manualForm {
   display: flex;
   gap: 0.5rem;
 }
 
-.scanInput {
+.manualInput {
   flex: 1;
-  padding: 1.25rem;
+  padding: 1rem;
   background: #111;
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   color: #fff;
   font-family: var(--font-mono);
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   transition: border-color 0.2s;
 }
 
-.scanInput:focus {
+.manualInput:focus {
   outline: none;
   border-color: var(--color-accent-primary);
 }
 
-.scanBtn {
+.manualBtn {
   padding: 0 1.5rem;
-  background: var(--color-accent-primary);
-  color: #000;
-  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 0.85rem;
   cursor: pointer;
   text-transform: uppercase;
+  transition: all 0.2s;
 }
 
-.alert {
-  padding: 1.25rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  text-align: center;
-}
-
-.alertError {
-  background: rgba(255, 59, 92, 0.1);
-  border: 1px solid #ff3b5c;
-  color: #ff3b5c;
-}
-
-.alertSuccess {
-  background: rgba(0, 255, 178, 0.1);
-  border: 1px solid var(--color-accent-primary);
+.manualBtn:hover:not(:disabled) {
+  border-color: var(--color-accent-primary);
   color: var(--color-accent-primary);
-  font-size: 1.2rem;
 }
 
-.ticketDetails {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 2rem;
-  animation: slideUp 0.3s ease-out;
+.manualBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
+/* ── Loading State ─────────────────────────────────────── */
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 4rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Result Section ────────────────────────────────────── */
+
+.resultSection {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.ticketHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+/* ── Big Status States ─────────────────────────────────── */
+
+.bigState {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
-.statusBadgeLarge {
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
+.bigBadge {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  border-radius: 8px;
   font-family: var(--font-heading);
   font-weight: 900;
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   letter-spacing: 2px;
+  margin-bottom: 0.75rem;
 }
 
-.valid .statusBadgeLarge { background: var(--color-accent-primary); color: #000; }
-.used .statusBadgeLarge { background: #ffcc00; color: #000; }
-.void .statusBadgeLarge { background: #ff3b5c; color: #fff; }
-
-.ticketMeta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.orderRef {
+.bigMessage {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.ticketCode {
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-.infoGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-}
-
-.infoGroup label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 0.5rem;
-  letter-spacing: 1px;
-}
-
-.infoValue {
-  font-family: var(--font-heading);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.infoSub {
   font-size: 0.85rem;
   color: var(--color-text-secondary);
-  margin-top: 0.25rem;
+  margin: 0;
 }
+
+.badgeValid     { background: var(--color-accent-primary); color: #000; }
+.badgeCheckedIn { background: var(--color-accent-primary); color: #000; box-shadow: 0 0 40px rgba(0, 255, 178, 0.35); }
+.badgeUsed      { background: #ffcc00; color: #000; }
+.badgeVoid      { background: #ff3b5c; color: #fff; }
+.badgeInvalid   { background: #ff3b5c; color: #fff; }
+
+/* ── Details Card ──────────────────────────────────────── */
+
+.detailsCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.detailRow {
+  padding: 0.75rem 0;
+}
+
+.detailRow + .detailRow {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.detailRow label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+  letter-spacing: 1.5px;
+}
+
+.detailValue {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.detailValueMono {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.detailSub {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.2rem;
+}
+
+/* ── Action Buttons ────────────────────────────────────── */
 
 .checkInBtn {
   width: 100%;
@@ -199,17 +340,19 @@
   color: #000;
   border: none;
   border-radius: 12px;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 900;
   cursor: pointer;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   box-shadow: 0 0 30px rgba(0, 255, 178, 0.2);
   transition: all 0.2s;
+  margin-bottom: 1rem;
 }
 
 .checkInBtn:hover:not(:disabled) {
   transform: scale(1.02);
-  box-shadow: 0 0 40px rgba(0, 255, 178, 0.4);
+  box-shadow: 0 0 50px rgba(0, 255, 178, 0.4);
 }
 
 .checkInBtn:disabled {
@@ -217,17 +360,46 @@
   cursor: not-allowed;
 }
 
-.statusMessage {
-  text-align: center;
+.scanAnotherBtn {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 0.9rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
+.scanAnotherBtn:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+/* ── Mobile ────────────────────────────────────────────── */
+
 @media (max-width: 600px) {
-  .adminPage { padding: 2rem 1rem; }
-  .infoValue { font-size: 1.1rem; }
-  .checkInBtn { font-size: 1.2rem; }
+  .page {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .title {
+    font-size: 1.4rem;
+  }
+
+  .bigBadge {
+    font-size: 1.3rem;
+    padding: 0.8rem 2rem;
+  }
+
+  .checkInBtn {
+    font-size: 1.3rem;
+    padding: 1.25rem;
+  }
+
+  .viewfinderWrapper {
+    max-height: 320px;
+  }
 }
