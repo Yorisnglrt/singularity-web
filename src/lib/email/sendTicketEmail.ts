@@ -12,6 +12,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -124,21 +126,37 @@ export async function sendOrderTicketsEmail(orderId: string): Promise<{ sent: bo
       filename: `${t.ticket_code}.png`,
       content: qrBuffer,
       cid: cid,
+      contentId: cid, // Some clients prefer contentId
     });
+
+    const ticketUrl = `${BASE_URL}/tickets/${t.ticket_code}`;
 
     return `
       <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
         <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">Ticket: ${t.ticket_code}</div>
+        
         <div style="margin-bottom: 16px;">
           <img src="cid:${cid}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 4px; display: block; margin: 0 auto;" />
         </div>
+
+        <div style="margin-bottom: 20px;">
+          <p style="color: #aaa; font-size: 0.8rem; margin-bottom: 12px;">If the QR code is not visible, open your ticket here:</p>
+          <a href="${ticketUrl}" 
+             style="display: inline-block; padding: 12px 24px; background: #00ffb2; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 0.85rem;">
+             View Ticket
+          </a>
+        </div>
+
         <div style="color: #fff; font-size: 0.9rem; font-weight: bold; margin-bottom: 4px;">Show this QR at the entrance</div>
         <div style="color: #888; font-size: 0.7rem; word-break: break-all; opacity: 0.5;">${t.qr_payload}</div>
       </div>
     `;
   })).then(htmls => htmls.join(''));
 
-  const ticketListText = tickets.map(t => `Ticket Code: ${t.ticket_code}\nQR Payload: ${t.qr_payload}`).join('\n\n');
+  const ticketListText = tickets.map(t => {
+    const ticketUrl = `${BASE_URL}/tickets/${t.ticket_code}`;
+    return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
+  }).join('\n\n');
 
   // 4. Send via Resend
   const { data, error: sendError } = await resend.emails.send({
