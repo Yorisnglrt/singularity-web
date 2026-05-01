@@ -81,9 +81,13 @@ export default function EventCard({ event, featured }: EventCardProps) {
             {event.isFree ? (
               <span className="tag">{t('events.free')}</span>
             ) : (
-              <a href={event.ticketUrl || '#'} className="btn btn-primary btn-sm" id={`tickets-${event.id}`}>
+              <Link 
+                href={`/events/${toSlug(event)}#tickets`} 
+                className="btn btn-primary btn-sm" 
+                id={`tickets-${event.id}`}
+              >
                 {t('events.tickets')}
-              </a>
+              </Link>
             )}
             <Link href={`/events/${toSlug(event)}`} className={`btn btn-sm`} style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} id={`detail-${event.id}`}>
               View details

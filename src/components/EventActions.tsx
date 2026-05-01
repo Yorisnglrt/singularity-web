@@ -156,10 +156,18 @@ export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProv
   return (
     <>
       <div className={styles.wrapper}>
-        {!isPast && !enableCheckout && (
+        {!isPast && (
           <div className={styles.ticketRow}>
             {isFree ? (
               <span className="tag">Free entry</span>
+            ) : enableCheckout ? (
+              <a
+                href="#tickets"
+                className={`${styles.ticketBtn} btn btn-primary`}
+                id={`buy-internal-${eventId}`}
+              >
+                Get Tickets
+              </a>
             ) : ticketProvider === 'vipps' ? (
               <button
                 className={`${styles.ticketBtn} ${styles.vippsBtn} btn btn-primary`}

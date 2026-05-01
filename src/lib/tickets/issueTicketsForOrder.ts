@@ -95,6 +95,24 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
     throw new Error('Failed to generate tickets');
   }
 
+  // 5.5 Update sold_quantity in event_ticket_types
+  try {
+    const ttUpdates = items.map(item => ({
+      ticket_type_id: item.ticket_type_id,
+      quantity: item.quantity
+    }));
+    
+    const { error: ttError } = await supabaseAdmin.rpc('increment_ticket_sold_counts', { 
+      items: ttUpdates 
+    });
+    
+    if (ttError) {
+      console.error(`[tickets] Failed to increment sold counts for order ${order.order_reference}:`, ttError);
+    }
+  } catch (ttErr: any) {
+    console.error(`[tickets] sold_quantity increment crashed for ${order.order_reference}:`, ttErr.message);
+  }
+
   // 6. Mark order as issued
   const { error: updateError } = await supabaseAdmin
     .from('ticket_orders')
