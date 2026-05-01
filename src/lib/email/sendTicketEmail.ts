@@ -50,7 +50,11 @@ export interface SendResult {
  * Sends a ticket confirmation email for a paid order.
  * This function is idempotent: if email_status is 'sent', it skips sending.
  */
-export async function sendOrderTicketsEmail(orderId: string): Promise<{ sent: boolean; alreadySent: boolean; messageId?: string }> {
+export async function sendOrderTicketsEmail(
+  orderId: string, 
+  options?: { force?: boolean }
+): Promise<{ sent: boolean; alreadySent: boolean; messageId?: string }> {
+  const force = options?.force === true;
   const resend = getResendClient();
   const from = getFromAddress();
   const replyTo = getReplyTo();
@@ -66,7 +70,7 @@ export async function sendOrderTicketsEmail(orderId: string): Promise<{ sent: bo
     throw new Error(`Order not found for email: ${orderId}`);
   }
 
-  if (order.email_status === 'sent') {
+  if (order.email_status === 'sent' && !force) {
     return { sent: false, alreadySent: true };
   }
 
