@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // 1. Load the existing pending order from ticket_orders
     let query = supabaseAdmin
       .from('ticket_orders')
-      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name');
+      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name, payment_method_type');
 
     if (orderReference) {
       query = query.eq('order_reference', orderReference);
@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       amountOre,
       returnUrl,
       idempotencyKey,
+      (order.payment_method_type as 'WALLET' | 'CARD') || 'WALLET'
     );
 
     // 9. Update ticket_orders with Vipps metadata

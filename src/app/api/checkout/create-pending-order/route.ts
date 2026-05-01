@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { eventId, ticketTypeId, quantity, customerEmail, customerName, customerPhone } = body;
+    const { eventId, ticketTypeId, quantity, customerEmail, customerName, customerPhone, paymentMethodType } = body;
 
     // ── Input validation ──
     if (!eventId || typeof eventId !== 'string' || !isUuidLike(eventId)) {
@@ -53,6 +53,10 @@ export async function POST(req: Request) {
     if (!customerEmail || typeof customerEmail !== 'string' || !isValidEmail(customerEmail)) {
       return NextResponse.json({ error: 'customerEmail is required and must be a valid email address' }, { status: 400 });
     }
+
+    // ── Validate payment method ──
+    const validMethods = ['WALLET', 'CARD'];
+    const finalMethod = (paymentMethodType && validMethods.includes(paymentMethodType)) ? paymentMethodType : 'WALLET';
 
     // ── Optional auth: resolve profile_id if logged in ──
     let profileId: string | null = null;
@@ -138,6 +142,7 @@ export async function POST(req: Request) {
       sales_channel: 'online',
       payment_provider: 'vipps',
       payment_status: 'pending',
+      payment_method_type: finalMethod,
       profile_id: profileId,
       rave_points_earned: ravePointsEarned,
       points_awarded: false,

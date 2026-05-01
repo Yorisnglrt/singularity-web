@@ -70,6 +70,7 @@ export async function createPayment(
   amountOre: number,
   returnUrl: string,
   idempotencyKey: string,
+  paymentMethodType: 'WALLET' | 'CARD' = 'WALLET'
 ): Promise<string> {
   const headers = await vippsHeaders();
   headers['Idempotency-Key'] = idempotencyKey;
@@ -79,7 +80,7 @@ export async function createPayment(
       value: amountOre,
       currency: 'NOK',
     },
-    paymentMethod: { type: 'WALLET' },
+    paymentMethod: { type: paymentMethodType },
     reference,
     returnUrl,
     userFlow: 'WEB_REDIRECT',

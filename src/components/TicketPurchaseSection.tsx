@@ -21,6 +21,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CARD'>('WALLET');
 
   useEffect(() => {
     const checkUser = async () => {
@@ -79,7 +80,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           quantity,
           customerEmail: email,
           customerName: name,
-          customerPhone: phone
+          customerPhone: phone,
+          paymentMethodType: paymentMethod
         })
       });
 
@@ -227,6 +229,23 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             I agree to the <a href="/terms-of-sale" target="_blank" rel="noopener noreferrer">Terms of Sale</a>
           </span>
         </label>
+
+        <div className={styles.paymentMethodSelector}>
+          <div 
+            className={`${styles.methodBtn} ${paymentMethod === 'WALLET' ? styles.methodBtnSelected : ''}`}
+            onClick={() => setPaymentMethod('WALLET')}
+          >
+            <span className={styles.methodIcon}>📱</span>
+            <span className={styles.methodLabel}>Pay with Vipps</span>
+          </div>
+          <div 
+            className={`${styles.methodBtn} ${paymentMethod === 'CARD' ? styles.methodBtnSelected : ''}`}
+            onClick={() => setPaymentMethod('CARD')}
+          >
+            <span className={styles.methodIcon}>💳</span>
+            <span className={styles.methodLabel}>Pay with Card</span>
+          </div>
+        </div>
 
         <button 
           type="submit" 

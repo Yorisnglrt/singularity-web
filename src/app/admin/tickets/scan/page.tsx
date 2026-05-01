@@ -120,21 +120,21 @@ export default function TicketScannerPage() {
       const html5QrCode = new Html5Qrcode(scannerId);
       scannerRef.current = html5QrCode;
 
-      const containerWidth = scannerContainerRef.current.clientWidth || 300;
-      // Use smaller QR box for compact frame
-      const qrBoxSize = Math.min(180, Math.floor(containerWidth * 0.6));
+      // Removed qrbox and container size calculations for full-video preview
 
       await html5QrCode.start(
         { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: qrBoxSize, height: qrBoxSize },
           aspectRatio: 1.333333, // 4:3
+          // Remove qrbox to avoid shaded overlay for a clean full video preview
         },
         (decodedText: string) => {
           if (decodedText === lastScannedRef.current) return;
           lastScannedRef.current = decodedText;
-          html5QrCode.stop().catch(() => {});
+          
+          // Stop and clear immediately on success to hide camera preview
+          stopScanner();
           lookupTicket(decodedText);
         },
         () => {}
@@ -231,7 +231,7 @@ export default function TicketScannerPage() {
             <div className={styles.cameraFrame}>
               <div ref={scannerContainerRef} className={styles.viewfinder} />
               {cameraError && <div className={styles.cameraError}>{cameraError}</div>}
-              <div className={styles.scanHint}>Align QR code in center</div>
+              <div className={styles.scanHint}>Point the camera at the ticket QR code</div>
             </div>
 
             <div className={styles.manualRow}>
