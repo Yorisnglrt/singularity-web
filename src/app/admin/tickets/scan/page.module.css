@@ -1,0 +1,233 @@
+.adminPage {
+  min-height: 100vh;
+  padding: 4rem 2rem;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  display: flex;
+  justify-content: center;
+}
+
+.scannerContainer {
+  width: 100%;
+  max-width: 600px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 1.5rem;
+}
+
+.backLink {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.backLink:hover {
+  color: var(--color-accent-primary);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.statusIndicator {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.scanSection {
+  margin-bottom: 2rem;
+}
+
+.scanForm {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.scanInput {
+  flex: 1;
+  padding: 1.25rem;
+  background: #111;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  transition: border-color 0.2s;
+}
+
+.scanInput:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+}
+
+.scanBtn {
+  padding: 0 1.5rem;
+  background: var(--color-accent-primary);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.alert {
+  padding: 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: center;
+}
+
+.alertError {
+  background: rgba(255, 59, 92, 0.1);
+  border: 1px solid #ff3b5c;
+  color: #ff3b5c;
+}
+
+.alertSuccess {
+  background: rgba(0, 255, 178, 0.1);
+  border: 1px solid var(--color-accent-primary);
+  color: var(--color-accent-primary);
+  font-size: 1.2rem;
+}
+
+.ticketDetails {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 2rem;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ticketHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.statusBadgeLarge {
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+}
+
+.valid .statusBadgeLarge { background: var(--color-accent-primary); color: #000; }
+.used .statusBadgeLarge { background: #ffcc00; color: #000; }
+.void .statusBadgeLarge { background: #ff3b5c; color: #fff; }
+
+.ticketMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.orderRef {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.ticketCode {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.infoGroup label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+}
+
+.infoValue {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.infoSub {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.checkInBtn {
+  width: 100%;
+  padding: 1.5rem;
+  background: var(--color-accent-primary);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 0 30px rgba(0, 255, 178, 0.2);
+  transition: all 0.2s;
+}
+
+.checkInBtn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 0 40px rgba(0, 255, 178, 0.4);
+}
+
+.checkInBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statusMessage {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .adminPage { padding: 2rem 1rem; }
+  .infoValue { font-size: 1.1rem; }
+  .checkInBtn { font-size: 1.2rem; }
+}
