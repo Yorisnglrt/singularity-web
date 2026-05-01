@@ -633,6 +633,9 @@ export default function AdminPage() {
             <Link href="/admin/tickets/scan" className={`${styles.button}`} style={{width: 'auto', padding: '0.6rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', textDecoration: 'none'}}>
               🎫 Scan Tickets
             </Link>
+            <Link href="/admin/ticket-sales" className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto', padding: '0.6rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', textDecoration: 'none'}}>
+              💰 Ticket Sales
+            </Link>
             <button onClick={logout} className={`${styles.button} ${styles.buttonOutline}`} style={{width: 'auto'}}>Logout</button>
           </div>
         </header>
