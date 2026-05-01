@@ -23,8 +23,7 @@ export default function TicketScannerPage() {
 
   const scannerRef = useRef<any>(null);
   const scannerContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
   const lastScannedRef = useRef<string>('');
 
   useEffect(() => {
@@ -33,31 +32,41 @@ export default function TicketScannerPage() {
     }
   }, [user, isLoading, router]);
 
-  // Auto-scroll to top of result when result state is entered
-  useEffect(() => {
-    if (scanState === 'result') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [scanState]);
+  // Nuclear fallback to kill all camera tracks
+  const killAllVideoTracks = useCallback(() => {
+    try {
+      const videos = document.querySelectorAll('video');
+      videos.forEach((video) => {
+        const stream = (video as HTMLVideoElement).srcObject as MediaStream | null;
+        if (stream) {
+          stream.getTracks().forEach((track) => {
+            track.stop();
+            console.log('[scanner] killed track:', track.label);
+          });
+          (video as HTMLVideoElement).srcObject = null;
+        }
+      });
+    } catch (e) {}
+  }, []);
 
   const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        const state = scannerRef.current.getState();
-        if (state === 2) {
-          await scannerRef.current.stop();
-        }
-      } catch (e) {
-        // Scanner may already be stopped
+    const instance = scannerRef.current;
+    if (!instance) return;
+
+    console.log('[scanner] stopping');
+    try {
+      const state = instance.getState();
+      if (state === 2 || state === 3) {
+        await instance.stop();
       }
-      try {
-        scannerRef.current.clear();
-      } catch (e) {
-        // Ignore clear errors
-      }
-      scannerRef.current = null;
+      instance.clear();
+    } catch (e) {
+      console.log('[scanner] stop error:', e);
     }
-  }, []);
+    scannerRef.current = null;
+    killAllVideoTracks();
+    console.log('[scanner] cleanup complete');
+  }, [killAllVideoTracks]);
 
   const lookupTicket = useCallback(async (value: string) => {
     if (!value.trim()) return;
@@ -94,33 +103,33 @@ export default function TicketScannerPage() {
   const startScanner = useCallback(async () => {
     if (!scannerContainerRef.current) return;
     setCameraError(null);
+    console.log('[scanner] starting');
 
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
-
       await stopScanner();
-
-      if (scannerContainerRef.current) {
-        scannerContainerRef.current.innerHTML = '';
-      }
+      
+      if (!mountedRef.current || !scannerContainerRef.current) return;
+      scannerContainerRef.current.innerHTML = '';
 
       const scannerId = 'qr-scanner-viewport';
       const div = document.createElement('div');
       div.id = scannerId;
-      scannerContainerRef.current?.appendChild(div);
+      scannerContainerRef.current.appendChild(div);
 
       const html5QrCode = new Html5Qrcode(scannerId);
       scannerRef.current = html5QrCode;
 
-      const containerWidth = scannerContainerRef.current?.clientWidth || 300;
-      const qrBoxSize = Math.min(200, Math.floor(containerWidth * 0.55));
+      const containerWidth = scannerContainerRef.current.clientWidth || 300;
+      // Use smaller QR box for compact frame
+      const qrBoxSize = Math.min(180, Math.floor(containerWidth * 0.6));
 
       await html5QrCode.start(
         { facingMode: 'environment' },
         {
           fps: 10,
           qrbox: { width: qrBoxSize, height: qrBoxSize },
-          aspectRatio: 4 / 3,
+          aspectRatio: 1.333333, // 4:3
         },
         (decodedText: string) => {
           if (decodedText === lastScannedRef.current) return;
@@ -130,17 +139,15 @@ export default function TicketScannerPage() {
         },
         () => {}
       );
+      console.log('[scanner] camera active');
     } catch (err: any) {
-      console.error('Camera error:', err);
-      setCameraError(
-        err?.message?.includes('NotAllowedError') || err?.message?.includes('Permission')
-          ? 'Camera access denied. Allow camera and reload.'
-          : 'Camera not available. Use manual input below.'
-      );
+      console.error('[scanner] camera error:', err);
+      setCameraError('Camera error. Use manual input.');
     }
   }, [stopScanner, lookupTicket]);
 
   useEffect(() => {
+    mountedRef.current = true;
     if (scanState === 'scanning' && user?.isAdmin) {
       const timer = setTimeout(() => startScanner(), 300);
       return () => {
@@ -151,8 +158,17 @@ export default function TicketScannerPage() {
   }, [scanState, user?.isAdmin, startScanner, stopScanner]);
 
   useEffect(() => {
-    return () => { stopScanner(); };
+    return () => {
+      mountedRef.current = false;
+      stopScanner();
+    };
   }, [stopScanner]);
+
+  useEffect(() => {
+    if (scanState === 'result') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [scanState]);
 
   const handleManualLookup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,10 +180,7 @@ export default function TicketScannerPage() {
 
   const handleCheckIn = async () => {
     if (!ticket || ticket.status !== 'valid') return;
-
     setCheckingIn(true);
-    setError(null);
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/admin/tickets/checkin', {
@@ -178,20 +191,14 @@ export default function TicketScannerPage() {
         },
         body: JSON.stringify({ ticketId: ticket.id })
       });
-
       if (res.ok) {
         setSuccess(true);
-        setTicket({
-          ...ticket,
-          status: 'used',
-          used_at: new Date().toISOString()
-        });
+        setTicket({ ...ticket, status: 'used', used_at: new Date().toISOString() });
       } else {
         const err = await res.json();
         setError(err.error || 'Check-in failed');
       }
     } catch (err) {
-      console.error('Check-in error:', err);
       setError('Connection error');
     } finally {
       setCheckingIn(false);
@@ -203,7 +210,6 @@ export default function TicketScannerPage() {
     setTicket(null);
     setError(null);
     setSuccess(false);
-    setQuery('');
     setScanState('scanning');
   };
 
@@ -211,150 +217,98 @@ export default function TicketScannerPage() {
     return <div className={styles.page}><div className={styles.loadingState}>Authenticating...</div></div>;
   }
 
-  const resolveVenue = (venue: any): string => {
-    if (!venue) return 'TBA';
-    if (typeof venue === 'string') return venue;
-    if (typeof venue === 'object') return venue.en || venue.no || Object.values(venue)[0] as string || 'TBA';
-    return 'TBA';
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-
-        {/* Compact Header */}
         <header className={styles.header}>
           <Link href="/admin" className={styles.backLink}>← Admin</Link>
           <h1 className={styles.title}>Scanner</h1>
-          <div className={styles.adminBadge}>
-            <span className={styles.adminDot} />
-          </div>
+          <div className={styles.adminDot} />
         </header>
 
-        {/* ── SCANNING STATE ── */}
         {scanState === 'scanning' && (
-          <>
-            <div className={styles.cameraSection}>
+          <div className={styles.scanSection}>
+            <div className={styles.cameraFrame}>
               <div ref={scannerContainerRef} className={styles.viewfinder} />
-              {cameraError && (
-                <div className={styles.cameraErrorMsg}>{cameraError}</div>
-              )}
-              <p className={styles.scanHint}>Point camera at QR code</p>
+              {cameraError && <div className={styles.cameraError}>{cameraError}</div>}
+              <div className={styles.scanHint}>Align QR code in center</div>
             </div>
 
-            <div className={styles.divider}><span>or type code</span></div>
-
-            <form onSubmit={handleManualLookup} className={styles.manualForm}>
-              <input
-                ref={inputRef}
-                type="text"
-                className={styles.manualInput}
-                placeholder="Ticket code..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoComplete="off"
-              />
-              <button type="submit" className={styles.manualBtn} disabled={!query.trim()}>
-                Go
-              </button>
-            </form>
-          </>
+            <div className={styles.manualRow}>
+              <form onSubmit={handleManualLookup} className={styles.manualForm}>
+                <input
+                  type="text"
+                  className={styles.manualInput}
+                  placeholder="Code..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoComplete="off"
+                />
+                <button type="submit" className={styles.manualBtn} disabled={!query.trim()}>GO</button>
+              </form>
+            </div>
+          </div>
         )}
 
-        {/* ── LOADING STATE ── */}
         {scanState === 'loading' && (
           <div className={styles.loadingState}>
             <div className={styles.spinner} />
-            <p>Looking up...</p>
+            <p>Searching...</p>
           </div>
         )}
 
-        {/* ── RESULT STATE ── */}
         {scanState === 'result' && (
-          <div className={styles.resultSection} ref={resultRef}>
-
-            {/* ── INVALID ── */}
-            {error && !ticket && (
+          <div className={styles.resultSection}>
+            {/* Status Badge */}
+            {error && !ticket && <div className={`${styles.statusBadge} ${styles.badgeInvalid}`}>INVALID</div>}
+            {success && <div className={`${styles.statusBadge} ${styles.badgeSuccess}`}>✓ CHECKED IN</div>}
+            {ticket && !success && (
               <>
-                <div className={`${styles.bigBadge} ${styles.badgeInvalid}`}>INVALID</div>
-                <p className={styles.resultMessage}>{error}</p>
+                {ticket.status === 'valid' && <div className={`${styles.statusBadge} ${styles.badgeValid}`}>VALID</div>}
+                {ticket.status === 'used' && <div className={`${styles.statusBadge} ${styles.badgeUsed}`}>ALREADY USED</div>}
+                {ticket.status === 'void' && <div className={`${styles.statusBadge} ${styles.badgeVoid}`}>VOID</div>}
               </>
             )}
 
-            {/* ── SUCCESS CHECK-IN ── */}
-            {success && (
-              <>
-                <div className={`${styles.bigBadge} ${styles.badgeCheckedIn}`}>✓ CHECKED IN</div>
-                <p className={styles.resultMessage}>Entry granted</p>
-              </>
-            )}
-
-            {/* ── VALID ticket: badge → CHECK IN → details ── */}
+            {/* Main Action Button */}
             {ticket && ticket.status === 'valid' && !success && (
-              <>
-                <div className={`${styles.bigBadge} ${styles.badgeValid}`}>VALID</div>
-                <button
-                  className={styles.checkInBtn}
-                  onClick={handleCheckIn}
-                  disabled={checkingIn}
-                >
-                  {checkingIn ? 'Processing...' : 'CHECK IN'}
-                </button>
-              </>
+              <button className={styles.checkInBtn} onClick={handleCheckIn} disabled={checkingIn}>
+                {checkingIn ? '...' : 'CHECK IN'}
+              </button>
             )}
 
-            {/* ── ALREADY USED ── */}
-            {ticket && ticket.status === 'used' && !success && (
-              <>
-                <div className={`${styles.bigBadge} ${styles.badgeUsed}`}>ALREADY USED</div>
-                <p className={styles.resultMessage}>
-                  Scanned {new Date(ticket.used_at).toLocaleString('en-GB')}
-                </p>
-              </>
+            {/* Message/Reason */}
+            {(error || success || (ticket && ticket.status !== 'valid')) && (
+              <p className={styles.resultMessage}>
+                {error || (success ? 'Entry granted' : ticket.status === 'used' ? `Used ${new Date(ticket.used_at).toLocaleTimeString()}` : 'Entry denied')}
+              </p>
             )}
 
-            {/* ── VOID ── */}
-            {ticket && ticket.status === 'void' && !success && (
-              <>
-                <div className={`${styles.bigBadge} ${styles.badgeVoid}`}>VOID</div>
-                <p className={styles.resultMessage}>Entry denied</p>
-              </>
-            )}
-
-            {/* ── Compact Details ── */}
+            {/* Compact Details */}
             {ticket && (
-              <div className={styles.detailsCard}>
+              <div className={styles.detailsBox}>
                 <div className={styles.detailsGrid}>
-                  <div className={styles.detailCell}>
-                    <span className={styles.detailLabel}>Event</span>
-                    <span className={styles.detailVal}>{ticket.events?.title || '—'}</span>
+                  <div className={styles.detailItem}>
+                    <label>Event</label>
+                    <span>{ticket.events?.title}</span>
                   </div>
-                  <div className={styles.detailCell}>
-                    <span className={styles.detailLabel}>Type</span>
-                    <span className={styles.detailVal}>{ticket.event_ticket_types?.name || '—'}</span>
+                  <div className={styles.detailItem}>
+                    <label>Type</label>
+                    <span>{ticket.event_ticket_types?.name}</span>
                   </div>
-                  <div className={styles.detailCell}>
-                    <span className={styles.detailLabel}>Code</span>
-                    <span className={`${styles.detailVal} ${styles.mono}`}>{ticket.ticket_code}</span>
+                  <div className={styles.detailItem}>
+                    <label>Holder</label>
+                    <span>{ticket.holder_name || ticket.holder_email}</span>
                   </div>
-                  <div className={styles.detailCell}>
-                    <span className={styles.detailLabel}>Holder</span>
-                    <span className={styles.detailVal}>{ticket.holder_name || ticket.holder_email || '—'}</span>
+                  <div className={styles.detailItem}>
+                    <label>Code</label>
+                    <span className={styles.mono}>{ticket.ticket_code}</span>
                   </div>
-                </div>
-                <div className={styles.detailsFooter}>
-                  {ticket.events?.date ? new Date(ticket.events.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
-                  {' · '}
-                  {resolveVenue(ticket.events?.venue)}
-                  {ticket.ticket_orders?.order_reference ? ` · ${ticket.ticket_orders.order_reference}` : ''}
                 </div>
               </div>
             )}
 
-            {/* ── Scan Another ── */}
-            <button className={styles.scanAnotherBtn} onClick={handleScanAnother}>
-              ◈ Scan Another Ticket
-            </button>
+            <button className={styles.scanNextBtn} onClick={handleScanAnother}>◈ Scan Another</button>
           </div>
         )}
       </div>
