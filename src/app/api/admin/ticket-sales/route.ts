@@ -36,7 +36,7 @@ export async function GET(req: Request) {
           *,
           event:events(title)
         ),
-        tickets:tickets(count)
+        tickets:tickets(id, ticket_code, status)
       `)
       .order('created_at', { ascending: false });
 
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     // Flatten tickets count for easier frontend use
     const orders = data?.map(order => ({
       ...order,
-      ticket_count: order.tickets?.[0]?.count ?? 0
+      ticket_count: order.tickets?.length ?? 0
     })) ?? [];
 
     return NextResponse.json(orders);

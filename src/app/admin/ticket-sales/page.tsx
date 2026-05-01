@@ -18,6 +18,12 @@ interface TicketOrderItem {
   };
 }
 
+interface Ticket {
+  id: string;
+  ticket_code: string;
+  status: string;
+}
+
 interface TicketOrder {
   id: string;
   order_reference: string;
@@ -37,6 +43,7 @@ interface TicketOrder {
   created_at: string;
   ticket_count: number;
   items: TicketOrderItem[];
+  tickets: Ticket[];
 }
 
 export default function TicketSalesPage() {
@@ -51,7 +58,7 @@ export default function TicketSalesPage() {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('paid');
   const [emailFilter, setEmailFilter] = useState('all');
 
   const fetchOrders = useCallback(async () => {
@@ -257,14 +264,26 @@ export default function TicketSalesPage() {
                   >
                     {resendingId === order.id ? 'Sending...' : '✉ Resend Email'}
                   </button>
-                  <Link 
-                    href={`/tickets/${order.id}`} // Assuming there might be a public ticket view by order ID too, or just use the first ticket
-                    className={`${styles.button} ${styles.buttonOutline}`}
-                    target="_blank"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    👁 View Tickets
-                  </Link>
+                  
+                  {order.tickets && order.tickets.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {order.tickets.map((t, i) => (
+                        <Link 
+                          key={t.id}
+                          href={`/tickets/${t.ticket_code}`}
+                          className={`${styles.button} ${styles.buttonOutline}`}
+                          target="_blank"
+                          style={{ textDecoration: 'none', fontSize: '0.75rem', padding: '0.4rem' }}
+                        >
+                          🎫 Ticket {order.tickets.length > 1 ? i + 1 : ''} ({t.status})
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                      No tickets issued
+                    </div>
+                  )}
                 </div>
               </div>
             ))
