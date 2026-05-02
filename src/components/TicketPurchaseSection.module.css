@@ -2,10 +2,10 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-5);
   margin-top: var(--space-4);
-  max-width: 1000px;
-  margin-left: auto;
+  max-width: 920px;
+  margin-left: 0;
   margin-right: auto;
 }
 
@@ -14,7 +14,7 @@
 }
 
 .title {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-family: var(--font-heading);
   margin-bottom: var(--space-3);
   color: var(--color-text-primary);
@@ -83,13 +83,14 @@
   grid-template-columns: 1.2fr 0.8fr;
   gap: var(--space-6);
   border-top: 1px solid var(--color-border);
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
+  align-items: start;
 }
 
 .checkoutDetails {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .row {
@@ -119,7 +120,7 @@
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  height: 42px;
+  height: 44px;
   transition: all 0.2s;
 }
 
@@ -129,30 +130,38 @@
   background: rgba(var(--color-accent-primary-rgb), 0.02);
 }
 
+.quantityRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .quantitySelector {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--color-border);
-  padding: 4px;
+  padding: 4px 12px;
   border-radius: var(--radius-sm);
   width: fit-content;
-  height: 42px;
+  height: 44px;
 }
 
 .qtyBtn {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   color: var(--color-text-primary);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .qtyBtn:hover:not(:disabled) {
@@ -161,19 +170,21 @@
 }
 
 .qtyBtn:disabled {
-  opacity: 0.2;
+  opacity: 0.1;
   cursor: not-allowed;
 }
 
 .qtyValue {
   font-family: var(--font-mono);
   font-size: var(--text-base);
-  width: 20px;
+  min-width: 20px;
   text-align: center;
+  font-weight: var(--weight-bold);
 }
 
 .checkoutSummary {
-  position: relative;
+  position: sticky;
+  top: var(--space-4);
 }
 
 .summaryCard {
@@ -187,7 +198,7 @@
 }
 
 .summaryTitle {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-text-muted);
@@ -244,6 +255,7 @@
   align-items: flex-start;
   gap: var(--space-2);
   cursor: pointer;
+  padding: 4px 0;
 }
 
 .checkbox {
@@ -270,14 +282,14 @@
 
 .paymentBtn {
   flex: 1;
-  height: 52px;
+  height: 54px;
   border-radius: var(--radius-sm);
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -285,32 +297,42 @@
 }
 
 .vippsBtn {
-  background: #ff5b24; /* Vipps Orange */
+  background: #ff5b24;
   color: white;
+  box-shadow: 0 4px 0 #cc491d;
 }
 
 .vippsBtn:hover:not(:disabled) {
-  background: #ff7c4d;
-  box-shadow: 0 0 15px rgba(255, 91, 36, 0.3);
+  background: #ff6d3d;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(255, 91, 36, 0.4), 0 5px 0 #cc491d;
+}
+
+.vippsBtn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #cc491d;
 }
 
 .cardBtn {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--color-border);
   color: var(--color-text-primary);
+  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cardBtn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--color-text-muted);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.1);
 }
 
 .paymentBtn:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
   box-shadow: none !important;
   transform: none !important;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .error {

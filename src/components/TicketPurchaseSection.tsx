@@ -167,11 +167,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
       <form className={styles.checkoutGrid} onSubmit={(e) => e.preventDefault()}>
         <div className={styles.checkoutDetails}>
-          <div className={styles.fieldRow}>
-            <div className={styles.field}>
+          <div className={styles.field}>
+            <div className={styles.quantityRow}>
               <label className={styles.label}>Quantity</label>
               <div className={styles.quantitySelector}>
-                <button type="button" className={styles.qtyBtn} onClick={handleDecrement} disabled={quantity <= 1}>-</button>
+                <button type="button" className={styles.qtyBtn} onClick={handleDecrement} disabled={quantity <= 1}>−</button>
                 <span className={styles.qtyValue}>{quantity}</span>
                 <button type="button" className={styles.qtyBtn} onClick={handleIncrement} disabled={!selectedType || (selectedType.totalQuantity !== null && quantity >= (selectedType.totalQuantity - selectedType.soldQuantity))}>+</button>
               </div>
