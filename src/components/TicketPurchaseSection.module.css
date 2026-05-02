@@ -297,33 +297,30 @@
 }
 
 .vippsBtn {
-  background: #ff5b24;
-  color: white;
-  box-shadow: 0 4px 0 #cc491d;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.vippsBtn:not(:disabled) {
+  color: #ff5b24;
+  border-color: rgba(255, 91, 36, 0.2);
 }
 
 .vippsBtn:hover:not(:disabled) {
-  background: #ff6d3d;
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(255, 91, 36, 0.4), 0 5px 0 #cc491d;
-}
-
-.vippsBtn:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #cc491d;
+  background: rgba(255, 91, 36, 0.05);
+  border-color: rgba(255, 91, 36, 0.4);
 }
 
 .cardBtn {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--color-border);
   color: var(--color-text-primary);
-  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cardBtn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--color-text-muted);
-  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.1);
 }
 
 .paymentBtn:disabled {

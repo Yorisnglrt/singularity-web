@@ -89,14 +89,24 @@ export default function EventCard({ event, featured }: EventCardProps) {
                 {t('events.tickets')}
               </Link>
             )}
-            <Link href={`/events/${toSlug(event)}`} className={`btn btn-sm`} style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} id={`detail-${event.id}`}>
+            <Link 
+              href={`/events/${toSlug(event)}`} 
+              className={`btn btn-sm ${styles.stretchedLink}`} 
+              style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} 
+              id={`detail-${event.id}`}
+            >
               View details
             </Link>
           </div>
         )}
         {event.isPast && (
           <div className={styles.actions}>
-            <Link href={`/events/${toSlug(event)}`} className={`btn btn-sm`} style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} id={`detail-past-${event.id}`}>
+            <Link 
+              href={`/events/${toSlug(event)}`} 
+              className={`btn btn-sm ${styles.stretchedLink}`} 
+              style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} 
+              id={`detail-past-${event.id}`}
+            >
               View details
             </Link>
           </div>

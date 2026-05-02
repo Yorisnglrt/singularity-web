@@ -252,7 +252,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
                 disabled={loading || !selectedType || !agree}
               >
-                {loading && paymentMethod === 'WALLET' ? '...' : 'Vipps'}
+                {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
               </button>
               <button 
                 type="button"
