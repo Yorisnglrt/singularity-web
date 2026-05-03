@@ -136,13 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!authData.user) return { error: 'Registration failed - no user returned.' };
 
       // 2. Explicitly create or upsert a profile row in the profiles table
+      // We don't set points: 0 here to allow DB triggers to award retroactive points from guest orders
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: authData.user.id,
           email: authData.user.email,
           display_name: displayName || '',
-          points: 0,
           created_at: new Date().toISOString(),
           marketing_consent: marketingConsent,
           marketing_consent_at: marketingConsent ? new Date().toISOString() : null,
@@ -150,8 +150,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
-        // We log the error but the auth user was still created.
         return { error: 'Auth successful, but profile creation failed: ' + profileError.message };
+      }
+
+      // 3. Trigger guest order linking and retroactive points award
+      // This is also handled by a DB trigger, but calling it here ensures immediate update
+      try {
+        await supabase.rpc('link_guest_orders_for_current_user');
+      } catch (rpcErr) {
+        console.error('Error calling guest linking RPC:', rpcErr);
       }
 
       return {};

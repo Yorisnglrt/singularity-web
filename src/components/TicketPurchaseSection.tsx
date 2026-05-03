@@ -211,6 +211,16 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             />
           </div>
 
+          {!isLoggedIn && (
+            <div className={styles.guestRpInfo}>
+              <strong className={styles.guestRpTitle}>Want to collect Rave Points?</strong>
+              <p className={styles.guestRpBody}>
+                Create an account with the same email after checkout and your ticket points will be added to your profile.
+              </p>
+              <a href="/membership" className={styles.guestRpLink}>Create account</a>
+            </div>
+          )}
+
           {error && <div className={styles.error}>{error}</div>}
         </div>
 

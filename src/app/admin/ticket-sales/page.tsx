@@ -55,6 +55,7 @@ export default function TicketSalesPage() {
   const [error, setError] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -128,6 +129,37 @@ export default function TicketSalesPage() {
     }
   };
 
+  const handleClearFailedOrders = async () => {
+    if (!confirm('Delete all failed orders? This cannot be undone.')) return;
+    
+    setClearing(true);
+    setStatusMsg(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/orders/failed', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      });
+      
+      const result = await res.json();
+      
+      if (res.ok) {
+        setStatusMsg({ type: 'success', text: `Deleted ${result.deleted} failed orders successfully.` });
+        fetchOrders();
+      } else {
+        setStatusMsg({ type: 'error', text: result.error || 'Failed to clear failed orders' });
+      }
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message });
+    } finally {
+      setClearing(false);
+      setTimeout(() => setStatusMsg(null), 5000);
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.order_reference.toLowerCase().includes(search.toLowerCase()) ||
@@ -154,9 +186,19 @@ export default function TicketSalesPage() {
             </Link>
             <h1 className={styles.title}>Ticket Sales</h1>
           </div>
-          <button onClick={fetchOrders} className={`${styles.button} ${styles.buttonOutline}`} style={{ width: 'auto' }}>
-            Refresh Data
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button 
+              onClick={handleClearFailedOrders} 
+              className={`${styles.button} ${styles.buttonDanger}`} 
+              style={{ width: 'auto' }}
+              disabled={clearing}
+            >
+              {clearing ? 'Clearing...' : '🗑 Clear Failed Orders'}
+            </button>
+            <button onClick={fetchOrders} className={`${styles.button} ${styles.buttonOutline}`} style={{ width: 'auto' }}>
+              Refresh Data
+            </button>
+          </div>
         </header>
 
         {statusMsg && (

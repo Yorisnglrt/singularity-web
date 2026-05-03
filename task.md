@@ -1,0 +1,15 @@
+- [x] Fix mobile layout for artist profile page (`/artists/[slug]`)
+    - [x] Stack hero and info panel cleanly
+    - [x] Adjust name font size and social buttons
+    - [x] Ensure correct aspect ratio for portrait
+- [x] Fix mobile layout for user profile pages (`/profile/` and `/profile/[id]`)
+    - [x] Add missing mobile media queries
+    - [x] Stack profile header and center content
+    - [x] Make favorites, stats, and event sections stack vertically
+    - [x] Ensure no horizontal scrolling or text overflow
+- [x] Fix profile ticket visibility leak
+    - [x] Create `get_my_tickets` RPC with ownership verification
+    - [x] Create `/api/profile/tickets` secure API route
+    - [x] Update `ProfilePage` to use secure API
+- [x] Run build and verify
+- [x] Push changes

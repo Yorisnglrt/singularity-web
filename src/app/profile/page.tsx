@@ -128,35 +128,20 @@ export default function ProfilePage() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            ticket_code,
-            status,
-            created_at,
-            events (
-              id,
-              title,
-              date,
-              venue
-            ),
-            event_ticket_types (
-              name
-            ),
-            ticket_orders (
-              id,
-              order_reference,
-              payment_status,
-              created_at
-            )
-          `)
-          .order('created_at', { ascending: false });
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-        if (error) {
-          console.error('Error fetching user tickets:', error);
+        const res = await fetch('/api/profile/tickets', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUserTickets(data || []);
         } else {
-          setUserTickets((data as any[]) || []);
+          console.error('Failed to fetch user tickets:', await res.text());
         }
       } catch (err) {
         console.error('User tickets exception:', err);
