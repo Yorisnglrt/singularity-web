@@ -343,22 +343,117 @@
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+
   .checkoutGrid {
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: var(--space-8);
   }
 
-  .paymentActions {
-    flex-direction: column;
-  }
-
-  .ticketItem {
-    height: auto;
-    min-height: 64px;
+  .input {
+    height: 52px;
+    font-size: 16px; /* Prevent iOS zoom */
   }
 
   .row {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  /* Quantity - more tappable */
+  .quantitySelector {
+    height: 52px;
+    padding: 0 var(--space-4);
+    gap: var(--space-6);
+    flex: 1;
+    justify-content: space-between;
+  }
+  
+  .qtyBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .quantityRow {
+    width: 100%;
+  }
+
+  /* Summary Card - Mobile CTA Zone */
+  .summaryCard {
+    padding: var(--space-6) var(--space-5);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .summaryTitle {
+    font-size: var(--text-sm);
+    padding-bottom: var(--space-3);
+  }
+
+  .summaryRow {
+    font-size: var(--text-base);
+  }
+
+  .totalPrice {
+    font-size: var(--text-xl);
+  }
+
+  .rpBadge {
+    padding: var(--space-3);
+    font-size: var(--text-xs);
+    margin: var(--space-2) 0;
+  }
+
+  .checkboxContainer {
+    padding: var(--space-4) 0;
+    margin-top: var(--space-2);
+    align-items: center;
+  }
+
+  .checkbox {
+    width: 24px;
+    height: 24px;
+    margin-top: 0;
+    accent-color: var(--color-accent-primary);
+  }
+
+  .checkboxLabel {
+    font-size: var(--text-sm);
+  }
+
+  /* Payment Buttons - Primary CTAs */
+  .paymentActions {
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .paymentBtn {
+    height: 60px;
+    font-size: 18px;
+    font-weight: 900;
+    border-radius: var(--radius-md);
+    letter-spacing: 0.1em;
+  }
+
+  .vippsBtn:not(:disabled) {
+    border-color: #ff5b24;
+    background: rgba(255, 91, 36, 0.08);
+  }
+
+  .cardBtn:not(:disabled) {
+    border-color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ticketItem {
+    padding: var(--space-4);
   }
 }
 
