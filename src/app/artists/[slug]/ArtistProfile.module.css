@@ -184,14 +184,15 @@
 
 @media (max-width: 1024px) {
   .profileWrapper {
-    padding-top: 150px;
+    padding-top: 100px;
+    padding-bottom: var(--space-12);
   }
   .content {
     grid-template-columns: 1fr;
-    gap: var(--space-12);
+    gap: var(--space-8);
   }
   .heroContainer {
-    max-width: 350px;
+    max-width: 320px;
     margin: 0 auto;
   }
   .infoPanel {
@@ -203,5 +204,35 @@
   }
   .bioBox {
     margin: 0 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .profileWrapper {
+    padding: var(--space-20) var(--space-6) var(--space-10);
+  }
+  .backLink {
+    margin-bottom: var(--space-6);
+    font-size: var(--text-xs);
+  }
+  .artistName {
+    font-size: var(--text-4xl);
+    line-height: 1;
+  }
+  .heroContainer {
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+  }
+  .socialRow {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-3);
+  }
+  .socialBtn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-sm);
   }
 }

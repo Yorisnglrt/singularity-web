@@ -691,3 +691,100 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .profileHeader {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .profileInfo {
+    align-items: center;
+  }
+
+  .bio {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .headerActions {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .actionButtons {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .editBtn, .logoutBtn {
+    width: 100%;
+  }
+
+  .stats {
+    gap: 0.75rem;
+  }
+
+  .stat {
+    min-width: calc(33.33% - 0.5rem);
+    padding: 0.5rem;
+  }
+
+  .statValue {
+    font-size: var(--text-xl);
+  }
+
+  .favoritesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .membershipGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .eventRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .badgeRow {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .historyItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .historyDelta {
+    align-self: flex-end;
+  }
+
+  .activeTicketsGrid {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .displayName {
+    font-size: var(--text-2xl);
+  }
+
+  .stat {
+    min-width: 100%;
+  }
+
+  .activeTicketCard {
+    width: 100%;
+    height: auto;
+    min-height: 180px;
+  }
+}
