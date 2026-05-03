@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Event, EventTicketType } from '@/data/events';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import styles from './TicketPurchaseSection.module.css';
 
 interface Props {
@@ -20,22 +21,16 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<any>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const isLoggedIn = !!user;
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CARD'>('WALLET');
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
-      if (session?.user?.email) {
-        setEmail(session.user.email);
-      }
-      if (session?.user?.user_metadata?.full_name) {
-        setName(session.user.user_metadata.full_name);
-      }
-    };
-    checkUser();
-  }, []);
+    if (user) {
+      if (user.email) setEmail(user.email);
+      if (user.displayName) setName(user.displayName);
+    }
+  }, [user]);
 
   const handleIncrement = () => {
     if (!selectedType) return;
@@ -211,7 +206,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             />
           </div>
 
-          {!isLoggedIn && (
+          {!isLoggedIn && !authLoading && (
             <div className={styles.guestRpInfo}>
               <strong className={styles.guestRpTitle}>Want to collect Rave Points?</strong>
               <p className={styles.guestRpBody}>
@@ -240,7 +235,12 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
             <div className={styles.rpBadge}>
               <span className={styles.rpIcon}>⚡</span>
-              <span>Earn <strong>+{quantity * 150} RP</strong> after payment</span>
+              <span>
+                {isLoggedIn 
+                  ? <>Earn <strong>+{quantity * 150} RP</strong> after payment</>
+                  : <>Create an account after checkout to collect <strong>+{quantity * 150} RP</strong></>
+                }
+              </span>
             </div>
 
             <label className={styles.checkboxContainer}>
