@@ -75,7 +75,7 @@ export default function MembershipPage() {
               <div className={styles.timelineDot} />
               <div className={styles.timelineContent}>
                 <span className={styles.stepName}>{t('membership.flow.free_entry')}</span>
-                <span className={styles.stepPoints}>{t('membership.flow.points')}</span>
+                <span className={styles.stepPoints}>{t('membership.flow.points_free_entry')}</span>
               </div>
             </div>
 
@@ -83,7 +83,7 @@ export default function MembershipPage() {
               <div className={styles.timelineDot} />
               <div className={styles.timelineContent}>
                 <span className={styles.stepName}>{t('membership.flow.merch')}</span>
-                <span className={styles.stepPoints}>{t('membership.flow.points')}</span>
+                <span className={styles.stepPoints}>{t('membership.flow.points_merch')}</span>
               </div>
             </div>
 
