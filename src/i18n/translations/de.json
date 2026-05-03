@@ -46,7 +46,7 @@
   "mixes.nowPlaying": "Läuft gerade",
   "mixes.duration": "Dauer",
   "membership.title": "Rave-Pass",
-  "membership.subtitle": "Werde Teil unserer Community und sammle Rave Points bei Singularity-Events. Deine RP werden digital in deinem Pass gespeichert.",
+  "membership.subtitle": "Werde Teil unserer Community und sammle Rave Points bei Singularity-Events.",
   "membership.howItWorks": "So funktioniert es",
   "membership.earnPoints": "Punkte sammeln",
   "membership.earnPoints.attend": "Events besuchen",
@@ -85,8 +85,8 @@
   "nav.supporters": "Unterstützer",
   "supporters.title": "Unsere Unterstützer",
   "supporters.text": "Vielen Dank an alle, die den Underground am Leben halten. Eure Unterstützung hilft uns, die Bassmusik-Szene in Oslo aufzubauen.",
-  "membership.platform": "Funktioniert mit Apple Wallet und Google Wallet. Je mehr RP du sammelst, desto mehr Belohnungen schaltest du frei.",
-  "membership.instructions": "Zeige deinen Pass an der Tür und sammle weiter.",
+  "membership.platform": "Erstelle ein Konto, kaufe Tickets mit derselben E-Mail und deine RP werden deinem Profil gutgeschrieben. Je mehr RP du sammelst, desto mehr Belohnungen schaltest du frei.",
+  "membership.instructions": "Zeige dein Profil an der Tür und sammle weiter.",
   "membership.flow.start": "START",
   "membership.flow.free_entry": "FREIER EINTRITT",
   "membership.flow.merch": "MERCH",
@@ -98,6 +98,6 @@
   "membership.how.presale": "+150 RP für Vorverkauf-Ticket",
   "membership.how.friend": "+100 RP, wenn du einen Freund mitbringst",
   "membership.qr.scan": "ZUM REGISTRIEREN SCANNEN",
-  "membership.qr.add": "ZUM WALLET HINZUFÜGEN",
+  "membership.qr.add": "PROFIL ANSEHEN",
   "termsOfSale.title": "Verkaufsbedingungen"
 }

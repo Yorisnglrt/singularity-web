@@ -46,7 +46,7 @@
   "mixes.nowPlaying": "Právě Hraje",
   "mixes.duration": "Délka",
   "membership.title": "Rave-Pass",
-  "membership.subtitle": "Přidej se k naší komunitě a sbírej Rave Points na akcích Singularity. Tvé RP se ukládají digitálně do passu.",
+  "membership.subtitle": "Přidej se k naší komunitě a sbírej Rave Points na akcích Singularity.",
   "membership.howItWorks": "Jak to funguje",
   "membership.earnPoints": "Získej Body",
   "membership.earnPoints.attend": "Účast na akcích",
@@ -85,8 +85,8 @@
   "nav.supporters": "Podporovatelé",
   "supporters.title": "Naši podporovatelé",
   "supporters.text": "Děkujeme všem, kteří pomáhají udržovat naši underground komunitu naživu.",
-  "membership.platform": "Funguje s Apple Wallet a Google Wallet. Čím více RP nasbíráš, tím více odměn odemkneš.",
-  "membership.instructions": "Ukaž svůj pass u vstupu a pokračuj ve sbírání.",
+  "membership.platform": "Vytvoř si účet, kupuj lístky se stejným e-mailem a tvé RP se přičtou k tvému profilu. Čím více RP nasbíráš, tím více odměn odemkneš.",
+  "membership.instructions": "Ukaž svůj profil u vstupu a pokračuj ve sbírání.",
   "membership.flow.start": "START",
   "membership.flow.free_entry": "VSTUP ZDARMA",
   "membership.flow.merch": "MERCH",
@@ -98,6 +98,6 @@
   "membership.how.presale": "+150 RP za lístek v předprodeji",
   "membership.how.friend": "+100 RP když přivedeš kámoše",
   "membership.qr.scan": "NASKENUJ PRO REGISTRACI",
-  "membership.qr.add": "PŘIDAT DO WALLETU",
+  "membership.qr.add": "ZOBRAZIT PROFIL",
   "termsOfSale.title": "Obchodní podmínky"
 }

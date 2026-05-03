@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { normalizeEvent, getMemberTier } from '@/lib/data-normalization';
 import styles from './page.module.css';
-import AppleWalletButton from '@/components/AppleWalletButton';
 import MemberQrCard from '@/components/MemberQrCard';
 
 type PointsHistoryItem = {
@@ -418,7 +417,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <AppleWalletButton />
+            <div style={{ height: 'var(--space-2)' }} />
           </div>
         </div>
 

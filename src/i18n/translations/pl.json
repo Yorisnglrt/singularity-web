@@ -46,7 +46,7 @@
   "mixes.nowPlaying": "Teraz Gra",
   "mixes.duration": "Czas trwania",
   "membership.title": "Rave-Pass",
-  "membership.subtitle": "Dołącz do naszej społeczności i zbieraj Rave Points. Twoje RP są zapisane cyfrowo.",
+  "membership.subtitle": "Dołącz do naszej społeczności i zbieraj Rave Points na wydarzeniach Singularity.",
   "membership.howItWorks": "Jak to działa",
   "membership.earnPoints": "Zdobywaj Punkty",
   "membership.earnPoints.attend": "Uczestnicz w wydarzeniach",
@@ -85,8 +85,8 @@
   "nav.supporters": "Wspierający",
   "supporters.title": "Nasi Wspierający",
   "supporters.text": "Dziękujemy tym, którzy utrzymują podziemie przy życiu i wspierają scenę bass music.",
-  "membership.platform": "Działa z Apple Wallet i Google Wallet. Im więcej RP zbierzesz, tym więcej odblokujesz.",
-  "membership.instructions": "Pokaż swój pass przy wejściu.",
+  "membership.platform": "Załóż konto, kupuj bilety na ten sam e-mail, a Twoje punkty RP zostaną dodane do Twojego profilu. Im więcej RP zbierzesz, tym więcej nagród odblokujesz.",
+  "membership.instructions": "Pokaż swój profil przy wejściu i zbieraj dalej.",
   "membership.flow.start": "START",
   "membership.flow.free_entry": "WOLNE WEJŚCIE",
   "membership.flow.merch": "MERCH",
@@ -98,6 +98,6 @@
   "membership.how.presale": "+150 RP w przedsprzedaży",
   "membership.how.friend": "+100 RP za przyprowadzenie znajomego",
   "membership.qr.scan": "ZESKANUJ, ABY ZAREJESTROWAĆ",
-  "membership.qr.add": "DODAJ DO PORTFELA",
+  "membership.qr.add": "ZOBACZ PROFIL",
   "termsOfSale.title": "Warunki sprzedaży"
 }
