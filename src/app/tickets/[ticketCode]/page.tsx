@@ -127,7 +127,7 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
             {ticket.status.toUpperCase()}
           </span>
           <span className={styles.ticketTypePill}>
-            {ticket.event_ticket_types?.name || 'Standard Entry'}
+            {ticket.event_ticket_types?.name || (ticket.ticket_type === 'guest' ? 'Guest list' : 'Standard Entry')}
           </span>
         </div>
 
@@ -176,7 +176,7 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
           
           <div className={styles.detailRow}>
             <span className={styles.label}>Order Reference</span>
-            <span className={styles.value}>{ticket.ticket_orders?.order_reference || '—'}</span>
+            <span className={styles.value}>{ticket.ticket_orders?.order_reference || (ticket.ticket_type === 'guest' ? 'Guest list' : '—')}</span>
           </div>
         </div>
       </div>

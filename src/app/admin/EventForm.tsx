@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import styles from './EventForm.module.css';
 import type { EventTicketType } from './page';
 
@@ -98,6 +99,92 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
 
   // Lineup
   const [newName, setNewName] = useState('');
+  const [lineupSearch, setLineupSearch] = useState('');
+
+  // Guest list states
+  const [guestList, setGuestList] = useState<any[]>([]);
+  const [newGuest, setNewGuest] = useState({ name: '', email: '', quantity: 1, note: '' });
+  const [issuingGuest, setIssuingGuest] = useState(false);
+
+  const fetchGuestList = useCallback(async () => {
+    if (!ev.id || ev.id.startsWith('new-')) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/guest-tickets?event_id=${ev.id}`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token || ''}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setGuestList(json);
+      }
+    } catch (err) {
+      console.error('Failed to fetch guest list:', err);
+    }
+  }, [ev.id]);
+
+  useEffect(() => {
+    fetchGuestList();
+  }, [fetchGuestList]);
+
+  const handleIssueGuest = async () => {
+    if (!newGuest.name || !newGuest.email) {
+      alert('Name and email are required');
+      return;
+    }
+    setIssuingGuest(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/guest-tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          event_id: ev.id,
+          guest_name: newGuest.name,
+          guest_email: newGuest.email,
+          quantity: newGuest.quantity,
+          note: newGuest.note
+        })
+      });
+      if (res.ok) {
+        setNewGuest({ name: '', email: '', quantity: 1, note: '' });
+        fetchGuestList();
+        alert('Guest tickets issued and email sent!');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (err) {
+      alert('Failed to issue guest tickets');
+    } finally {
+      setIssuingGuest(false);
+    }
+  };
+
+  const handleVoidGuest = async (id: string) => {
+    if (!confirm('Void this guest ticket? It will no longer be valid for entry.')) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({ 
+          type: 'tickets', 
+          data: [{ id, status: 'void' }] 
+        })
+      });
+      if (res.ok) {
+        fetchGuestList();
+      }
+    } catch (err) {
+      console.error('Failed to void ticket:', err);
+    }
+  };
   const [selectedArtist, setSelectedArtist] = useState('');
 
   const update = useCallback((patch: Partial<EventLike>) => setEv(prev => ({ ...prev, ...patch })), []);
@@ -540,6 +627,78 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
           )}
         </section>
 
+        {/* ── Guest List ── */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Guest List</h3>
+          {ev.id?.startsWith('new-') ? (
+            <div style={{ padding: '1.5rem', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+              Guest List management is available after saving the event.
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                Create free tickets and send them to guests via email.
+              </p>
+
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+                <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add to Guest List</h4>
+                <div className={styles.row2}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Guest Name *</label>
+                    <input className={styles.input} value={newGuest.name} onChange={e => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full name" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Guest Email *</label>
+                    <input className={styles.input} value={newGuest.email} onChange={e => setNewGuest({ ...newGuest, email: e.target.value })} placeholder="email@example.com" />
+                  </div>
+                </div>
+                <div className={styles.row2} style={{ marginTop: '0.75rem' }}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Quantity</label>
+                    <input type="number" className={styles.input} value={newGuest.quantity} onChange={e => setNewGuest({ ...newGuest, quantity: parseInt(e.target.value) || 1 })} min={1} max={20} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Note (Optional)</label>
+                    <input className={styles.input} value={newGuest.note} onChange={e => setNewGuest({ ...newGuest, note: e.target.value })} placeholder="e.g. DJ Guest" />
+                  </div>
+                </div>
+                <button 
+                  className={styles.addBtn} 
+                  style={{ marginTop: '1rem', width: '100%' }}
+                  onClick={handleIssueGuest}
+                  disabled={issuingGuest || !newGuest.name || !newGuest.email}
+                >
+                  {issuingGuest ? 'Issuing...' : 'Issue Guest Ticket(s) & Send Email'}
+                </button>
+              </div>
+
+              {guestList.length > 0 ? (
+                <div className={styles.guestList}>
+                  {guestList.map(t => (
+                    <div key={t.id} className={styles.guestItem}>
+                      <div className={styles.guestInfo}>
+                        <span className={styles.guestName}>{t.holder_name}</span>
+                        <span className={styles.guestEmail}>{t.holder_email} · {t.ticket_code}</span>
+                        {t.note && <span className={styles.guestNote}>{t.note}</span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span className={`${styles.guestBadge} ${t.status === 'void' ? styles.guestBadgeVoid : ''}`}>
+                          {t.status.toUpperCase()}
+                        </span>
+                        {t.status !== 'void' && (
+                          <button className={styles.removeBtn} onClick={() => handleVoidGuest(t.id)} title="Void Ticket">✕</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem' }}>Guest list is empty.</p>
+              )}
+            </>
+          )}
+        </section>
+
         {/* ── Description ── */}
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Description <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional)</span></h3>
@@ -557,6 +716,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
             placeholder={`Event description in ${descLocale.toUpperCase()}...`}
           />
         </section>
+
 
         {/* ── Actions ── */}
         <div className={styles.actions}>

@@ -6,7 +6,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-const ALLOWED_TYPES = ['artists', 'events', 'mixes', 'supporters', 'event_ticket_types'] as const;
+const ALLOWED_TYPES = ['artists', 'events', 'mixes', 'supporters', 'event_ticket_types', 'tickets'] as const;
 type AllowedType = typeof ALLOWED_TYPES[number];
 
 export async function GET(req: Request) {

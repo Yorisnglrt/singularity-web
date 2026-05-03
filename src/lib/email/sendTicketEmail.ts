@@ -47,6 +47,22 @@ export interface SendResult {
 }
 
 /**
+ * Shared helper for robust venue extraction from JSONB or legacy fields
+ */
+function getEventVenue(ev: any): string {
+  const v = ev?.venue;
+  if (typeof v === 'string' && v.trim() !== '') return v;
+  if (v && typeof v === 'object') {
+    if (v.en && v.en !== 'TB') return v.en;
+    if (v.no && v.no !== 'TB') return v.no;
+    if (v.cs && v.cs !== 'TB') return v.cs;
+    const firstValid = Object.values(v).find(val => val && val !== 'TB' && typeof val === 'string');
+    if (firstValid) return firstValid as string;
+  }
+  return ev?.venue_legacy || 'Oslo';
+}
+
+/**
  * Sends a ticket confirmation email for a paid order.
  * This function is idempotent: if email_status is 'sent', it skips sending.
  */
@@ -97,21 +113,6 @@ export async function sendOrderTicketsEmail(
   const event = (tickets[0] as any).events;
   const eventTitle = event?.title || 'Singularity Event';
   const eventDate = event?.date ? new Date(event.date).toLocaleDateString('no-NO') : 'TBA';
-
-  // Helper for robust venue extraction from JSONB or legacy fields
-  const getEventVenue = (ev: any): string => {
-    const v = ev?.venue;
-    if (typeof v === 'string' && v.trim() !== '') return v;
-    if (v && typeof v === 'object') {
-      if (v.en && v.en !== 'TB') return v.en;
-      if (v.no && v.no !== 'TB') return v.no;
-      if (v.cs && v.cs !== 'TB') return v.cs;
-      const firstValid = Object.values(v).find(val => val && val !== 'TB' && typeof val === 'string');
-      if (firstValid) return firstValid as string;
-    }
-    return ev?.venue_legacy || 'Oslo';
-  };
-
   const eventVenue = getEventVenue(event);
 
   // 3. Generate QR codes and construct email content
@@ -231,6 +232,144 @@ Thank you for your purchase. Please have your ticket codes ready at the entrance
 
   console.log(`[email] Tickets sent for order ${order.order_reference} (ID: ${data?.id})`);
   return { sent: true, alreadySent: false, messageId: data?.id };
+}
+
+/**
+ * Sends a ticket confirmation email for guest list tickets.
+ */
+export async function sendGuestTicketEmail(
+  ticketIds: string[]
+): Promise<{ sent: boolean; messageId?: string }> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+  const replyTo = getReplyTo();
+
+  // 1. Load tickets with event details
+  const { data: tickets, error: ticketsError } = await supabaseAdmin
+    .from('tickets')
+    .select(`
+      ticket_code,
+      access_token,
+      qr_payload,
+      holder_name,
+      holder_email,
+      event_id,
+      events (
+        title,
+        date,
+        venue
+      )
+    `)
+    .in('id', ticketIds);
+
+  if (ticketsError || !tickets || tickets.length === 0) {
+    throw new Error('No tickets found for guest email');
+  }
+
+  const first = tickets[0];
+  const event = (first as any).events;
+  const eventTitle = event?.title || 'Singularity Event';
+  const eventDate = event?.date ? new Date(event.date).toLocaleDateString('no-NO') : 'TBA';
+  const eventVenue = getEventVenue(event);
+  const recipientEmail = first.holder_email;
+
+  if (!recipientEmail) {
+    throw new Error('No recipient email for guest ticket');
+  }
+
+  // 2. Generate QR codes and construct email content
+  const attachments: any[] = [];
+  const ticketListHtml = await Promise.all(tickets.map(async (t) => {
+    const qrBuffer = await QRCode.toBuffer(t.qr_payload, {
+      margin: 1,
+      width: 400,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+
+    const cid = `qr-${t.ticket_code}`;
+    attachments.push({
+      filename: `${t.ticket_code}.png`,
+      content: qrBuffer,
+      cid: cid,
+      contentId: cid,
+    });
+
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
+
+    return `
+      <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
+        <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">Guest List: ${t.ticket_code}</div>
+        
+        <div style="margin-bottom: 16px;">
+          <img src="cid:${cid}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 4px; display: block; margin: 0 auto;" />
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <p style="color: #aaa; font-size: 0.8rem; margin-bottom: 12px;">Open your digital ticket here:</p>
+          <a href="${ticketUrl}" 
+             style="display: inline-block; padding: 12px 24px; background: #00ffb2; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 0.85rem;">
+             View Ticket
+          </a>
+        </div>
+
+        <div style="color: #fff; font-size: 0.9rem; font-weight: bold; margin-bottom: 4px;">Show this QR at the entrance</div>
+        <div style="color: #888; font-size: 0.7rem; word-break: break-all; opacity: 0.5;">${t.qr_payload}</div>
+      </div>
+    `;
+  })).then(htmls => htmls.join(''));
+
+  const ticketListText = tickets.map(t => {
+    const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
+    return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
+  }).join('\n\n');
+
+  // 3. Send via Resend
+  const { data, error: sendError } = await resend.emails.send({
+    from,
+    to: [recipientEmail],
+    replyTo,
+    subject: `Your Guest List: ${eventTitle}`,
+    attachments,
+    html: `
+      <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+        <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px;">Singularity</h1>
+        <h2 style="color: #fff; margin: 0 0 24px;">Guest List Invitation</h2>
+        
+        <div style="background: #1a1a1a; padding: 20px; border-radius: 4px; margin-bottom: 32px;">
+          <div style="margin-bottom: 8px;"><strong style="color: #888;">Event:</strong> ${eventTitle}</div>
+          <div style="margin-bottom: 8px;"><strong style="color: #888;">Date:</strong> ${eventDate}</div>
+          <div style="margin-bottom: 8px;"><strong style="color: #888;">Venue:</strong> ${eventVenue}</div>
+        </div>
+
+        <h3 style="color: #fff; margin: 0 0 16px;">Your Invitation</h3>
+        ${ticketListHtml}
+
+        <p style="color: #aaa; font-size: 0.9rem; margin-top: 32px; border-top: 1px solid #222; padding-top: 24px;">
+          You have been added to the guest list for this event. Please have your QR codes ready at the entrance.
+        </p>
+      </div>
+    `,
+    text: `
+Singularity — Guest List Invitation
+
+Event:     ${eventTitle}
+Date:      ${eventDate}
+Venue:     ${eventVenue}
+
+YOUR INVITATION:
+${ticketListText}
+
+You have been added to the guest list for this event. Please have your QR codes ready at the entrance.
+    `.trim(),
+  });
+
+  if (sendError) {
+    console.error(`[email] Failed to send guest tickets:`, sendError);
+    return { sent: false };
+  }
+
+  console.log(`[email] Guest tickets sent to ${recipientEmail} (ID: ${data?.id})`);
+  return { sent: true, messageId: data?.id };
 }
 
 /**

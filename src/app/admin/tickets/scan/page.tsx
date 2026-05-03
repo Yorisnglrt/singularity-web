@@ -294,7 +294,7 @@ export default function TicketScannerPage() {
                   </div>
                   <div className={styles.detailItem}>
                     <label>Type</label>
-                    <span>{ticket.event_ticket_types?.name}</span>
+                    <span>{ticket.event_ticket_types?.name || (ticket.ticket_type === 'guest' ? 'Guest list' : 'Paid')}</span>
                   </div>
                   <div className={styles.detailItem}>
                     <label>Holder</label>

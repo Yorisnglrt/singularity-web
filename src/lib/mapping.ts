@@ -197,6 +197,8 @@ export function mapPayloadToDb(type: string, data: any[]) {
       return data.map(d => mapMixToDb(d));
     case 'event_ticket_types':
       return data.map(d => mapTicketTypeToDb(d));
+    case 'tickets':
+      return data;
     default:
       return data;
   }

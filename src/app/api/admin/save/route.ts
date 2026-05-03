@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!['artists', 'events', 'mixes', 'supporters', 'event_ticket_types'].includes(type) || !Array.isArray(data)) {
+    if (!['artists', 'events', 'mixes', 'supporters', 'event_ticket_types', 'tickets'].includes(type) || !Array.isArray(data)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
