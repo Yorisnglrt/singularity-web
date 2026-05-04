@@ -159,7 +159,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                   </div>
                 </div>
                 <div className={styles.ticketPrice}>
-                  {tt.priceNok} NOK
+                  {tt.priceNok} NOK / +{tt.isSupporter ? 200 : 150} RP
                 </div>
               </div>
             );
@@ -218,7 +218,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             <div className={styles.guestRpInfo}>
               <strong className={styles.guestRpTitle}>Want to collect Rave Points?</strong>
               <p className={styles.guestRpBody}>
-                Create an account with the same email after checkout and your ticket points will be added to your profile.
+                Create an account with the same email after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> from this purchase.
               </p>
               <a href="/membership" className={styles.guestRpLink}>Create account</a>
             </div>
@@ -252,8 +252,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
               <span className={styles.rpIcon}>⚡</span>
               <span>
                 {isLoggedIn 
-                  ? <>Earn <strong>+{quantity * 150} RP</strong> after payment</>
-                  : <>Create an account after checkout to collect <strong>+{quantity * 150} RP</strong></>
+                  ? <>Earn <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> after payment</>
+                  : <>Create an account after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong></>
                 }
               </span>
             </div>

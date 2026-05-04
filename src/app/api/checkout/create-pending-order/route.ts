@@ -8,7 +8,6 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // ── Constants ───────────────────────────────────────────────────────
-const RAVE_POINTS_PER_TICKET = 150;
 const MAX_QUANTITY = 10;
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -135,7 +134,8 @@ export async function POST(req: Request) {
     const orderReference = generateOrderReference();
     const claimToken = crypto.randomUUID();
     const totalAmountNok = unitPrice * quantity;
-    const ravePointsEarned = quantity * RAVE_POINTS_PER_TICKET;
+    const pointsPerTicket = ticketType.is_supporter ? 200 : 150;
+    const ravePointsEarned = quantity * pointsPerTicket;
 
     const orderRow = {
       order_reference: orderReference,

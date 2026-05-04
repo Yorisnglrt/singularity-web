@@ -76,6 +76,9 @@
   font-size: var(--text-base);
   color: var(--color-accent-primary);
   font-weight: var(--weight-bold);
+  white-space: nowrap;
+  margin-left: var(--space-4);
+  text-align: right;
 }
 
 .checkoutGrid {
@@ -481,6 +484,10 @@
 
   .ticketItem {
     padding: var(--space-4);
+  }
+
+  .ticketPrice {
+    font-size: var(--text-sm);
   }
 }
 
