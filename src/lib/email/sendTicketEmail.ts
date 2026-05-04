@@ -178,7 +178,7 @@ Date:            ${formattedDate}
 Customer:        ${order.customer_name ? `${order.customer_name} (${order.customer_email})` : order.customer_email}
 
 ITEMIZED DETAILS:
-${items.map(item => `- ${item.ticket_type_name} x ${item.quantity}: ${item.line_total_nok} ${order.currency || 'NOK'}`).join('\n')}
+${items.map(item => `- ${item.ticket_type_name}\n  Qty: ${item.quantity} · ${item.unit_price_nok || (item.line_total_nok / item.quantity)} NOK`).join('\n')}
 
 TOTAL: ${order.total_amount_nok} ${order.currency || 'NOK'}
 Payment method: ${methodLabel}

@@ -231,13 +231,16 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           <div className={styles.summaryCard}>
             <h3 className={styles.summaryTitle}>Order Summary</h3>
             <div className={styles.summaryContent}>
-              <div className={styles.summaryRow}>
-                <span>
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryItemName}>
                   {selectedType?.name}
                   {selectedType?.isSupporter && !selectedType?.name.toLowerCase().includes('supporter') && ' Supporter'}
-                  {' '}x {quantity}
-                </span>
-                <span>{(selectedType?.priceNok || 0) * quantity} NOK</span>
+                </div>
+                <div className={styles.summaryItemDetails}>
+                  <span>x {quantity}</span>
+                  <span className={styles.summaryItemDot}>·</span>
+                  <span>{selectedType?.priceNok || 0} NOK</span>
+                </div>
               </div>
               <div className={`${styles.summaryRow} ${styles.totalRow}`}>
                 <span>Total</span>
