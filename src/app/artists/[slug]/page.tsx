@@ -4,14 +4,30 @@ import { normalizeArtist } from '@/lib/data-normalization';
 import { useI18n } from '@/i18n';
 import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { notFound, useParams, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { getFlagEmoji, getFlagUrl } from '@/lib/utils';
 
-export default function ArtistProfilePage() {
+function ArtistProfileContent() {
   const { locale, t } = useI18n();
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params?.slug as string;
+  const fromParam = searchParams?.get('from');
+
+  // Validate fromParam to ensure it's an internal relative path starting with /
+  const isValidFrom = fromParam && fromParam.startsWith('/') && !fromParam.startsWith('//');
+  const backHref = isValidFrom ? fromParam : '/#artist-spotlight';
+  
+  // Dynamic back label
+  const isFromEvent = isValidFrom && fromParam.startsWith('/events/');
+  const isFromArtists = isValidFrom && fromParam === '/artists';
+  
+  const backLabel = isFromEvent 
+    ? 'BACK TO EVENT' 
+    : isFromArtists 
+      ? 'BACK TO ARTISTS'
+      : (t('nav.backToShowcase') || 'BACK TO SHOWCASE');
 
   const [artist, setArtist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -53,10 +69,10 @@ export default function ArtistProfilePage() {
         style={{ background: artist.avatarGradient }} 
       />
 
-      {/* Back Link to Spotlight Section on Homepage */}
-      <Link href="/#artist-spotlight" className={styles.backLink}>
+      {/* Dynamic Back Link */}
+      <Link href={backHref} className={styles.backLink}>
         <span>←</span>
-        <span>{t('nav.backToShowcase') || 'BACK TO SHOWCASE'}</span>
+        <span>{backLabel}</span>
       </Link>
 
       <div className={styles.content}>
@@ -135,6 +151,18 @@ export default function ArtistProfilePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ArtistProfilePage() {
+  return (
+    <Suspense fallback={
+      <main className={styles.profileWrapper}>
+        <div style={{color:'#555',textAlign:'center',marginTop:'40vh'}}>◈</div>
+      </main>
+    }>
+      <ArtistProfileContent />
+    </Suspense>
   );
 }
 

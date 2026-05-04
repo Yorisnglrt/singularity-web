@@ -12,9 +12,10 @@ interface ArtistShowcaseProps {
   artists: Artist[];
   title: string;
   showDiamond?: boolean;
+  returnTo?: string;
 }
 
-export default function ArtistShowcase({ artists, title, showDiamond }: ArtistShowcaseProps) {
+export default function ArtistShowcase({ artists, title, showDiamond, returnTo }: ArtistShowcaseProps) {
   const { t } = useI18n();
   // Interaction State
   const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -79,7 +80,10 @@ export default function ArtistShowcase({ artists, title, showDiamond }: ArtistSh
           flex: isMobile ? '0 0 120px' : '0 0 165px' 
         }}
       >
-        <Link href={`/artists/${artist.slug}`} className={styles.internalCard}>
+        <Link 
+          href={`/artists/${artist.slug}${returnTo ? `?from=${encodeURIComponent(returnTo)}` : ''}`} 
+          className={styles.internalCard}
+        >
           <div className={styles.imageBox}>
             {artist.photoUrl ? (
               <img src={artist.photoUrl} alt={artist.name} className={styles.portraitPhoto} />

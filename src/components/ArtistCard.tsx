@@ -8,9 +8,10 @@ interface ArtistCardProps {
   artist: Artist;
   variant?: 'default' | 'compact' | 'lineup';
   compact?: boolean;
+  returnTo?: string;
 }
 
-export default function ArtistCard({ artist, variant, compact = false }: ArtistCardProps) {
+export default function ArtistCard({ artist, variant, compact = false, returnTo }: ArtistCardProps) {
   const { t, locale } = useI18n();
   const effectiveVariant = variant || (compact ? 'compact' : 'default');
   const isLineup = effectiveVariant === 'lineup';
@@ -19,7 +20,7 @@ export default function ArtistCard({ artist, variant, compact = false }: ArtistC
 
   return (
     <Link 
-      href={`/artists/${artist.slug}`} 
+      href={`/artists/${artist.slug}${returnTo ? `?from=${encodeURIComponent(returnTo)}` : ''}`} 
       className={`${styles.cardLink} ${styles[effectiveVariant + 'CardLink']}`}
     >
       <article 

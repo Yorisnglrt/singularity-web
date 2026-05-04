@@ -66,7 +66,7 @@ export default function ArtistsPage() {
           ) : (
             <div className={styles.grid}>
               {allSortedArtists.map((artist) => (
-                <ArtistCard key={artist.id} artist={artist} />
+                <ArtistCard key={artist.id} artist={artist} returnTo="/artists" />
               ))}
             </div>
           )}
