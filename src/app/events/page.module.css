@@ -1,5 +1,5 @@
 .page {
-  padding-top: var(--space-12);
+  padding-top: 100px;
   padding-bottom: var(--space-section);
   min-height: 100vh;
 }
@@ -122,6 +122,9 @@
 }
 
 @media (max-width: 600px) {
+  .page {
+    padding-top: 40px;
+  }
   .eventList {
     grid-template-columns: 1fr;
   }

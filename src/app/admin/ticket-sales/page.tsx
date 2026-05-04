@@ -54,6 +54,7 @@ export default function TicketSalesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resendingReceiptId, setResendingReceiptId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [clearing, setClearing] = useState(false);
 
@@ -125,6 +126,39 @@ export default function TicketSalesPage() {
       setStatusMsg({ type: 'error', text: err.message });
     } finally {
       setResendingId(null);
+      setTimeout(() => setStatusMsg(null), 5000);
+    }
+  };
+
+  const handleResendReceipt = async (order: TicketOrder) => {
+    if (!confirm(`Resend receipt to ${order.customer_email}?`)) return;
+    
+    try {
+      setResendingReceiptId(order.id);
+      setStatusMsg(null);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/tickets/resend-receipt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({ orderId: order.id })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend receipt');
+      }
+      
+      setStatusMsg({ type: 'success', text: `Receipt resent to ${order.customer_email}` });
+    } catch (err: any) {
+      console.error('Receipt resend error:', err);
+      setStatusMsg({ type: 'error', text: err.message });
+    } finally {
+      setResendingReceiptId(null);
       setTimeout(() => setStatusMsg(null), 5000);
     }
   };
@@ -305,6 +339,14 @@ export default function TicketSalesPage() {
                     disabled={resendingId === order.id || order.payment_status !== 'paid' || !order.tickets_issued}
                   >
                     {resendingId === order.id ? 'Sending...' : '✉ Resend Email'}
+                  </button>
+
+                  <button 
+                    className={styles.button}
+                    onClick={() => handleResendReceipt(order)}
+                    disabled={resendingReceiptId === order.id || order.payment_status !== 'paid' || !order.customer_email}
+                  >
+                    {resendingReceiptId === order.id ? 'Sending...' : '🧾 Resend Receipt'}
                   </button>
                   
                   {order.tickets && order.tickets.length > 0 ? (

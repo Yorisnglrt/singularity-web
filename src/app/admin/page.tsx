@@ -509,6 +509,7 @@ export default function AdminPage() {
             outputWidth={600}
             outputHeight={800}
             label="Change Artist Photo"
+            allowZoomOutToFit={true}
           />
         </div>
 

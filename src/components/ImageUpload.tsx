@@ -14,6 +14,7 @@ interface ImageUploadProps {
   circular?: boolean;
   outputWidth?: number;
   outputHeight?: number;
+  allowZoomOutToFit?: boolean;
 }
 
 export default function ImageUpload({
@@ -25,7 +26,8 @@ export default function ImageUpload({
   aspectRatio = 1,
   circular = false,
   outputWidth = 400,
-  outputHeight = 400
+  outputHeight = 400,
+  allowZoomOutToFit = false
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function ImageUpload({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [minZoom, setMinZoom] = useState(0.5);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,9 +67,30 @@ export default function ImageUpload({
 
     const url = URL.createObjectURL(file);
     setPreviewSrc(url);
+    // Initial reset, actual calculation happens in handleImageLoad
     setZoom(1);
+    setMinZoom(0.5);
     setPosition({ x: 0, y: 0 });
     setMessage(null);
+  };
+
+  const handleImageLoad = () => {
+    if (!imgRef.current || !containerRef.current || !allowZoomOutToFit) return;
+    
+    const img = imgRef.current;
+    const container = containerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    
+    // Calculate zooms relative to natural dimensions
+    const zoomX = containerRect.width / img.naturalWidth;
+    const zoomY = containerRect.height / img.naturalHeight;
+    
+    const fitZoom = Math.min(zoomX, zoomY);
+    const fillZoom = Math.max(zoomX, zoomY);
+    
+    setMinZoom(fitZoom);
+    setZoom(fillZoom);
+    setPosition({ x: 0, y: 0 });
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -186,6 +210,7 @@ export default function ImageUpload({
               src={previewSrc} 
               alt="Preview" 
               className={styles.previewImg}
+              onLoad={handleImageLoad}
               style={{
                 transform: `translate(-50%, -50%) translate(${position.x}px, ${position.y}px) scale(${zoom})`,
                 cursor: isDragging ? 'grabbing' : 'grab'
@@ -211,9 +236,9 @@ export default function ImageUpload({
                 <label>Zoom</label>
                 <input 
                   type="range" 
-                  min="0.5" 
+                  min={minZoom} 
                   max="4" 
-                  step="0.01" 
+                  step="0.001" 
                   value={zoom} 
                   onChange={(e) => setZoom(parseFloat(e.target.value))} 
                 />

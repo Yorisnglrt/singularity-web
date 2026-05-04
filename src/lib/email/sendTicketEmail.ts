@@ -63,6 +63,130 @@ function getEventVenue(ev: any): string {
 }
 
 /**
+ * Shared helper for generating receipt HTML section.
+ */
+function getReceiptHtmlSection(order: any, items: any[], replyTo: string): string {
+  const purchaseDate = order.paid_at || order.tickets_issued_at || order.created_at;
+  const formattedDate = new Date(purchaseDate).toLocaleDateString('no-NO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const itemRowsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid #222;">
+        <div style="color: #fff; font-weight: bold;">${item.ticket_type_name}</div>
+        <div style="color: #888; font-size: 0.8rem;">Qty: ${item.quantity}</div>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid #222; text-align: right; vertical-align: top; color: #fff;">
+        ${item.line_total_nok} ${order.currency || 'NOK'}
+      </td>
+    </tr>
+  `).join('');
+
+  const methodType = (order.payment_method_type || '').toLowerCase();
+  const methodLabel = methodType === 'wallet' 
+    ? 'Vipps' 
+    : methodType === 'card' 
+    ? 'Card' 
+    : order.payment_provider || 'Paid';
+
+  return `
+    <div style="margin-top: 48px; border-top: 1px solid #333; padding-top: 32px;">
+      <h2 style="color: #fff; margin: 0 0 32px; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em;">Receipt / Payment Confirmation</h2>
+      
+      <div style="display: flex; justify-content: space-between; margin-bottom: 32px; border-bottom: 1px solid #222; padding-bottom: 24px;">
+        <div>
+          <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 4px;">Seller</div>
+          <div style="color: #fff; font-weight: bold;">Singularity</div>
+          <div style="color: #888; font-size: 0.85rem;">Org. no.: 936 102 514</div>
+          <div style="color: #888; font-size: 0.85rem;">${replyTo}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 4px;">Order Reference</div>
+          <div style="color: #fff; font-weight: bold;">${order.order_reference}</div>
+          <div style="color: #888; font-size: 0.85rem;">${formattedDate}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 32px;">
+        <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 4px;">Customer</div>
+        ${order.customer_name ? `<div style="color: #fff; font-weight: bold;">${order.customer_name}</div>` : ''}
+        <div style="color: #888; font-size: 0.85rem;">${order.customer_email}</div>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px;">
+        <thead>
+          <tr>
+            <th style="text-align: left; color: #888; font-size: 0.75rem; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid #333;">Item</th>
+            <th style="text-align: right; color: #888; font-size: 0.75rem; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid #333;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRowsHtml}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td style="padding-top: 16px; color: #fff; font-weight: bold; font-size: 1.1rem;">Total</td>
+            <td style="padding-top: 16px; text-align: right; color: #00ffb2; font-weight: bold; font-size: 1.1rem;">
+              ${order.total_amount_nok} ${order.currency || 'NOK'}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="background: #111; padding: 16px; border-radius: 4px; margin-bottom: 32px;">
+        <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px;">Payment Details</div>
+        <div style="color: #fff; font-size: 0.9rem;">
+          Payment method: <span>${methodLabel}</span>
+        </div>
+        ${order.vipps_payment_id ? `<div style="color: #888; font-size: 0.8rem; margin-top: 4px;">Ref: ${order.vipps_payment_id}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Shared helper for generating receipt plain text section.
+ */
+function getReceiptTextSection(order: any, items: any[]): string {
+  const purchaseDate = order.paid_at || order.tickets_issued_at || order.created_at;
+  const formattedDate = new Date(purchaseDate).toLocaleDateString('no-NO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const methodType = (order.payment_method_type || '').toLowerCase();
+  const methodLabel = methodType === 'wallet' 
+    ? 'Vipps' 
+    : methodType === 'card' 
+    ? 'Card' 
+    : order.payment_provider || 'Paid';
+
+  return `
+--------------------------------------------------
+RECEIPT / PAYMENT CONFIRMATION
+--------------------------------------------------
+Order Reference: ${order.order_reference}
+Date:            ${formattedDate}
+Customer:        ${order.customer_name ? `${order.customer_name} (${order.customer_email})` : order.customer_email}
+
+ITEMIZED DETAILS:
+${items.map(item => `- ${item.ticket_type_name} x ${item.quantity}: ${item.line_total_nok} ${order.currency || 'NOK'}`).join('\n')}
+
+TOTAL: ${order.total_amount_nok} ${order.currency || 'NOK'}
+Payment method: ${methodLabel}
+--------------------------------------------------
+  `;
+}
+
+/**
  * Sends a ticket confirmation email for a paid order.
  * This function is idempotent: if email_status is 'sent', it skips sending.
  */
@@ -78,7 +202,7 @@ export async function sendOrderTicketsEmail(
   // 1. Load order and check status
   const { data: order, error: orderError } = await supabaseAdmin
     .from('ticket_orders')
-    .select('id, order_reference, customer_email, customer_name, email_status, payment_status')
+    .select('*')
     .eq('id', orderId)
     .single();
 
@@ -108,6 +232,16 @@ export async function sendOrderTicketsEmail(
 
   if (ticketsError || !tickets || tickets.length === 0) {
     throw new Error(`No tickets found for order ${order.order_reference}`);
+  }
+
+  // 2b. Load order items for receipt section
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from('ticket_order_items')
+    .select('*')
+    .eq('order_id', orderId);
+
+  if (itemsError || !items) {
+    console.error(`[email] Could not load items for receipt section of order ${orderId}`);
   }
 
   const event = (tickets[0] as any).events;
@@ -169,7 +303,7 @@ export async function sendOrderTicketsEmail(
     from,
     to: [order.customer_email],
     replyTo,
-    subject: `Your Tickets: ${eventTitle} (${order.order_reference})`,
+    subject: `Your Singularity ticket & receipt (${order.order_reference})`,
     attachments,
     html: `
       <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
@@ -186,6 +320,8 @@ export async function sendOrderTicketsEmail(
         <h3 style="color: #fff; margin: 0 0 16px;">Your Tickets</h3>
         ${ticketListHtml}
 
+        ${items ? getReceiptHtmlSection(order, items, replyTo) : ''}
+
         <p style="color: #aaa; font-size: 0.9rem; margin-top: 32px; border-top: 1px solid #222; padding-top: 24px;">
           Thank you for your purchase. Please have your ticket codes ready at the entrance.
         </p>
@@ -201,6 +337,8 @@ Venue:     ${eventVenue}
 
 YOUR TICKETS:
 ${ticketListText}
+
+${items ? getReceiptTextSection(order, items) : ''}
 
 Thank you for your purchase. Please have your ticket codes ready at the entrance.
     `.trim(),
@@ -369,6 +507,89 @@ You have been added to the guest list for this event. Please have your QR codes 
   }
 
   console.log(`[email] Guest tickets sent to ${recipientEmail} (ID: ${data?.id})`);
+  return { sent: true, messageId: data?.id };
+}
+
+/**
+ * Sends a receipt / payment confirmation email for a paid order.
+ */
+export async function sendOrderReceiptEmail(orderId: string): Promise<{ sent: boolean; messageId?: string }> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+  const replyTo = getReplyTo();
+
+  // 1. Load order
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('ticket_orders')
+    .select('*')
+    .eq('id', orderId)
+    .single();
+
+  if (orderError || !order) {
+    throw new Error(`Order not found for receipt: ${orderId}`);
+  }
+
+  if (order.payment_status !== 'paid') {
+    throw new Error(`Cannot send receipt for unpaid order: ${order.order_reference}`);
+  }
+
+  // 2. Load order items
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from('ticket_order_items')
+    .select('*')
+    .eq('order_id', orderId);
+
+  if (itemsError || !items || items.length === 0) {
+    throw new Error(`No items found for order receipt: ${order.order_reference}`);
+  }
+
+  const recipientEmail = order.customer_email;
+
+  // 4. Send via Resend
+  const { data, error: sendError } = await resend.emails.send({
+    from,
+    to: [recipientEmail],
+    replyTo,
+    subject: `Your Singularity receipt (${order.order_reference})`,
+    html: `
+      <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+        <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px;">Singularity</h1>
+        
+        ${getReceiptHtmlSection(order, items, replyTo)}
+
+        <p style="color: #666; font-size: 0.75rem; text-align: center; margin-top: 40px;">
+          Thank you for your purchase.
+        </p>
+      </div>
+    `,
+    text: `
+Singularity — Receipt / Payment Confirmation
+
+${getReceiptTextSection(order, items)}
+
+Thank you for your purchase.
+    `.trim(),
+  });
+
+  // 5. Log attempt
+  const logEntry = {
+    order_id: orderId,
+    email_type: 'receipt_confirmation',
+    recipient_email: recipientEmail,
+    status: sendError ? 'failed' : 'sent',
+    resend_message_id: data?.id || null,
+    error_message: sendError?.message || null,
+    sent_at: new Date().toISOString(),
+  };
+
+  await supabaseAdmin.from('ticket_email_log').insert(logEntry);
+
+  if (sendError) {
+    console.error(`[receipt] Failed to send for ${order.order_reference}:`, sendError);
+    return { sent: false };
+  }
+
+  console.log(`[receipt] Sent for order ${order.order_reference} (ID: ${data?.id})`);
   return { sent: true, messageId: data?.id };
 }
 
