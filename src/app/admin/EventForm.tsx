@@ -237,6 +237,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
     totalQuantity: null,
     soldQuantity: 0,
     isActive: true,
+    isSupporter: false,
     saleStartsAt: null,
     saleEndsAt: null,
     sortOrder: (ticketTypes.length + 1) * 10,
@@ -613,6 +614,11 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
               <div className={styles.toggleRow} style={{ marginTop: '0.75rem' }}>
                 <input type="checkbox" id="ttIsActive" checked={editingTT.isActive} onChange={e => setEditingTT({ ...editingTT, isActive: e.target.checked })} />
                 <label htmlFor="ttIsActive">Active (visible for purchase)</label>
+              </div>
+
+              <div className={styles.toggleRow} style={{ marginTop: '0.5rem' }}>
+                <input type="checkbox" id="ttIsSupporter" checked={editingTT.isSupporter} onChange={e => setEditingTT({ ...editingTT, isSupporter: e.target.checked })} />
+                <label htmlFor="ttIsSupporter">Supporter ticket (requires name, appears on /supporters)</label>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>

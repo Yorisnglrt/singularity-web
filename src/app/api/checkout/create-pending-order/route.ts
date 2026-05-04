@@ -110,6 +110,11 @@ export async function POST(req: Request) {
       }
     }
 
+    // ── Supporter validation ──
+    if (ticketType.is_supporter && (!customerName || customerName.trim().length < 2)) {
+      return NextResponse.json({ error: 'A name is required for Supporter tickets.' }, { status: 400 });
+    }
+
     // ── Check availability ──
     if (ticketType.total_quantity != null) {
       const available = ticketType.total_quantity - (ticketType.sold_quantity || 0);
@@ -171,6 +176,7 @@ export async function POST(req: Request) {
       quantity,
       unit_price_nok: unitPrice,
       line_total_nok: totalAmountNok,
+      is_supporter: !!ticketType.is_supporter,
     };
 
     const { error: itemError } = await supabase

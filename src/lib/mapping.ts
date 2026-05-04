@@ -177,6 +177,7 @@ export function mapTicketTypeToDb(tt: any) {
     total_quantity: totalQuantity != null && !isNaN(totalQuantity) ? Math.max(0, totalQuantity) : null,
     // sold_quantity is managed by the system (incremented on issuance), do not overwrite via admin
     is_active: tt.isActive ?? tt.is_active ?? true,
+    is_supporter: !!(tt.isSupporter ?? tt.is_supporter),
     sale_starts_at: tt.saleStartsAt ?? tt.sale_starts_at ?? null,
     sale_ends_at: tt.saleEndsAt ?? tt.sale_ends_at ?? null,
     sort_order: parseInt(String(tt.sortOrder ?? tt.sort_order ?? 0), 10) || 0,

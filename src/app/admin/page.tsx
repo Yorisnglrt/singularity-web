@@ -25,6 +25,7 @@ export interface EventTicketType {
   totalQuantity?: number | null;
   soldQuantity: number;
   isActive: boolean;
+  isSupporter: boolean;
   saleStartsAt?: string | null;
   saleEndsAt?: string | null;
   sortOrder: number;
@@ -92,6 +93,7 @@ export default function AdminPage() {
           totalQuantity: tt.total_quantity ?? null,
           soldQuantity: tt.sold_quantity ?? 0,
           isActive: tt.is_active ?? true,
+          isSupporter: tt.is_supporter ?? false,
           saleStartsAt: tt.sale_starts_at ?? null,
           saleEndsAt: tt.sale_ends_at ?? null,
           sortOrder: tt.sort_order ?? 0,

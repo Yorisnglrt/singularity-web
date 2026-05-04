@@ -7,7 +7,6 @@ import styles from './page.module.css';
 type Supporter = {
   id: string;
   name: string;
-  amount: number;
 };
 
 export default function SupportersPage() {
@@ -60,7 +59,6 @@ export default function SupportersPage() {
               supporters.map(supporter => (
                 <article key={supporter.id} className={styles.supporterCard}>
                   <span className={styles.supporterName}>{supporter.name}</span>
-                  <span className={styles.supporterYear}>{supporter.amount} kr</span>
                 </article>
               ))
             ) : (

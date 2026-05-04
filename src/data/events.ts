@@ -34,6 +34,7 @@ export interface EventTicketType {
   totalQuantity: number | null;
   soldQuantity: number;
   isActive: boolean;
+  isSupporter: boolean;
   saleStartsAt: string | null;
   saleEndsAt: string | null;
   sortOrder: number;

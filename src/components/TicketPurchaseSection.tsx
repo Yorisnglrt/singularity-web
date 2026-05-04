@@ -53,6 +53,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       setError('Please enter a valid email address');
       return;
     }
+    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
+      setError('A name is required for Supporter tickets to be listed on our /supporters page.');
+      return;
+    }
     if (!agree) {
       setError('You must agree to the Terms of Sale');
       return;
@@ -146,7 +150,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 onClick={() => !isSoldOut && setSelectedType(tt)}
               >
                 <div className={styles.ticketInfo}>
-                  <span className={styles.ticketName}>{tt.name}</span>
+                  <span className={styles.ticketName}>
+                    {tt.name}
+                    {tt.isSupporter && !tt.name.toLowerCase().includes('supporter') && ' Supporter'}
+                  </span>
                   <div className={styles.ticketStatus}>
                     {isSoldOut ? 'SOLD OUT' : tt.saleEndsAt ? `Until ${new Date(tt.saleEndsAt).toLocaleDateString()}` : 'Available'}
                   </div>
@@ -175,12 +182,13 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>Your Name</label>
+              <label className={styles.label}>Your Name {selectedType?.isSupporter && '*'}</label>
               <input 
                 className={styles.input} 
                 value={name} 
                 onChange={e => setName(e.target.value)} 
-                placeholder="Full Name (optional)"
+                placeholder={selectedType?.isSupporter ? "First name (required for supporters)" : "First name (optional)"}
+                required={selectedType?.isSupporter}
               />
             </div>
             <div className={styles.field}>
@@ -224,7 +232,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             <h3 className={styles.summaryTitle}>Order Summary</h3>
             <div className={styles.summaryContent}>
               <div className={styles.summaryRow}>
-                <span>{selectedType?.name} x {quantity}</span>
+                <span>
+                  {selectedType?.name}
+                  {selectedType?.isSupporter && !selectedType?.name.toLowerCase().includes('supporter') && ' Supporter'}
+                  {' '}x {quantity}
+                </span>
                 <span>{(selectedType?.priceNok || 0) * quantity} NOK</span>
               </div>
               <div className={`${styles.summaryRow} ${styles.totalRow}`}>
