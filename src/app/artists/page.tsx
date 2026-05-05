@@ -7,9 +7,11 @@ import { Artist } from '@/data/artists';
 import { normalizeArtist } from '@/lib/data-normalization';
 import styles from './page.module.css';
 
+type ArtistRow = Record<string, unknown>;
+
 export default function ArtistsPage() {
   const { t } = useI18n();
-  const [artists, setArtists] = useState<any[]>([]);
+  const [artists, setArtists] = useState<ArtistRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +29,9 @@ export default function ArtistsPage() {
         }
 
         setArtists(Array.isArray(data) ? data : []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Artists fetch error:', err);
-        setError(err?.message || 'Network error');
+        setError(err instanceof Error ? err.message : 'Network error');
         setArtists([]);
       } finally {
         setLoading(false);

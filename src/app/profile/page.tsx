@@ -26,7 +26,7 @@ type UserTicket = {
     id: string;
     title: string;
     date: string;
-    venue: any;
+    venue: Record<string, string> | string;
   } | null;
   event_ticket_types: {
     name: string;
@@ -44,7 +44,7 @@ export default function ProfilePage() {
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  const [dbEvents, setDbEvents] = useState<any[]>([]);
+  const [dbEvents, setDbEvents] = useState<Record<string, unknown>[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [userTickets, setUserTickets] = useState<UserTicket[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
@@ -80,7 +80,7 @@ export default function ProfilePage() {
         } else {
           setPointsHistory(data || []);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Points history exception:', err);
         setHistoryError('An unexpected error occurred.');
       } finally {
@@ -183,10 +183,6 @@ export default function ProfilePage() {
     if (rawDbEvent) return normalizeEvent(rawDbEvent);
     return events.find(e => e.id === id);
   };
-
-  const attendingEvents = attendingIds.map(getEventData).filter(Boolean) as any[];
-  const interestedEvents = interestedIds.map(getEventData).filter(Boolean) as any[];
-  const likedEvents = likedIds.map(getEventData).filter(Boolean) as any[];
 
   return (
     <div className={styles.page}>

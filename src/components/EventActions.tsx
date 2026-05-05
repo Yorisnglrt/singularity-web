@@ -51,7 +51,7 @@ export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProv
       if (reactionsError) throw reactionsError;
 
       const newCounts: ReactionCounts = { like: 0, interested: 0, attending: 0 };
-      reactionsData?.forEach((row: any) => {
+      reactionsData?.forEach((row: { action: string }) => {
         if (row.action in newCounts) {
           newCounts[row.action as keyof ReactionCounts]++;
         }
@@ -78,12 +78,16 @@ export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProv
       if (reactorsError) throw reactorsError;
 
       const uniqueUserMap = new Map<string, Reactor>();
-      reactorsData?.forEach((row: any) => {
-        if (!uniqueUserMap.has(row.user_id) && row.profiles?.display_name) {
+      reactorsData?.forEach((row: { 
+        user_id: string; 
+        profiles: { display_name: string; avatar_url: string | null } | { display_name: string; avatar_url: string | null }[] | null 
+      }) => {
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        if (!uniqueUserMap.has(row.user_id) && profile?.display_name) {
           uniqueUserMap.set(row.user_id, {
             id: row.user_id,
-            name: row.profiles.display_name,
-            avatarUrl: row.profiles.avatar_url
+            name: profile.display_name,
+            avatarUrl: profile.avatar_url || undefined
           });
         }
       });

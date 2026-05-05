@@ -9,6 +9,7 @@ type RawMix = {
   title: string;
   artist: string;
   eventId: string;
+  event_id?: string;
   label?: string;
   duration?: string;
   date: string;
@@ -39,9 +40,9 @@ export default function MixesPage() {
 
         const mixesData = Array.isArray(data) ? data : [];
         setMixes(mixesData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Mixes fetch error:', err);
-        setError(err?.message || 'Network error');
+        setError(err instanceof Error ? err.message : 'Network error');
         setMixes([]);
       } finally {
         setLoading(false);
@@ -55,7 +56,7 @@ export default function MixesPage() {
   const normalizedMixes = useMemo(() => {
     return mixes.map(mix => ({
       ...mix,
-      eventId: mix.eventId ?? (mix as any).event_id ?? 'unknown',
+      eventId: mix.eventId ?? mix.event_id ?? 'unknown',
       label: mix.label || 'Full set',
       coverGradient: mix.coverGradient || 'linear-gradient(135deg, #0a0a14, #1a1a2e)',
     }));

@@ -47,8 +47,8 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments((data as any) || []);
-    } catch (err: any) {
+      setComments((data as unknown as Comment[]) || []);
+    } catch (err: unknown) {
       console.error('Error fetching comments:', err);
     } finally {
       setLoading(false);
@@ -89,8 +89,8 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
       
       setContent('');
       fetchComments();
-    } catch (err: any) {
-      setError(err.message || 'Failed to post comment');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to post comment');
     } finally {
       setSubmitting(false);
     }
@@ -108,8 +108,8 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
       if (error) throw error;
       
       setComments(prev => prev.filter(c => c.id !== commentId));
-    } catch (err: any) {
-      alert('Failed to delete comment: ' + err.message);
+    } catch (err: unknown) {
+      alert('Failed to delete comment: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
