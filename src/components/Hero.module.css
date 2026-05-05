@@ -296,7 +296,17 @@
     min-width: 0;
   }
 
+  .bgGlow {
+    top: 50%;
+    left: 50%;
+    width: 70%;
+  }
 
+  .bgPulse {
+    top: 50%;
+    left: 50%;
+    width: 45%;
+  }
 }
 
 /* Desktop Scaling */
