@@ -46,7 +46,7 @@ export default function SupportersPage() {
       <div className="container">
         <div className={styles.header}>
           <h1 className={styles.title}>{t('supporters.title')}</h1>
-          <p className={styles.text}>{t('supporters.text')}</p>
+          <p className={styles.subtitle}>SINGULARITY SUPPORTERS — COMMUNITY</p>
         </div>
 
         <div className={styles.section}>

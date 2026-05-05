@@ -1,11 +1,11 @@
 .page {
-  padding-top: var(--space-12);
+  padding-top: var(--space-8);
   padding-bottom: var(--space-section);
   min-height: 100vh;
 }
 
 .header {
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-10);
 }
 
 .title {

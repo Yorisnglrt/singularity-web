@@ -5,7 +5,7 @@
   right: 0;
   height: var(--nav-height);
   z-index: var(--z-sticky);
-  background: rgba(5, 5, 7, 0.7);
+  background: rgba(3, 4, 8, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--glass-border);
@@ -29,8 +29,8 @@
 }
 
 .logoImage {
-  width: 320px;
-  height: 74px;
+  width: 242px;
+  height: 56px;
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-primary) 100%);
   -webkit-mask-image: url('/logo-white.png');
   -webkit-mask-size: contain;
@@ -257,10 +257,6 @@
 
 /* Intermediate scaling for tablets / small desktops */
 @media (max-width: 1300px) {
-  .logoImage {
-    width: 240px;
-  }
-  
   .links {
     gap: var(--space-1);
   }

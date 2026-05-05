@@ -2,6 +2,7 @@
 
 import { useI18n } from '@/i18n';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import styles from './Hero.module.css';
 import { Event as AppEvent } from '@/data/events';
 
@@ -45,19 +46,7 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
       {/* Background grid stays in the back */}
       <div className={styles.bgGrid} />
 
-      {/* Waveform decoration */}
-      <div className={styles.waveform}>
-        {Array.from({ length: 60 }).map((_, i) => (
-          <div
-            key={i}
-            className={styles.waveBar}
-            style={{
-              height: `${20 + Math.sin(i * 0.5) * 40 + Math.random() * 30}%`,
-              animationDelay: `${i * 0.05}s`,
-            }}
-          />
-        ))}
-      </div>
+
 
       <div className={`${styles.content} container`}>
         <div className={styles.tagBadge}>
@@ -66,10 +55,12 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
         </div>
 
         <div className={styles.titleWrapper}>
-          <div className={styles.heroLogoImage} />
-          {/* Glow effects centered behind the logo */}
-          <div className={styles.bgGlow} />
-          <div className={styles.bgPulse} />
+          <div className={styles.logoWrap}>
+            <div className={styles.heroLogoImage} />
+            {/* Glow effects centered behind the logo */}
+            <div className={styles.bgGlow} />
+            <div className={styles.bgPulse} />
+          </div>
         </div>
 
         <p className={styles.subtitle}>{t('hero.subtitle')}</p>
@@ -102,19 +93,16 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
         )}
 
         <div className={styles.ctas}>
-          <a href="/events" className="btn btn-primary" id="hero-cta-events">
+          <Link href={nextEvent ? `/events/${nextEvent.slug}` : "/events"} className="btn btn-primary" id="hero-cta-events">
             {t('hero.cta')}
-          </a>
-          <a href="/membership" className="btn btn-outline" id="hero-cta-membership">
+          </Link>
+          <Link href="/membership" className="btn btn-outline" id="hero-cta-membership">
             {t('hero.cta2')}
-          </a>
+          </Link>
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className={styles.scrollHint}>
-        <div className={styles.scrollLine} />
-      </div>
+
     </section>
   );
 }

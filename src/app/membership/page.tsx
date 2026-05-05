@@ -49,18 +49,20 @@ export default function MembershipPage() {
 
   return (
     <div className={styles.page}>
-      <div className={`container ${styles.grid}`}>
-        
-        {/* Left Column: Info & Rewards Timeline */}
-        <div className={styles.infoCol}>
-          <div>
-            <h1 className={styles.title}>{t('membership.title')}</h1>
-            <p className={styles.desc}>{t('membership.subtitle')}</p>
-            <br />
-            <p className={styles.desc}>{t('membership.platform')}</p>
-            <br />
-            <p className={styles.desc}>{t('membership.instructions')}</p>
-          </div>
+      <div className="container">
+        <div className={styles.grid}>
+          {/* Left Column: Info & Rewards Timeline */}
+          <div className={styles.infoCol}>
+            <div className={styles.header}>
+              <h1 className={styles.title}>RAVE PASS</h1>
+              <p className={styles.subtitle}>SINGULARITY MEMBERSHIP — RAVE POINTS</p>
+            </div>
+            
+            <div className={styles.intro}>
+              <p className={styles.desc}>{t('membership.platform')}</p>
+              <br />
+              <p className={styles.desc}>{t('membership.instructions')}</p>
+            </div>
 
           <div className={styles.timeline}>
             <div className={styles.timelineStep}>
@@ -243,6 +245,7 @@ export default function MembershipPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

@@ -2,6 +2,17 @@
   position: relative;
 }
 
+.nextEventSection {
+  margin-top: -180px;
+  z-index: 5;
+}
+
+@media (max-width: 768px) {
+  .nextEventSection {
+    margin-top: -100px;
+  }
+}
+
 /* Section headers */
 .sectionHeader {
   display: flex;

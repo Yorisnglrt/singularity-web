@@ -99,7 +99,7 @@ export default function Home() {
 
       {/* Next Event - Featured */}
       {nextEvent && (
-        <section className={`section ${styles.section}`} id="next-event">
+        <section className={`section ${styles.section} ${styles.nextEventSection}`} id="next-event">
           <div className="container">
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTag}>◈ {t('home.nextEvent')}</span>

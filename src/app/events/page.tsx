@@ -103,7 +103,7 @@ export default function EventsPage() {
             </div>
           ) : filtered.length > 0 ? (
             filtered.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} featured />
             ))
           ) : (
             <div className={styles.empty}>
