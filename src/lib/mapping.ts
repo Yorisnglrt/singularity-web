@@ -1,3 +1,4 @@
+import { toSlug } from './slug';
 import crypto from 'crypto';
 
 /**
@@ -59,7 +60,6 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
   // Generate slug if missing or if it's the old 'new-...' ID
   let slug: string = event.slug || rest.slug || slugOrId;
   if (!slug || slug.startsWith('new-')) {
-    const { toSlug } = require('./slug');
     slug = toSlug(rest.title || 'untitled-event');
   }
 
@@ -120,7 +120,6 @@ export function mapMixToDb(mix: any) {
   
   let slug = mix.slug || rest.slug;
   if (!slug || slug.startsWith('new-')) {
-    const { toSlug } = require('./slug');
     slug = toSlug(rest.title || 'untitled-mix');
   }
 

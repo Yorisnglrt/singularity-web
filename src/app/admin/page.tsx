@@ -68,7 +68,7 @@ export default function AdminPage() {
         }
         setData(prev => ({ ...prev, [type]: json }));
       }
-    } catch {
+    } catch (e) {
       console.error(e);
     }
   };
@@ -100,7 +100,7 @@ export default function AdminPage() {
         }));
         setTicketTypes(normalized);
       }
-    } catch {
+    } catch (e) {
       console.error('Failed to load ticket types:', e);
     }
   };

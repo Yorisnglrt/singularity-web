@@ -116,7 +116,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
         const json = await res.json();
         setGuestList(json);
       }
-    } catch {
+    } catch (err) {
       console.error('Failed to fetch guest list:', err);
     }
   }, [ev.id]);
@@ -180,7 +180,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       if (res.ok) {
         fetchGuestList();
       }
-    } catch {
+    } catch (err) {
       console.error('Failed to void ticket:', err);
     }
   };
