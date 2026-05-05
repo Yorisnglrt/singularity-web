@@ -117,15 +117,7 @@ export default function Home() {
               <span className={styles.sectionTag}>◈ NEXT LINEUP</span>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 180px))',
-                gap: 'var(--space-4)',
-                justifyContent: 'center',
-                alignItems: 'stretch',
-              }}
-            >
+            <div className={styles.nextLineupGrid}>
               {nextEventLineupArtists.map((artist) => (
                 <ArtistCard key={artist.id} artist={artist} compact />
               ))}

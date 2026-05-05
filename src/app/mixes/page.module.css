@@ -246,10 +246,6 @@
     text-align: left;
   }
 
-  .title {
-    font-size: var(--text-3xl);
-  }
-
   .cardHeader {
     flex-direction: column;
     gap: var(--space-2);

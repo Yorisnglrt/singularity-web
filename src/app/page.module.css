@@ -68,6 +68,15 @@
   padding-bottom: var(--space-2);
 }
 
+/* Next Lineup Grid */
+.nextLineupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 180px));
+  gap: var(--space-4);
+  justify-content: center;
+  align-items: stretch;
+}
+
 
 /* Mix list */
 .mixList {
@@ -147,6 +156,11 @@
 
   .featuredGrid {
     grid-template-columns: 1fr;
+  }
+
+  .nextLineupGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
   }
 }
 
