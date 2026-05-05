@@ -5,7 +5,8 @@ import { useI18n } from '@/i18n';
 import styles from './ArtistCardDeck.module.css';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface ArtistCardDeckProps {

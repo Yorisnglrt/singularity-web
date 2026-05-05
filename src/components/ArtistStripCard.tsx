@@ -3,7 +3,7 @@
 import { Artist } from '@/data/artists';
 import { useI18n } from '@/i18n';
 import styles from './ArtistStripCard.module.css';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface ArtistStripCardProps {
   artist: Artist;

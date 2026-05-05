@@ -6,7 +6,8 @@ import styles from './ArtistProfile.module.css';
 import Link from 'next/link';
 import { notFound, useParams, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import { getFlagEmoji, getFlagUrl } from '@/lib/utils';
+import { getFlagUrl } from '@/lib/utils';
+
 
 function ArtistProfileContent() {
   const { locale, t } = useI18n();

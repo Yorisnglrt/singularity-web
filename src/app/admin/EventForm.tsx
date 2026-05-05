@@ -99,7 +99,6 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
 
   // Lineup
   const [newName, setNewName] = useState('');
-  const [lineupSearch, setLineupSearch] = useState('');
 
   // Guest list states
   const [guestList, setGuestList] = useState<any[]>([]);
@@ -117,7 +116,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
         const json = await res.json();
         setGuestList(json);
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch guest list:', err);
     }
   }, [ev.id]);
@@ -156,7 +155,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
         const err = await res.json();
         alert(`Error: ${err.error}`);
       }
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to issue guest tickets');
     } finally {
       setIssuingGuest(false);
@@ -181,7 +180,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       if (res.ok) {
         fetchGuestList();
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to void ticket:', err);
     }
   };

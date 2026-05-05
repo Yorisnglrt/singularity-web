@@ -68,7 +68,7 @@ export default function AdminPage() {
         }
         setData(prev => ({ ...prev, [type]: json }));
       }
-    } catch (e) {
+    } catch {
       console.error(e);
     }
   };
@@ -100,7 +100,7 @@ export default function AdminPage() {
         }));
         setTicketTypes(normalized);
       }
-    } catch (e) {
+    } catch {
       console.error('Failed to load ticket types:', e);
     }
   };
@@ -137,7 +137,7 @@ export default function AdminPage() {
         const err = await res.json();
         setStatusMsg(`Failed to save: ${err.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Error saving.');
     }
   };
@@ -160,7 +160,7 @@ export default function AdminPage() {
         const err = await res.json();
         setStatusMsg(`Failed to save ticket type: ${err.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Error saving ticket type.');
     }
   };
@@ -184,7 +184,7 @@ export default function AdminPage() {
         const err = await res.json();
         setStatusMsg(`Failed to delete: ${err.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Error deleting ticket type.');
     } finally {
       setTimeout(() => setStatusMsg(''), 3000);
@@ -223,7 +223,7 @@ export default function AdminPage() {
         const err = await res.json();
         setStatusMsg(`Failed to delete: ${err.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Error deleting.');
     } finally {
       setTimeout(() => setStatusMsg(''), 3000);
@@ -253,7 +253,7 @@ export default function AdminPage() {
         const err = await res.json();
         setStatusMsg(`Upload failed: ${err.error}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Upload error.');
     } finally {
       setUploading(false);
@@ -311,7 +311,7 @@ export default function AdminPage() {
       } else {
         setStatusMsg(`Migration failed: ${json.error}`);
       }
-    } catch (e) {
+    } catch {
       setStatusMsg('Migration error.');
     } finally {
       setTimeout(() => setStatusMsg(''), 5000);

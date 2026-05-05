@@ -6,7 +6,8 @@ import styles from './ArtistShowcase.module.css';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { getFlagEmoji, getFlagUrl } from '@/lib/utils';
+import { getFlagUrl } from '@/lib/utils';
+
 
 interface ArtistShowcaseProps {
   artists: Artist[];
