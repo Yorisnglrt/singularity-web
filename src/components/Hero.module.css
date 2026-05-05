@@ -298,13 +298,13 @@
 
   .bgGlow {
     top: 50%;
-    left: 60%;
+    left: 50%;
     width: 52%;
   }
 
   .bgPulse {
     top: 50%;
-    left: 60%;
+    left: 50%;
     width: 30%;
   }
 }
