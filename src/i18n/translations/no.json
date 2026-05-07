@@ -118,5 +118,9 @@
   "cookies.status": "Vår nettside bruker for øyeblikket kun nødvendige tekniske informasjonskapsler som kreves for kjernefunksjonalitet, som å holde deg innlogget og ivareta sikkerheten. Vi bruker ikke tredjeparts sporing, analyse eller reklame-cookies.",
   "cookies.changes": "Hvis vi introduserer valgfrie informasjonskapsler i fremtiden, vil vi oppdatere denne siden og be om ditt samtykke.",
   "legal.agree": "Ved å opprette en konto, godtar du vår",
-  "termsOfSale.title": "Salgsbetingelser"
+  "termsOfSale.title": "Salgsbetingelser",
+  "events.location": "Sted",
+  "events.venue": "Venue",
+  "events.openInMaps": "Åpne i Google Maps",
+  "events.planRoute": "Planlegg reisen"
 }

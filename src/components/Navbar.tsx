@@ -48,12 +48,33 @@ export default function Navbar() {
         </Link>
 
         <div className={`${styles.links} ${mobileOpen ? styles.open : ''}`}>
+          {/* Mobile-only Auth button - top of drawer */}
+          <div className={`${styles.authWrapper} ${styles.mobileOnly}`}>
+            {user ? (
+              <Link href="/profile" className={styles.userBtn} id="nav-profile-mobile" onClick={() => setMobileOpen(false)}>
+                <span className={styles.userAvatar}>
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.displayName} className={styles.avatarImg} />
+                  ) : (
+                    user.avatarInitial
+                  )}
+                </span>
+                <span className={styles.userName}>{user.displayName}</span>
+                {user.isAdmin && <span className={styles.adminTag}>Admin</span>}
+              </Link>
+            ) : (
+              <button className={styles.signInBtn} onClick={() => { setShowAuthModal(true); setMobileOpen(false); }} id="nav-signin-mobile">
+                Sign In / Account
+              </button>
+            )}
+          </div>
+
           {navLinks.map(link => (
             <Link
               key={link.href}
               href={link.href}
-              className={`${styles.link} ${pathname === link.href ? styles.active : ''}`}
-              id={`nav-${link.key.split('.')[1]}`}
+              className={`${styles.link} ${pathname === link.href ? styles.active : ''} ${styles.mobileLink}`}
+              id={`nav-mobile-${link.key.split('.')[1]}`}
               onClick={() => setMobileOpen(false)}
             >
               {t(link.key)}
@@ -63,15 +84,70 @@ export default function Navbar() {
           {user?.isAdmin && (
             <Link
               href="/admin"
-              className={`${styles.link} ${pathname === '/admin' ? styles.active : ''}`}
-              id="nav-admin"
+              className={`${styles.link} ${pathname === '/admin' ? styles.active : ''} ${styles.mobileLink}`}
+              id="nav-mobile-admin"
               onClick={() => setMobileOpen(false)}
             >
               {t('nav.admin')}
             </Link>
           )}
 
-          {/* Language switcher */}
+          {/* Mobile-only Language switcher */}
+          <div className={`${styles.langWrapper} ${styles.mobileOnly}`}>
+            <button
+              className={styles.langBtn}
+              onClick={() => setLangOpen(!langOpen)}
+              id="lang-switcher-mobile"
+              aria-label="Change language"
+            >
+              {localeLabels[locale]}
+            </button>
+            {langOpen && (
+              <div className={styles.langDropdown}>
+                {locales.map(l => (
+                  <button
+                    key={l}
+                    className={`${styles.langOption} ${l === locale ? styles.langActive : ''}`}
+                    onClick={() => {
+                      setLocale(l);
+                      setLangOpen(false);
+                    }}
+                    id={`lang-mobile-${l}`}
+                  >
+                    {localeLabels[l]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop-only Actions - Right side (Includes Nav Links, Lang, Auth) */}
+        <div className={styles.desktopActions}>
+          <div className={styles.desktopNav}>
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${styles.link} ${pathname === link.href ? styles.active : ''}`}
+                id={`nav-desktop-${link.key.split('.')[1]}`}
+              >
+                {t(link.key)}
+              </Link>
+            ))}
+
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                className={`${styles.link} ${pathname === '/admin' ? styles.active : ''}`}
+                id="nav-desktop-admin"
+              >
+                {t('nav.admin')}
+              </Link>
+            )}
+          </div>
+
+          {/* Desktop Language switcher */}
           <div className={styles.langWrapper}>
             <button
               className={styles.langBtn}
@@ -100,10 +176,9 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Auth button */}
           <div className={styles.authWrapper}>
             {user ? (
-              <Link href="/profile" className={styles.userBtn} id="nav-profile" onClick={() => setMobileOpen(false)}>
+              <Link href="/profile" className={styles.userBtn} id="nav-profile">
                 <span className={styles.userAvatar}>
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt={user.displayName} className={styles.avatarImg} />

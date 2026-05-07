@@ -8,6 +8,8 @@ import EventActions from '@/components/EventActions';
 import EventDiscussion from '@/components/EventDiscussion';
 import TicketPurchaseSection from '@/components/TicketPurchaseSection';
 import { resolveLineupArtists } from '@/lib/data-normalization';
+import EventLocationMap from '@/components/EventLocationMap';
+import { useI18n } from '@/i18n';
 import styles from './page.module.css';
 
 interface Props {
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export default function EventDetailClient({ event, artists, ticketTypes }: Props) {
+  const { t, locale } = useI18n();
   const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
@@ -145,15 +148,22 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
 
             {/* Discussion Section */}
             <EventDiscussion eventId={event.id} />
+
+            {/* Mobile Location Section */}
+            <div className={`${styles.section} ${styles.mobileOnly}`}>
+              <h2 className={styles.sectionTitle}>{t('events.location')}</h2>
+              <EventLocationMap 
+                venue={typeof event.venue === 'string' ? event.venue : event.venue[locale]} 
+              />
+            </div>
           </div>
 
           {/* Sidebar */}
           <aside className={styles.sidebar}>
-            <div className={styles.sideCard}>
-              <div className={styles.dateBlock}>
-                <span className={styles.dateDay}>{day}</span>
-                <span className={styles.dateMonthYear}>{month} {year}</span>
-              </div>
+            <div className={styles.desktopOnly}>
+              <EventLocationMap 
+                venue={typeof event.venue === 'string' ? event.venue : event.venue[locale]} 
+              />
             </div>
           </aside>
         </div>

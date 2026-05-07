@@ -7,14 +7,9 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.stretchedLink::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
+.card:focus-within, .card:focus {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 4px;
 }
 
 /* Poster — clean 4:5 image, nothing overlaid */

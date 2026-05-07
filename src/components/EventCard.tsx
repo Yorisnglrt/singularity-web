@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useI18n } from '@/i18n';
 import { Event, toSlug } from '@/data/events';
 import styles from './EventCard.module.css';
@@ -11,6 +12,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, featured }: EventCardProps) {
+  const router = useRouter();
   const { t, locale } = useI18n();
   const eventDate = new Date(event.date);
   const day = eventDate.getDate();
@@ -18,9 +20,29 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const year = eventDate.getFullYear();
 
   const cardImage = event.posterVertical || event.posterImage;
+  const eventHref = `/events/${toSlug(event)}`;
+
+  const handleCardClick = () => {
+    router.push(eventHref);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      router.push(eventHref);
+    }
+  };
 
   return (
-    <article className={`${styles.card} card ${featured ? styles.featured : ''}`} id={`event-${event.id}`}>
+    <article 
+      className={`${styles.card} card ${featured ? styles.featured : ''}`} 
+      id={`event-${event.id}`}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="link"
+      aria-label={`${event.title}, ${day} ${month} ${year}`}
+    >
       {/* Poster — clean 4:5, nothing overlaid */}
       <div className={styles.poster} style={{ background: event.posterColor }}>
         {cardImage ? (
@@ -45,7 +67,7 @@ export default function EventCard({ event, featured }: EventCardProps) {
       <div className={styles.info}>
         <div className={styles.topRow}>
           <span className={styles.dateText}>{day} {month} {year}</span>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
             {event.ageRestriction && (
               <span className="tag" style={{ fontSize: 'var(--text-xs)', padding: '0.15em 0.5em' }}>{event.ageRestriction}</span>
             )}
@@ -76,41 +98,30 @@ export default function EventCard({ event, featured }: EventCardProps) {
           </div>
         </div>
 
-        {!event.isPast && (
-          <div className={styles.actions}>
-            {event.isFree ? (
-              <span className="tag">{t('events.free')}</span>
-            ) : (
-              <Link 
-                href={`/events/${toSlug(event)}#tickets`} 
-                className="btn btn-primary btn-sm" 
-                id={`tickets-${event.id}`}
-              >
-                {t('events.tickets')}
-              </Link>
-            )}
-            <Link 
-              href={`/events/${toSlug(event)}`} 
-              className={`btn btn-sm ${styles.stretchedLink}`} 
-              style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} 
-              id={`detail-${event.id}`}
-            >
-              View details
-            </Link>
-          </div>
-        )}
-        {event.isPast && (
-          <div className={styles.actions}>
-            <Link 
-              href={`/events/${toSlug(event)}`} 
-              className={`btn btn-sm ${styles.stretchedLink}`} 
-              style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} 
-              id={`detail-past-${event.id}`}
-            >
-              View details
-            </Link>
-          </div>
-        )}
+        <div className={styles.actions}>
+          {!event.isPast && (
+            <>
+              {event.isFree ? (
+                <span className="tag" onClick={(e) => e.stopPropagation()}>{t('events.free')}</span>
+              ) : (
+                <Link 
+                  href={`${eventHref}#tickets`} 
+                  className="btn btn-primary btn-sm" 
+                  id={`tickets-${event.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t('events.tickets')}
+                </Link>
+              )}
+            </>
+          )}
+          <span 
+            className={`btn btn-sm`} 
+            style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', pointerEvents: 'none'}} 
+          >
+            View details
+          </span>
+        </div>
       </div>
     </article>
   );

@@ -74,7 +74,7 @@
 .name {
   font-size: var(--text-lg);
   letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
+  text-transform: none;
   font-weight: 800;
   margin: 0;
   white-space: nowrap;

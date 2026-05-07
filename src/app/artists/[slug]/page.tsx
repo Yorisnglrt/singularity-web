@@ -104,19 +104,14 @@ function ArtistProfileContent() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <div className={styles.titleContainer}>
             <h1 className={styles.artistName}>{artist.name}</h1>
             {artist.country_code && (
               <img 
                 src={getFlagUrl(artist.country_code)} 
                 alt={artist.country_code}
                 title={artist.country_code}
-                style={{ 
-                  height: '1.4rem', 
-                  width: 'auto',
-                  borderRadius: '2px',
-                  boxShadow: '0 0 10px rgba(255,255,255,0.1)'
-                }} 
+                className={styles.artistFlag}
               />
             )}
           </div>
