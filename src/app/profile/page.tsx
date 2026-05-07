@@ -233,7 +233,9 @@ export default function ProfilePage() {
               </div>
             )}
             <div className={styles.actionButtons}>
-              <button className={styles.editBtn}>Edit Profile</button>
+              <Link href="/profile/settings" className={styles.editBtn}>
+                Edit Profile
+              </Link>
               <button className={styles.logoutBtn} onClick={logout}>Sign Out</button>
             </div>
           </div>
