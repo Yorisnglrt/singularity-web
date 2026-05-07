@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // 1. Load the existing pending order from ticket_orders
     let query = supabaseAdmin
       .from('ticket_orders')
-      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name, payment_method_type');
+      .select('id, order_reference, total_amount_nok, currency, payment_status, vipps_reference, customer_name, payment_method_type, payment_url');
 
     if (orderReference) {
       query = query.eq('order_reference', orderReference);
@@ -50,10 +50,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order has no valid amount' }, { status: 400 });
     }
 
-    // 4. If Vipps payment was already created for this order, reuse the reference
+    // 4. If Vipps payment was already created for this order, return the existing URL
     if (order.vipps_reference) {
+      if (order.payment_url) {
+        return NextResponse.json({ redirectUrl: order.payment_url, reference: order.vipps_reference });
+      }
       return NextResponse.json(
-        { error: 'Vipps payment already initiated for this order' },
+        { error: 'Vipps payment already initiated but payment URL is missing. Please cancel and try again.' },
         { status: 409 }
       );
     }
@@ -82,6 +85,7 @@ export async function POST(request: Request) {
       .from('ticket_orders')
       .update({
         vipps_reference: vippsReference,
+        payment_url: redirectUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', order.id);

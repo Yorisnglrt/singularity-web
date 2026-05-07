@@ -24,13 +24,103 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const { user, isLoading: authLoading } = useAuth();
   const isLoggedIn = !!user;
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CARD'>('WALLET');
+  const [pendingOrder, setPendingOrder] = useState<any>(null);
+  const [checkingPending, setCheckingPending] = useState(false);
 
   useEffect(() => {
     if (user) {
       if (user.email) setEmail(user.email);
       if (user.displayName) setName(user.displayName);
+      checkPendingOrder();
     }
   }, [user]);
+
+  const checkPendingOrder = async () => {
+    if (!user) return;
+    setCheckingPending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/checkout/pending-status?eventId=${event.id}`, {
+        headers: {
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data.hasPending) {
+        setPendingOrder(data.order);
+      } else {
+        setPendingOrder(null);
+      }
+    } catch (err) {
+      console.error('Failed to check pending order:', err);
+    } finally {
+      setCheckingPending(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!pendingOrder || !user) return;
+    if (!confirm('Er du sikker på at du vil avbryte denne bestillingen?')) return;
+    
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/checkout/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ orderReference: pendingOrder.orderReference })
+      });
+      
+      if (res.ok) {
+        setPendingOrder(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Kunne ikke avbryte bestillingen');
+        // Refresh status if something changed server-side
+        checkPendingOrder();
+      }
+    } catch (err) {
+      console.error('Cancel error:', err);
+      alert('En uventet feil oppstod');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleContinuePayment = async () => {
+    if (!pendingOrder) return;
+    setLoading(true);
+    
+    // 1. Primárně použít uloženou URL z pending-status
+    if (pendingOrder.paymentUrl) {
+      window.location.href = pendingOrder.paymentUrl;
+      return;
+    }
+
+    // 2. Fallback: Zkusit zavolat create endpoint pro získání URL (pro starší objednávky)
+    try {
+      const vippsRes = await fetch('/api/payments/vipps/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderReference: pendingOrder.orderReference })
+      });
+
+      const vippsData = await vippsRes.json();
+      if (vippsRes.ok && vippsData.redirectUrl) {
+        window.location.href = vippsData.redirectUrl;
+      } else {
+        // Zobrazíme norskou chybu pokud URL chybí
+        alert('Betalingslenken mangler. Avbryt bestillingen og start på nytt.');
+      }
+    } catch (err: any) {
+      alert('En uventet feil oppstod. Prøv igjen senere.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleIncrement = () => {
     if (!selectedType) return;
@@ -130,6 +220,49 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           Your order has been created. You are being redirected to Vipps to complete payment.
         </p>
         <div className={styles.orderRef}>{success.orderReference}</div>
+      </div>
+    );
+  }
+
+  if (pendingOrder) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.recoveryBox}>
+          <h2 className={styles.recoveryTitle}>Du har en pågående bestilling som ikke er betalt ennå.</h2>
+          <div className={styles.recoveryDetails}>
+            <div className={styles.recoveryItem}>
+              <span className={styles.recoveryLabel}>Billettype</span>
+              <span className={styles.recoveryValue}>{pendingOrder.ticketTypeName}</span>
+            </div>
+            <div className={styles.recoveryItem}>
+              <span className={styles.recoveryLabel}>Antall</span>
+              <span className={styles.recoveryValue}>{pendingOrder.quantity} stk</span>
+            </div>
+            <div className={styles.recoveryItem}>
+              <span className={styles.recoveryLabel}>Totalpris</span>
+              <span className={styles.recoveryValue}>{pendingOrder.totalAmountNok} NOK</span>
+            </div>
+          </div>
+          <div className={styles.recoveryActions}>
+            <button 
+              className={`${styles.paymentBtn} btn btn-primary`}
+              onClick={handleContinuePayment}
+              disabled={loading}
+            >
+              {loading ? 'Laster...' : 'Gå tilbake til betaling'}
+            </button>
+            <button 
+              className={styles.cancelBtn}
+              onClick={handleCancelOrder}
+              disabled={loading}
+            >
+              {loading ? '...' : 'Avbryt bestilling'}
+            </button>
+          </div>
+          <p className={styles.recoveryHint}>
+            Hvis du vil kjøpe andre billetter eller endre antall, må du først avbryte den pågående bestillingen.
+          </p>
+        </div>
       </div>
     );
   }
