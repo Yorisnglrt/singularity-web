@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -8,7 +8,15 @@ import styles from './page.module.css';
 
 export default function MembershipPage() {
   const { t } = useI18n();
-  const { user, register, login, isLoading } = useAuth();
+  const { user, register, login, isLoading, claimStartingPoints, refreshProfile } = useAuth();
+
+  // Ensure points are claimed and profile is up-to-date on mount
+  useEffect(() => {
+    if (user?.id) {
+      claimStartingPoints();
+      refreshProfile();
+    }
+  }, [user?.id, claimStartingPoints, refreshProfile]);
   
   // Form state
   const [formMode, setFormMode] = useState<'register' | 'login'>('register');

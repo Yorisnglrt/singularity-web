@@ -28,6 +28,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<{ error?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
+  claimStartingPoints: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email || '');
+        claimStartingPoints();
       }
       setIsLoading(false);
     };
@@ -60,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch profile asynchronously to not block the main auth loop
         fetchProfile(session.user.id, session.user.email || '').finally(() => {
           setIsLoading(false);
+          // Automatically try to claim starting points on sign in
+          if (event === 'SIGNED_IN') {
+            claimStartingPoints();
+          }
         });
       } else {
         setUser(null);
@@ -301,6 +307,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.id) await fetchProfile(user.id, user.email);
   };
 
+  const claimStartingPoints = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/membership/claim-starting-points', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const status = typeof data === 'string' ? data : data?.status;
+        
+        if (status === 'CLAIMED') {
+          console.log('[AuthContext] Starting points claimed successfully.');
+          await refreshProfile();
+        }
+      }
+    } catch (err) {
+      // Log error but don't show to user as per requirements
+      console.error('[AuthContext] Failed to claim starting points:', err);
+    }
+  };
+
   const hasInteraction = (eventId: string, action: EventInteraction['action']) => {
     return interactions.some(i => i.eventId === eventId && i.action === action);
   };
@@ -320,7 +353,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       openAuthModal,
       forgotPassword,
       updateProfile,
-      refreshProfile
+      refreshProfile,
+      claimStartingPoints
     }}>
       {children}
     </AuthContext.Provider>

@@ -40,7 +40,7 @@ type UserTicket = {
 };
 
 export default function ProfilePage() {
-  const { user, interactions, logout, openAuthModal, refreshProfile } = useAuth();
+  const { user, interactions, logout, openAuthModal, refreshProfile, claimStartingPoints } = useAuth();
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -53,8 +53,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user?.id) {
       refreshProfile();
+      claimStartingPoints();
     }
-  }, [user?.id]);
+  }, [user?.id, refreshProfile, claimStartingPoints]);
 
   useEffect(() => {
     const fetchHistory = async () => {
