@@ -1,16 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Artist } from '@/data/artists';
 import ArtistCard from '@/components/ArtistCard';
-import { Event, EventTicketType, toSlug } from '@/data/events';
+import { Event, EventTicketType } from '@/data/events';
 import EventActions from '@/components/EventActions';
-import EventDiscussion from '@/components/EventDiscussion';
-import TicketPurchaseSection from '@/components/TicketPurchaseSection';
 import { resolveLineupArtists } from '@/lib/data-normalization';
-import EventLocationMap from '@/components/EventLocationMap';
 import { useI18n } from '@/i18n';
 import styles from './page.module.css';
+
+// Lazy-load non-critical interactive components
+const TicketPurchaseSection = dynamic(() => import('@/components/TicketPurchaseSection'), { ssr: false });
+const EventDiscussion = dynamic(() => import('@/components/EventDiscussion'), { ssr: false });
+const EventLocationMap = dynamic(() => import('@/components/EventLocationMap'), { ssr: false });
 
 interface Props {
   event: Event;
@@ -38,12 +42,28 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
       {/* Wide cover hero — full width, ~1.91:1 aspect */}
       {wideImage ? (
         <div className={styles.coverHero}>
-          <img src={wideImage} alt={event.title} className={styles.coverHeroImage} />
+          <Image 
+            src={wideImage} 
+            alt={event.title} 
+            className={styles.coverHeroImage} 
+            fill 
+            priority 
+            sizes="100vw"
+            style={{ objectFit: 'cover' }}
+          />
         </div>
       ) : portraitImage ? (
         /* Portrait fallback — centered, 4:5 (existing behavior for old events) */
         <div className={styles.posterHero}>
-          <img src={portraitImage} alt={event.title} className={styles.posterHeroImage} />
+          <Image 
+            src={portraitImage} 
+            alt={event.title} 
+            className={styles.posterHeroImage} 
+            fill 
+            priority 
+            sizes="(max-width: 768px) 100vw, 600px"
+            style={{ objectFit: 'cover' }}
+          />
         </div>
       ) : (
         /* Gradient fallback — no image at all */

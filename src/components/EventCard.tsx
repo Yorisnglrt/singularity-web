@@ -77,7 +77,11 @@ export default function EventCard({ event, featured }: EventCardProps) {
           </div>
         </div>
 
-        <h3 className={styles.title}>{event.title}</h3>
+        <h3 className={styles.title}>
+          <Link href={eventHref} className={styles.titleLink}>
+            {event.title}
+          </Link>
+        </h3>
 
         <p className={styles.meta}>
           <span className={styles.metaIcon}>◷</span> {event.time}
@@ -115,12 +119,13 @@ export default function EventCard({ event, featured }: EventCardProps) {
               )}
             </>
           )}
-          <span 
+          <Link 
+            href={eventHref}
             className={`btn btn-sm`} 
-            style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', pointerEvents: 'none'}} 
+            style={{borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)'}} 
           >
             View details
-          </span>
+          </Link>
         </div>
       </div>
     </article>

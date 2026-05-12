@@ -92,6 +92,16 @@
     font-size: var(--text-2xl);
   }
 }
+ 
+.titleLink {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.titleLink:hover {
+  color: var(--color-accent-primary);
+}
 
 .meta {
   display: flex;

@@ -57,6 +57,7 @@
 
 /* Cover hero — wide image, ~1.91:1 Facebook event cover ratio */
 .coverHero {
+  position: relative;
   width: 100%;
   aspect-ratio: 1.91 / 1;
   overflow: hidden;
@@ -71,6 +72,7 @@
 
 /* Poster hero — clean portrait image, nothing overlaid (backward compat) */
 .posterHero {
+  position: relative;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
