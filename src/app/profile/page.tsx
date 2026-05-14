@@ -340,7 +340,7 @@ export default function ProfilePage() {
               {Array.from(new Set(interactions.map(i => i.eventId))).map(id => {
                 const ev = getEventData(id);
                 if (!ev) return null;
-                const eventSlug = ev.id;
+                const eventSlug = ev.slug || ev.id;
                 const userActions = interactions.filter(i => i.eventId === id).map(i => i.action);
 
                 return (

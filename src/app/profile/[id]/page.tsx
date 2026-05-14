@@ -137,7 +137,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 const ev = getEventData(eventId);
                 if (!ev) return null;
                 
-                const eventSlug = ev.id;
+                const eventSlug = ev.slug || ev.id;
                 const userActions = interactions.filter(i => i.eventId === eventId).map(i => i.action);
                 
                 return (

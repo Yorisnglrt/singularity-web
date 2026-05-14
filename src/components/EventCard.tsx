@@ -20,7 +20,7 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const year = eventDate.getFullYear();
 
   const cardImage = event.posterVertical || event.posterImage;
-  const eventHref = `/events/${event.id}`;
+  const eventHref = `/events/${event.slug || event.id}`;
 
   const handleCardClick = () => {
     router.push(eventHref);

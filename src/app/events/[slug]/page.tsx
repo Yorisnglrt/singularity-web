@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import EventDetailClient from './EventDetailClient';
 import { supabase } from '@/lib/supabase';
 import { normalizeEvent, normalizeArtist, normalizeTicketType } from '@/lib/data-normalization';
@@ -12,14 +12,30 @@ export const dynamic = 'force-dynamic';
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
 
-  const { data: event, error } = await supabase
+  // 1. Try by slug
+  let { data: event, error } = await supabase
     .from('events')
     .select('*')
-    .eq('id', slug)
+    .eq('slug', slug)
     .single();
 
-  if (error || !event) {
-    notFound();
+  // 2. If not found by slug, try by ID (backward compatibility)
+  if (!event || error) {
+    const { data: eventById, error: errorById } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', slug)
+      .single();
+    
+    if (eventById && !errorById) {
+      // If it has a slug, redirect to the slug URL
+      if (eventById.slug) {
+        redirect(`/events/${eventById.slug}`);
+      }
+      event = eventById;
+    } else {
+      notFound();
+    }
   }
 
   // Prepare lineup filter

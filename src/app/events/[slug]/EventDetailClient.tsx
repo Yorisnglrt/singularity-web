@@ -131,7 +131,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
                   }}
                 >
                   {lineupArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} variant="lineup" returnTo={`/events/${event.id}`} />
+                    <ArtistCard key={artist.id} artist={artist} variant="lineup" returnTo={`/events/${event.slug || event.id}`} />
                   ))}
                 </div>
               ) : (

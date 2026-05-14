@@ -61,6 +61,7 @@ export function normalizeEvent(event: any): Event {
   return {
     ...event,
     id: event.id,
+    slug: event.slug || null,
     title: event.title || 'Untitled Event',
     date: event.date,
     time: event.time || '',
