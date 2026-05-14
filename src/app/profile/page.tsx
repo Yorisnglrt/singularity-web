@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { events, toSlug } from '@/data/events';
+import { events } from '@/data/events';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { normalizeEvent, getMemberTier } from '@/lib/data-normalization';
@@ -340,15 +340,11 @@ export default function ProfilePage() {
               {Array.from(new Set(interactions.map(i => i.eventId))).map(id => {
                 const ev = getEventData(id);
                 if (!ev) return null;
-
-                const eventSlug = toSlug(ev);
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventSlug);
-                const hasValidSlug = eventSlug && !isUuid;
-                
+                const eventSlug = ev.id;
                 const userActions = interactions.filter(i => i.eventId === id).map(i => i.action);
-                
-                const content = (
-                  <>
+
+                return (
+                  <Link key={ev.id} href={`/events/${eventSlug}`} className={styles.eventRow}>
                     <div className={styles.eventDot} style={{ background: ev.posterColor }} />
                     <div style={{ flex: 1 }}>
                       <div className={styles.eventName}>{ev.title}</div>
@@ -361,21 +357,7 @@ export default function ProfilePage() {
                       {userActions.includes('interested') && <span className={`${styles.miniBadge} ${styles.interestedBadge}`}>★ Interested</span>}
                       {userActions.includes('like') && <span className={`${styles.miniBadge} ${styles.likeBadge}`}>♥ Liked</span>}
                     </div>
-                  </>
-                );
-
-                if (hasValidSlug) {
-                  return (
-                    <Link key={ev.id} href={`/events/${eventSlug}`} className={styles.eventRow}>
-                      {content}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <div key={ev.id} className={styles.eventRow} style={{ cursor: 'default' }}>
-                    {content}
-                  </div>
+                  </Link>
                 );
               })}
             </div>

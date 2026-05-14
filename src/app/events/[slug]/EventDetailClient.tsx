@@ -14,7 +14,6 @@ import styles from './page.module.css';
 // Lazy-load non-critical interactive components
 const TicketPurchaseSection = dynamic(() => import('@/components/TicketPurchaseSection'), { ssr: false });
 const EventDiscussion = dynamic(() => import('@/components/EventDiscussion'), { ssr: false });
-const EventLocationMap = dynamic(() => import('@/components/EventLocationMap'), { ssr: false });
 
 interface Props {
   event: Event;
@@ -23,7 +22,7 @@ interface Props {
 }
 
 export default function EventDetailClient({ event, artists, ticketTypes }: Props) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
@@ -132,7 +131,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
                   }}
                 >
                   {lineupArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} variant="lineup" returnTo={`/events/${event.slug}`} />
+                    <ArtistCard key={artist.id} artist={artist} variant="lineup" returnTo={`/events/${event.id}`} />
                   ))}
                 </div>
               ) : (
@@ -168,23 +167,11 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
 
             {/* Discussion Section */}
             <EventDiscussion eventId={event.id} />
-
-            {/* Mobile Location Section */}
-            <div className={`${styles.section} ${styles.mobileOnly}`}>
-              <h2 className={styles.sectionTitle}>{t('events.location')}</h2>
-              <EventLocationMap 
-                venue={typeof event.venue === 'string' ? event.venue : event.venue[locale]} 
-              />
-            </div>
           </div>
 
           {/* Sidebar */}
           <aside className={styles.sidebar}>
-            <div className={styles.desktopOnly}>
-              <EventLocationMap 
-                venue={typeof event.venue === 'string' ? event.venue : event.venue[locale]} 
-              />
-            </div>
+            {/* Sidebar content removed for now */}
           </aside>
         </div>
       </div>

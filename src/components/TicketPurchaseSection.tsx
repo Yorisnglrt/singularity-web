@@ -273,7 +273,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         <h2 className={styles.title}>Get Tickets</h2>
         <div className={styles.ticketList}>
           {ticketTypes.map(tt => {
-            const isSoldOut = tt.totalQuantity !== null && tt.soldQuantity >= tt.totalQuantity;
+            const isDeadlinePassed = tt.saleEndsAt ? new Date(tt.saleEndsAt).getTime() < Date.now() : false;
+            const isSoldOut = (tt.totalQuantity !== null && tt.soldQuantity >= tt.totalQuantity) || isDeadlinePassed;
             const isSelected = selectedType?.id === tt.id;
             
             return (
@@ -288,7 +289,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                     {tt.isSupporter && !tt.name.toLowerCase().includes('supporter') && ' Supporter'}
                   </span>
                   <div className={styles.ticketStatus}>
-                    {isSoldOut ? 'SOLD OUT' : tt.saleEndsAt ? `Until ${new Date(tt.saleEndsAt).toLocaleDateString()}` : 'Available'}
+                    {isSoldOut ? 'SOLD OUT' : 'AVAILABLE'}
                   </div>
                 </div>
                 <div className={styles.ticketPrice}>

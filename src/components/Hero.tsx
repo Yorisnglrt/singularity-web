@@ -93,7 +93,7 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
         )}
 
         <div className={styles.ctas}>
-          <Link href={nextEvent ? `/events/${nextEvent.slug}` : "/events"} className="btn btn-primary" id="hero-cta-events">
+          <Link href={nextEvent ? `/events/${nextEvent.id}` : "/events"} className="btn btn-primary" id="hero-cta-events">
             {t('hero.cta')}
           </Link>
           <Link href="/membership" className="btn btn-outline" id="hero-cta-membership">

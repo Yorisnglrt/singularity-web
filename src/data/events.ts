@@ -40,22 +40,10 @@ export interface EventTicketType {
   sortOrder: number;
 }
 
-/** Generate a stable URL slug from the event title, falling back to the id */
-export function toSlug(event: Event): string {
-  if (event.slug) return event.slug;
-  return event.title
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-/** Find an event by slug (tries slug field, then title-derived slug, then id) */
+/** Find an event by slug (tries id field, then legacy slug) */
 export function findEventBySlug(slug: string): Event | undefined {
   console.log('[findEventBySlug] looking for:', slug);
-  console.log('[findEventBySlug] available slugs:', events.map(e => ({ id: e.id, slug: toSlug(e) })));
   return events.find(e =>
-    toSlug(e) === slug ||
     e.id === slug ||
     (e.slug && e.slug === slug)
   );

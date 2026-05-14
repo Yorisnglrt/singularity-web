@@ -15,7 +15,7 @@ export default async function EventDetailPage({ params }: Props) {
   const { data: event, error } = await supabase
     .from('events')
     .select('*')
-    .eq('slug', slug)
+    .eq('id', slug)
     .single();
 
   if (error || !event) {

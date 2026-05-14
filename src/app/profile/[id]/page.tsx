@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { normalizeProfile, getMemberTier, normalizeEvent } from '@/lib/data-normalization';
-import { events, toSlug } from '@/data/events';
+import { events } from '@/data/events';
 import styles from '../page.module.css';
 
 interface Props {
@@ -136,15 +136,12 @@ export default async function PublicProfilePage({ params }: Props) {
               {uniqueEventIds.map(eventId => {
                 const ev = getEventData(eventId);
                 if (!ev) return null;
-
-                const eventSlug = toSlug(ev);
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventSlug);
-                const hasValidSlug = eventSlug && !isUuid;
                 
+                const eventSlug = ev.id;
                 const userActions = interactions.filter(i => i.eventId === eventId).map(i => i.action);
                 
-                const content = (
-                  <>
+                return (
+                  <Link key={ev.id} href={`/events/${eventSlug}`} className={styles.eventRow}>
                     <div className={styles.eventDot} style={{ background: ev.posterColor }} />
                     <div style={{ flex: 1 }}>
                       <div className={styles.eventName}>{ev.title}</div>
@@ -157,21 +154,7 @@ export default async function PublicProfilePage({ params }: Props) {
                       {userActions.includes('interested') && <span className={`${styles.miniBadge} ${styles.interestedBadge}`}>★ Interested</span>}
                       {userActions.includes('like') && <span className={`${styles.miniBadge} ${styles.likeBadge}`}>♥ Liked</span>}
                     </div>
-                  </>
-                );
-
-                if (hasValidSlug) {
-                  return (
-                    <Link key={ev.id} href={`/events/${eventSlug}`} className={styles.eventRow}>
-                      {content}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <div key={ev.id} className={styles.eventRow} style={{ cursor: 'default' }}>
-                    {content}
-                  </div>
+                  </Link>
                 );
               })}
             </div>

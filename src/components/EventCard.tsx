@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/i18n';
-import { Event, toSlug } from '@/data/events';
+import { Event } from '@/data/events';
 import styles from './EventCard.module.css';
 
 interface EventCardProps {
@@ -20,7 +20,7 @@ export default function EventCard({ event, featured }: EventCardProps) {
   const year = eventDate.getFullYear();
 
   const cardImage = event.posterVertical || event.posterImage;
-  const eventHref = `/events/${toSlug(event)}`;
+  const eventHref = `/events/${event.id}`;
 
   const handleCardClick = () => {
     router.push(eventHref);
