@@ -12,7 +12,21 @@ interface Props {
 }
 
 export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
-  const [selectedType, setSelectedType] = useState<EventTicketType | null>(ticketTypes[0] || null);
+  // Helper to determine if a ticket type is available
+  const isTicketTypeAvailable = (tt: EventTicketType) => {
+    const isDeadlinePassed = tt.saleEndsAt ? new Date(tt.saleEndsAt).getTime() < Date.now() : false;
+    const isSoldOut = (tt.totalQuantity !== null && tt.soldQuantity >= tt.totalQuantity) || isDeadlinePassed;
+    return tt.isActive && !isSoldOut;
+  };
+
+  const availableTypes = ticketTypes.filter(isTicketTypeAvailable);
+  
+  // Find the cheapest available ticket type
+  const defaultSelected = availableTypes.length > 0 
+    ? [...availableTypes].sort((a, b) => a.priceNok - b.priceNok)[0]
+    : null;
+
+  const [selectedType, setSelectedType] = useState<EventTicketType | null>(defaultSelected);
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,6 +48,15 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       checkPendingOrder();
     }
   }, [user]);
+
+  // Ensure selected type is always valid/available
+  useEffect(() => {
+    if (selectedType && !isTicketTypeAvailable(selectedType)) {
+      setSelectedType(defaultSelected);
+    } else if (!selectedType && defaultSelected) {
+      setSelectedType(defaultSelected);
+    }
+  }, [ticketTypes, defaultSelected]);
 
   const checkPendingOrder = async () => {
     if (!user) return;
@@ -138,7 +161,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     if (e) e.preventDefault();
     const method = methodOverride || paymentMethod;
     
-    if (!selectedType) return;
+    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
+      setError('Please select an available ticket type');
+      return;
+    }
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
       return;
@@ -273,15 +299,14 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         <h2 className={styles.title}>Get Tickets</h2>
         <div className={styles.ticketList}>
           {ticketTypes.map(tt => {
-            const isDeadlinePassed = tt.saleEndsAt ? new Date(tt.saleEndsAt).getTime() < Date.now() : false;
-            const isSoldOut = (tt.totalQuantity !== null && tt.soldQuantity >= tt.totalQuantity) || isDeadlinePassed;
+            const isAvailable = isTicketTypeAvailable(tt);
             const isSelected = selectedType?.id === tt.id;
             
             return (
               <div 
                 key={tt.id} 
-                className={`${styles.ticketItem} ${isSelected ? styles.ticketItemSelected : ''} ${isSoldOut ? styles.soldOut : ''}`}
-                onClick={() => !isSoldOut && setSelectedType(tt)}
+                className={`${styles.ticketItem} ${isSelected ? styles.ticketItemSelected : ''} ${!isAvailable ? styles.soldOut : ''}`}
+                onClick={() => isAvailable && setSelectedType(tt)}
               >
                 <div className={styles.ticketInfo}>
                   <span className={styles.ticketName}>
@@ -289,7 +314,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                     {tt.isSupporter && !tt.name.toLowerCase().includes('supporter') && ' Supporter'}
                   </span>
                   <div className={styles.ticketStatus}>
-                    {isSoldOut ? 'SOLD OUT' : 'AVAILABLE'}
+                    {isAvailable ? 'AVAILABLE' : 'SOLD OUT'}
                   </div>
                 </div>
                 <div className={styles.ticketPrice}>
@@ -409,7 +434,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 type="button"
                 className={`${styles.paymentBtn} ${styles.vippsBtn}`}
                 onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
-                disabled={loading || !selectedType || !agree}
+                disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
               >
                 {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
               </button>
@@ -417,7 +442,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 type="button"
                 className={`${styles.paymentBtn} ${styles.cardBtn}`}
                 onClick={() => { setPaymentMethod('CARD'); handleSubmit(undefined, 'CARD'); }}
-                disabled={loading || !selectedType || !agree}
+                disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
               >
                 {loading && paymentMethod === 'CARD' ? '...' : 'Card'}
               </button>

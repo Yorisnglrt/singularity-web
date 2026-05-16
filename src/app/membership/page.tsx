@@ -130,7 +130,7 @@ export default function MembershipPage() {
                 <div className={styles.statusGrid}>
                   <div className={styles.statusItem}>
                     <span className={styles.statusLabel}>Tier</span>
-                    <span className={styles.statusValue}>{user.tier || 'Member'}</span>
+                    <span className={styles.statusValue}>{user.tier || 'Observer'}</span>
                   </div>
                   <div className={styles.statusItem}>
                     <span className={styles.statusLabel}>Points</span>
