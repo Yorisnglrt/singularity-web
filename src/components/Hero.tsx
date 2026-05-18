@@ -32,9 +32,27 @@ function useCountdown(targetDate: string) {
   return timeLeft;
 }
 
+function getEventTargetDate(event?: AppEvent): string {
+  if (!event || !event.date) return '';
+  
+  const datePart = event.date.substring(0, 10); // extracts YYYY-MM-DD
+  
+  if (event.time) {
+    const timeMatch = event.time.match(/([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)/);
+    if (timeMatch && timeMatch[1]) {
+      let timeStr = timeMatch[1];
+      if (timeStr.indexOf(':') === 1) timeStr = '0' + timeStr; // pad hour
+      if (timeStr.length === 5) timeStr += ':00'; // pad seconds
+      return `${datePart}T${timeStr}`;
+    }
+  }
+  
+  return event.date;
+}
+
 export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
   const { t } = useI18n();
-  const countdown = useCountdown(nextEvent?.date || '');
+  const countdown = useCountdown(getEventTargetDate(nextEvent));
 
   // A valid upcoming event is one in the future (countdown has at least some time left)
   const hasUpcomingEvent = !!nextEvent && (
