@@ -49,13 +49,92 @@ export default function ProfilePage() {
   const [userTickets, setUserTickets] = useState<UserTicket[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   
+  const [claims, setClaims] = useState<any[]>([]);
+  const [loadingClaims, setLoadingClaims] = useState(true);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+
+  const fetchClaims = async () => {
+    if (!user?.id) {
+      setLoadingClaims(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('reward_claims')
+        .select('*')
+        .eq('profile_id', user.id);
+
+      if (!error) {
+        setClaims(data || []);
+      } else {
+        console.error('Supabase error fetching claims:', error);
+        setClaims([]);
+      }
+    } catch (err) {
+      console.error('Error fetching claims:', err);
+      setClaims([]);
+    } finally {
+      setLoadingClaims(false);
+    }
+  };
+
+  const totalClaimedCost = claims
+    .filter(c => ['available', 'reserved', 'used'].includes(c.status))
+    .reduce((sum, c) => sum + c.points_cost, 0);
+
+  const availablePoints = Math.max(0, (user?.points || 0) - totalClaimedCost);
+
+  const activeClaims = claims.filter(c => c.status === 'available' || c.status === 'reserved');
+  
   // Refresh profile on mount to ensure points and tier are up-to-date
   useEffect(() => {
     if (user?.id) {
       refreshProfile();
       claimStartingPoints();
+      fetchClaims();
     }
   }, [user?.id, refreshProfile, claimStartingPoints]);
+
+  const handleClaimReward = async () => {
+    setClaiming(true);
+    setClaimError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setClaimError('Session expired. Please sign in again.');
+        return;
+      }
+      
+      const res = await fetch('/api/rewards/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      const result = await res.json();
+      if (res.ok && result.ok) {
+        await refreshProfile(); // Refresh points/tier
+        await fetchClaims(); // Refresh claims count
+        const { data: historyData } = await supabase
+          .from('points_log')
+          .select('id, type, description, points_delta, created_at')
+          .eq('profile_id', user?.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (historyData) setPointsHistory(historyData);
+      } else {
+        setClaimError(result.error || 'Failed to claim reward.');
+      }
+    } catch (err) {
+      console.error('Exception claiming reward:', err);
+      setClaimError('An unexpected error occurred.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -385,8 +464,12 @@ export default function ProfilePage() {
                 <span className={styles.membershipValue} style={{fontFamily: 'var(--font-mono)', letterSpacing: '0.1em'}}>{user.memberCode || '—'}</span>
               </div>
               <div className={styles.membershipItem}>
-                <span className={styles.membershipLabel}>Points</span>
+                <span className={styles.membershipLabel}>Lifetime Points</span>
                 <span className={styles.membershipValue}>{user.points}</span>
+              </div>
+              <div className={styles.membershipItem}>
+                <span className={styles.membershipLabel}>Spendable Points</span>
+                <span className={styles.membershipValue}>{loadingClaims ? '↻' : availablePoints}</span>
               </div>
               <div className={styles.membershipItem}>
                 <span className={styles.membershipLabel}>Member Since</span>
@@ -396,6 +479,48 @@ export default function ProfilePage() {
                 <span className={styles.membershipLabel}>Registered</span>
                 <span className={styles.membershipValue}>{new Date(user.createdAt).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
+              <div className={styles.membershipItem}>
+                <span className={styles.membershipLabel}>Active Free Tickets</span>
+                <span className={styles.membershipValue}>
+                  {loadingClaims ? '↻' : activeClaims.filter(c => c.status === 'available').length}
+                </span>
+              </div>
+            </div>
+
+            {/* Reward Claiming Control */}
+            <div className={styles.rewardClaimSection} style={{ borderTop: '1px solid rgba(0, 255, 178, 0.1)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+              <h3 className={styles.rewardClaimTitle} style={{ fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent-primary)', marginBottom: '0.75rem' }}>
+                ◈ Claim Rewards
+              </h3>
+              
+              {activeClaims.filter(c => c.status === 'available' || c.status === 'reserved').length > 0 ? (
+                <p className={styles.rewardClaimHint} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
+                  You have an active free ticket reward claim. Consume it in checkout before claiming another one.
+                </p>
+              ) : availablePoints >= 500 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <p className={styles.rewardClaimHint} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', margin: 0 }}>
+                    You have enough spendable points to claim a <strong>Free Ticket</strong> (500 RP).
+                  </p>
+                  <button 
+                    onClick={handleClaimReward} 
+                    className="btn btn-primary" 
+                    disabled={claiming} 
+                    style={{ width: 'fit-content', marginTop: '0.5rem' }}
+                  >
+                    {claiming ? 'Claiming...' : 'Claim Free Ticket (500 RP)'}
+                  </button>
+                  {claimError && (
+                    <span className={styles.claimError} style={{ color: '#ff3b5c', fontSize: 'var(--text-xs)', marginTop: '0.25rem', display: 'block' }}>
+                      ⚠ {claimError}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className={styles.rewardClaimHint} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
+                  Earn at least <strong>500 spendable RP</strong> to claim a Free Ticket reward. You currently have {loadingClaims ? '↻' : availablePoints} spendable RP (out of {user.points} lifetime RP).
+                </p>
+              )}
             </div>
 
             <div style={{ height: 'var(--space-2)' }} />

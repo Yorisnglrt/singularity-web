@@ -40,14 +40,37 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CARD'>('WALLET');
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const [checkingPending, setCheckingPending] = useState(false);
+  const [freeTicketsCount, setFreeTicketsCount] = useState(0);
+  const [useFreeTicket, setUseFreeTicket] = useState(false);
 
   useEffect(() => {
     if (user) {
       if (user.email) setEmail(user.email);
       if (user.displayName) setName(user.displayName);
       checkPendingOrder();
+      fetchFreeTicketsCount();
+    } else {
+      setFreeTicketsCount(0);
+      setUseFreeTicket(false);
     }
   }, [user]);
+
+  const fetchFreeTicketsCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reward_claims')
+        .select('id')
+        .eq('profile_id', user!.id)
+        .eq('reward_type', 'free_ticket')
+        .eq('status', 'available');
+
+      if (!error) {
+        setFreeTicketsCount(data?.length || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch free tickets count:', err);
+    }
+  };
 
   // Ensure selected type is always valid/available
   useEffect(() => {
@@ -157,6 +180,64 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     if (quantity > 1) setQuantity(q => q - 1);
   };
 
+  const handleFreeTicketSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
+      setError('Please select an available ticket type');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
+      setError('A name is required for Supporter tickets.');
+      return;
+    }
+    if (!agree) {
+      setError('You must agree to the Terms of Sale');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to claim a free ticket reward.');
+      }
+
+      const res = await fetch('/api/checkout/use-free-ticket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          ticketTypeId: selectedType.id,
+          customerEmail: email,
+          customerName: name,
+          customerPhone: phone
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to process free ticket purchase');
+      }
+
+      if (data.ok && data.orderId) {
+        setSuccess({ isFreeTicket: true, orderId: data.orderId });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e?: React.FormEvent, methodOverride?: 'WALLET' | 'CARD') => {
     if (e) e.preventDefault();
     const method = methodOverride || paymentMethod;
@@ -239,6 +320,21 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   };
 
   if (success) {
+    if (success.isFreeTicket) {
+      return (
+        <div className={styles.success}>
+          <h3 className={styles.successTitle}>Billetten din er klar! ⚡</h3>
+          <p className={styles.successText}>
+            Gratulerer! Billetten din har blitt utstedt og sendt til <strong>{email}</strong>.
+          </p>
+          <div className={styles.orderRef}>Bestillings-ID: {success.orderId}</div>
+          <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <a href="/profile" className="btn btn-primary" style={{ padding: '0.625rem 1.25rem', textDecoration: 'none' }}>Gå til profil</a>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={styles.success}>
         <h3 className={styles.successTitle}>Redirecting to Vipps…</h3>
@@ -293,6 +389,13 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     );
   }
 
+  const handleUseFreeTicketChange = (checked: boolean) => {
+    setUseFreeTicket(checked);
+    if (checked) {
+      setQuantity(1);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -325,19 +428,36 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           })}
         </div>
       </div>
-
+ 
       <form className={styles.checkoutGrid} onSubmit={(e) => e.preventDefault()}>
         <div className={styles.checkoutDetails}>
           <div className={styles.field}>
             <div className={styles.quantityRow}>
               <label className={styles.label}>Quantity</label>
               <div className={styles.quantitySelector}>
-                <button type="button" className={styles.qtyBtn} onClick={handleDecrement} disabled={quantity <= 1}>−</button>
+                <button type="button" className={styles.qtyBtn} onClick={handleDecrement} disabled={quantity <= 1 || useFreeTicket}>−</button>
                 <span className={styles.qtyValue}>{quantity}</span>
-                <button type="button" className={styles.qtyBtn} onClick={handleIncrement} disabled={!selectedType || (selectedType.totalQuantity !== null && quantity >= (selectedType.totalQuantity - selectedType.soldQuantity))}>+</button>
+                <button type="button" className={styles.qtyBtn} onClick={handleIncrement} disabled={useFreeTicket || !selectedType || (selectedType.totalQuantity !== null && quantity >= (selectedType.totalQuantity - selectedType.soldQuantity))}>+</button>
               </div>
             </div>
           </div>
+
+          {/* Use Free Ticket Option */}
+          {isLoggedIn && freeTicketsCount > 0 && (
+            <div className={styles.field} style={{ marginTop: '0.25rem', marginBottom: '1.25rem' }}>
+              <label className={styles.checkboxContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  className={styles.checkbox}
+                  checked={useFreeTicket}
+                  onChange={e => handleUseFreeTicketChange(e.target.checked)} 
+                />
+                <span className={styles.checkboxLabel} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-accent-primary)', fontWeight: 'bold' }}>
+                  Use available Free Ticket Reward ({freeTicketsCount} claim{freeTicketsCount > 1 ? 's' : ''} available)
+                </span>
+              </label>
+            </div>
+          )}
 
           <div className={styles.row}>
             <div className={styles.field}>
@@ -398,22 +518,25 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 <div className={styles.summaryItemDetails}>
                   <span>x {quantity}</span>
                   <span className={styles.summaryItemDot}>·</span>
-                  <span>{selectedType?.priceNok || 0} NOK</span>
+                  <span>{useFreeTicket ? 0 : (selectedType?.priceNok || 0)} NOK</span>
                 </div>
               </div>
               <div className={`${styles.summaryRow} ${styles.totalRow}`}>
                 <span>Total</span>
-                <span className={styles.totalPrice}>{(selectedType?.priceNok || 0) * quantity} NOK</span>
+                <span className={styles.totalPrice}>{useFreeTicket ? 0 : ((selectedType?.priceNok || 0) * quantity)} NOK</span>
               </div>
             </div>
 
             <div className={styles.rpBadge}>
               <span className={styles.rpIcon}>⚡</span>
               <span>
-                {isLoggedIn 
-                  ? <>Earn <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> after payment</>
-                  : <>Create an account after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong></>
-                }
+                {useFreeTicket ? (
+                  <>Earn <strong>+0 RP</strong> (Free Ticket Reward applied)</>
+                ) : isLoggedIn ? (
+                  <>Earn <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> after payment</>
+                ) : (
+                  <>Create an account after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong></>
+                )}
               </span>
             </div>
 
@@ -429,24 +552,36 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
               </span>
             </label>
 
-            <div className={styles.paymentActions}>
+            {useFreeTicket ? (
               <button 
                 type="button"
-                className={`${styles.paymentBtn} ${styles.vippsBtn}`}
-                onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
+                className={styles.paymentBtn}
+                style={{ width: '100%', background: 'var(--color-accent-primary)', color: '#000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                onClick={handleFreeTicketSubmit}
                 disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
               >
-                {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
+                {loading ? 'Processing...' : 'Confirm Free Ticket Claim'}
               </button>
-              <button 
-                type="button"
-                className={`${styles.paymentBtn} ${styles.cardBtn}`}
-                onClick={() => { setPaymentMethod('CARD'); handleSubmit(undefined, 'CARD'); }}
-                disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
-              >
-                {loading && paymentMethod === 'CARD' ? '...' : 'Card'}
-              </button>
-            </div>
+            ) : (
+              <div className={styles.paymentActions}>
+                <button 
+                  type="button"
+                  className={`${styles.paymentBtn} ${styles.vippsBtn}`}
+                  onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
+                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
+                >
+                  {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.paymentBtn} ${styles.cardBtn}`}
+                  onClick={() => { setPaymentMethod('CARD'); handleSubmit(undefined, 'CARD'); }}
+                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
+                >
+                  {loading && paymentMethod === 'CARD' ? '...' : 'Card'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </form>
