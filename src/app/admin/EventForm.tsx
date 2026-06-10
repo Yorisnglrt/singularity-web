@@ -111,6 +111,23 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   const [emailSending, setEmailSending] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [campaignKey, setCampaignKey] = useState('location-info');
+  const [sendMode, setSendMode] = useState<'all' | 'unsent_only'>('unsent_only');
+  const [autoSendToLateBuyers, setAutoSendToLateBuyers] = useState(false);
+  const [startsAt, setStartsAt] = useState('');
+
+  const handleToggleAutoSend = (checked: boolean) => {
+    setAutoSendToLateBuyers(checked);
+    if (checked && !startsAt) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      setStartsAt(`${year}-${month}-${day}T${hours}:${minutes}`);
+    }
+  };
 
   const fetchGuestList = useCallback(async () => {
     if (!ev.id || ev.id.startsWith('new-')) return;
@@ -198,7 +215,16 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       return;
     }
 
-    if (!confirm('Send this email to all valid/checked-in ticket holders for this event?')) {
+    if (!campaignKey.trim()) {
+      alert('Campaign Key is required.');
+      return;
+    }
+
+    const confirmMessage = autoSendToLateBuyers
+      ? 'Send this campaign now and automatically send it to late ticket buyers after the selected time?'
+      : 'Send this email to all valid/checked-in ticket holders for this event?';
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -217,13 +243,17 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
         body: JSON.stringify({
           eventId: ev.id,
           subject: emailSubject,
-          message: emailMessage
+          message: emailMessage,
+          campaignKey,
+          sendMode,
+          autoSendToLateBuyers,
+          startsAt: startsAt ? new Date(startsAt).toISOString() : null
         })
       });
 
       if (res.ok) {
         const json = await res.json();
-        setEmailSuccess(`Email sent to ${json.sentCount} attendees.`);
+        setEmailSuccess(`Email sent to ${json.sentCount} attendees. ${json.skippedAlreadySentCount} already had this campaign and were skipped.`);
         setEmailSubject('');
         setEmailMessage('');
       } else {
@@ -777,6 +807,57 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                   disabled={emailSending}
                 />
               </div>
+
+              <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                <label className={styles.label}>Campaign Key *</label>
+                <input 
+                  className={styles.input} 
+                  value={campaignKey} 
+                  onChange={e => setCampaignKey(e.target.value)} 
+                  placeholder="e.g. location-info" 
+                  disabled={emailSending}
+                />
+              </div>
+
+              <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                <label className={styles.label}>Send Mode</label>
+                <select 
+                  className={styles.input} 
+                  value={sendMode} 
+                  onChange={e => setSendMode(e.target.value as 'all' | 'unsent_only')}
+                  disabled={emailSending}
+                >
+                  <option value="unsent_only">Send only to attendees who have not received this campaign yet</option>
+                  <option value="all">Send to everyone</option>
+                </select>
+              </div>
+
+              <div className={styles.toggleRow} style={{ marginBottom: '1rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="autoSendToLateBuyers" 
+                  checked={autoSendToLateBuyers} 
+                  onChange={e => handleToggleAutoSend(e.target.checked)} 
+                  disabled={emailSending}
+                />
+                <label htmlFor="autoSendToLateBuyers" style={{ fontSize: '0.85rem' }}>Automatically send this campaign to late ticket buyers</label>
+              </div>
+
+              {autoSendToLateBuyers && (
+                <div className={styles.field} style={{ marginBottom: '1.25rem' }}>
+                  <label className={styles.label}>Campaign active from</label>
+                  <input 
+                    type="datetime-local" 
+                    className={styles.input} 
+                    value={startsAt} 
+                    onChange={e => setStartsAt(e.target.value)} 
+                    disabled={emailSending}
+                  />
+                  <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                    Late buyers after this time will automatically receive this email.
+                  </p>
+                </div>
+              )}
 
               <div className={styles.field} style={{ marginBottom: '1rem' }}>
                 <label className={styles.label}>Message *</label>

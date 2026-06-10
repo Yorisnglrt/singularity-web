@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendOrderTicketsEmail } from '@/lib/email/sendTicketEmail';
+import { sendActiveBroadcastCampaignsForTickets } from '@/lib/email/sendActiveBroadcastCampaignsForTickets';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -93,6 +94,33 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
   if (insertError) {
     console.error(`[tickets] issue failed for order ${order.order_reference}:`, insertError);
     throw new Error('Failed to generate tickets');
+  }
+
+  // 5.2 Trigger active broadcast campaigns for the new tickets
+  try {
+    const ticketsByEvent: Record<string, any[]> = {};
+    for (const t of ticketInserts) {
+      if (!t.event_id || !t.holder_email) continue;
+      if (!ticketsByEvent[t.event_id]) {
+        ticketsByEvent[t.event_id] = [];
+      }
+      ticketsByEvent[t.event_id].push({
+        holder_email: t.holder_email,
+        holder_name: t.holder_name,
+      });
+    }
+
+    for (const [eventId, evTickets] of Object.entries(ticketsByEvent)) {
+      // Execute without letting any error propagate
+      await sendActiveBroadcastCampaignsForTickets({
+        eventId,
+        tickets: evTickets,
+      }).catch(err => {
+        console.error(`[tickets] Failed to send active campaigns for eventId: ${eventId}, orderId: ${orderId}:`, err);
+      });
+    }
+  } catch (err) {
+    console.error(`[tickets] Error grouping tickets for active campaign send for orderId: ${orderId}:`, err);
   }
 
   // 5.5 Update sold_quantity in event_ticket_types

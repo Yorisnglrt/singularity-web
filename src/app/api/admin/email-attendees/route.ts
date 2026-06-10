@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
+import { sendEventBroadcastEmail } from '@/lib/email/sendEventBroadcastEmail';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 export async function POST(req: Request) {
   try {
@@ -42,26 +33,80 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // 2. Request Validation
+    // 2. Request Body and Validation
     const body = await req.json();
-    const { eventId, subject, message } = body;
+    const { eventId, subject, message, campaignKey, sendMode, autoSendToLateBuyers, startsAt } = body;
 
-    if (!eventId || !subject || !message) {
-      return NextResponse.json({ error: 'eventId, subject, and message are required' }, { status: 400 });
+    if (!eventId || !subject || !message || !campaignKey || !sendMode) {
+      return NextResponse.json({ error: 'eventId, subject, message, campaignKey, and sendMode are required' }, { status: 400 });
     }
 
-    if (typeof eventId !== 'string' || typeof subject !== 'string' || typeof message !== 'string') {
-      return NextResponse.json({ error: 'All fields must be strings' }, { status: 400 });
+    if (
+      typeof eventId !== 'string' ||
+      typeof subject !== 'string' ||
+      typeof message !== 'string' ||
+      typeof campaignKey !== 'string' ||
+      typeof sendMode !== 'string'
+    ) {
+      return NextResponse.json({ error: 'Required fields must be strings' }, { status: 400 });
     }
 
-    if (!eventId.trim() || !subject.trim() || !message.trim()) {
+    const normalizedCampaignKey = campaignKey.trim().toLowerCase();
+    if (!eventId.trim() || !subject.trim() || !message.trim() || !normalizedCampaignKey) {
       return NextResponse.json({ error: 'Required fields cannot be empty' }, { status: 400 });
     }
 
-    // 3. Query Ticket Holders
+    if (sendMode !== 'all' && sendMode !== 'unsent_only') {
+      return NextResponse.json({ error: 'sendMode must be either "all" or "unsent_only"' }, { status: 400 });
+    }
+
+    // Parse startsAt date and handle defaults
+    let startsAtDateStr: string | null = null;
+    if (autoSendToLateBuyers) {
+      if (startsAt) {
+        const parsedTime = new Date(startsAt).getTime();
+        if (isNaN(parsedTime)) {
+          return NextResponse.json({ error: 'Invalid startsAt date string' }, { status: 400 });
+        }
+        startsAtDateStr = new Date(startsAt).toISOString();
+      } else {
+        startsAtDateStr = new Date().toISOString();
+      }
+    } else {
+      if (startsAt) {
+        const parsedTime = new Date(startsAt).getTime();
+        if (isNaN(parsedTime)) {
+          return NextResponse.json({ error: 'Invalid startsAt date string' }, { status: 400 });
+        }
+        startsAtDateStr = new Date(startsAt).toISOString();
+      }
+    }
+
+    // 3. Upsert campaign details into event_broadcast_campaigns
+    const { error: campaignError } = await supabaseAdmin
+      .from('event_broadcast_campaigns')
+      .upsert({
+        event_id: eventId,
+        campaign_key: normalizedCampaignKey,
+        subject: subject.trim(),
+        message: message.trim(),
+        auto_send_to_late_buyers: !!autoSendToLateBuyers,
+        starts_at: startsAtDateStr,
+        created_by: user.id,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'event_id,campaign_key'
+      });
+
+    if (campaignError) {
+      console.error('[email-attendees] Database error upserting campaign:', campaignError);
+      return NextResponse.json({ error: 'Database error upserting campaign details' }, { status: 500 });
+    }
+
+    // 4. Query eligible ticket holders for this event
     const { data: tickets, error: ticketsError } = await supabaseAdmin
       .from('tickets')
-      .select('holder_email, holder_name, order_id')
+      .select('holder_email, holder_name')
       .eq('event_id', eventId)
       .in('status', ['valid', 'used'])
       .not('holder_email', 'is', null);
@@ -71,133 +116,111 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Database error fetching tickets' }, { status: 500 });
     }
 
-    if (!tickets || tickets.length === 0) {
-      return NextResponse.json({ ok: true, sentCount: 0 });
-    }
-
-    // 4. Deduplicate Recipients in memory (case-insensitive & trimmed emails)
-    const uniqueRecipients = new Map<string, { email: string; name: string | null; orderId: string | null }>();
-
-    for (const t of tickets) {
+    // Deduplicate recipients (case-insensitive & trimmed emails)
+    const uniqueRecipientsMap = new Map<string, { email: string; name: string | null }>();
+    for (const t of tickets || []) {
       if (!t.holder_email) continue;
       const emailKey = t.holder_email.trim().toLowerCase();
-      
-      const existing = uniqueRecipients.get(emailKey);
-      // If not present, or if the current ticket has an order_id (paid) whereas existing does not, update it
-      // this ensures we associate an order_id for logging if the attendee has both a guest and a paid ticket.
-      if (!existing || (t.order_id && !existing.orderId)) {
-        uniqueRecipients.set(emailKey, {
-          email: t.holder_email.trim(),
-          name: t.holder_name || null,
-          orderId: t.order_id || null
+      if (!uniqueRecipientsMap.has(emailKey)) {
+        uniqueRecipientsMap.set(emailKey, {
+          email: emailKey, // store normalized
+          name: t.holder_name || null
         });
       }
     }
 
-    const recipients = Array.from(uniqueRecipients.values());
-    if (recipients.length === 0) {
-      return NextResponse.json({ ok: true, sentCount: 0 });
+    const uniqueRecipients = Array.from(uniqueRecipientsMap.values());
+    const totalEligibleCount = uniqueRecipients.length;
+
+    if (totalEligibleCount === 0) {
+      return NextResponse.json({
+        ok: true,
+        sentCount: 0,
+        skippedAlreadySentCount: 0,
+        totalEligibleCount: 0
+      });
     }
 
-    // 5. Initialize Resend Client
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromAddress = process.env.TICKET_EMAIL_FROM;
-    const replyTo = process.env.TICKET_EMAIL_REPLY_TO;
+    const emailsToLookup = Array.from(uniqueRecipientsMap.keys());
 
-    if (!apiKey || !fromAddress || !replyTo) {
-      console.error('[email-attendees] Missing Resend env vars');
-      return NextResponse.json({ error: 'Email configuration is missing on the server' }, { status: 500 });
+    // 5. Query already sent logs for this campaign to skip if needed
+    const { data: existingLogs, error: logsError } = await supabaseAdmin
+      .from('event_broadcast_email_log')
+      .select('recipient_email')
+      .eq('event_id', eventId)
+      .eq('campaign_key', normalizedCampaignKey)
+      .in('recipient_email', emailsToLookup);
+
+    if (logsError) {
+      console.error('[email-attendees] Database error fetching campaign email logs:', logsError);
+      return NextResponse.json({ error: 'Database error checking sent log history' }, { status: 500 });
     }
 
-    const resend = new Resend(apiKey);
+    const sentEmailsSet = new Set<string>();
+    for (const log of existingLogs || []) {
+      if (log.recipient_email) {
+        sentEmailsSet.add(log.recipient_email.trim().toLowerCase());
+      }
+    }
 
-    // Prepare Email Content with Premium Styling and Sanitized Message
-    const escapedMessage = escapeHtml(message).replace(/\n/g, '<br />');
-    
-    const emailHtml = `
-      <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px; border: 1px solid #222;">
-        <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px; border-bottom: 1px solid #222; padding-bottom: 16px;">Singularity</h1>
-        <h2 style="color: #fff; margin: 0 0 20px; font-size: 1.3rem;">${escapeHtml(subject)}</h2>
-        
-        <div style="background: #111; padding: 24px; border-radius: 6px; border: 1px solid #222; line-height: 1.6; color: #d0d0d0; font-size: 1rem;">
-          ${escapedMessage}
-        </div>
-        
-        <p style="color: #666; font-size: 0.8rem; margin-top: 32px; text-align: center;">
-          This is an event update from Singularity. Please do not reply directly to this automated email.
-        </p>
-      </div>
-    `;
+    // Determine target recipients depending on sendMode
+    let unsentRecipients = uniqueRecipients;
+    if (sendMode === 'unsent_only') {
+      unsentRecipients = uniqueRecipients.filter(r => !sentEmailsSet.has(r.email));
+    }
 
-    const emailText = `Singularity — Event Update\n\n${subject}\n\n${message}`;
+    const skippedAlreadySentCount = totalEligibleCount - unsentRecipients.length;
 
-    // 6. Batch send via Resend in chunks of 100 to avoid timeouts
-    const batchSize = 100;
-    let sentCount = 0;
-    let loggedCount = 0;
-    let skippedLogCount = 0;
+    if (unsentRecipients.length === 0) {
+      return NextResponse.json({
+        ok: true,
+        sentCount: 0,
+        skippedAlreadySentCount,
+        totalEligibleCount
+      });
+    }
 
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const chunk = recipients.slice(i, i + batchSize);
-      
-      const batchPayload = chunk.map(r => ({
-        from: fromAddress,
-        to: [r.email],
-        replyTo: replyTo,
-        subject: subject,
-        html: emailHtml,
-        text: emailText
+    // 6. Send broadcast email via shared helper
+    const { sentCount, error: sendError } = await sendEventBroadcastEmail({
+      subject,
+      message,
+      recipients: unsentRecipients
+    });
+
+    if (sendError) {
+      console.error('[email-attendees] Resend send error:', sendError);
+      return NextResponse.json({ error: sendError.message || 'Error sending email batch via Resend' }, { status: 500 });
+    }
+
+    // 7. Log successful sends into event_broadcast_email_log
+    if (sentCount > 0) {
+      const logInserts = unsentRecipients.slice(0, sentCount).map(r => ({
+        event_id: eventId,
+        campaign_key: normalizedCampaignKey,
+        recipient_email: r.email,
+        sent_at: new Date().toISOString(),
+        sent_by: user.id
       }));
 
-      const res = await resend.batch.send(batchPayload);
+      // Insert and capture errors but do not crash the API response since the emails were sent
+      const { error: logError } = await supabaseAdmin
+        .from('event_broadcast_email_log')
+        .insert(logInserts);
 
-      if (res.error) {
-        console.error('[email-attendees] Resend batch API error:', res.error);
-        return NextResponse.json({ error: res.error.message || 'Resend API error' }, { status: 500 });
+      if (logError) {
+        console.error('[email-attendees] Failed to log email sending events:', logError);
       }
-
-      // 7. Log to ticket_email_log for paid tickets only (where orderId is NOT NULL)
-      const logInserts = [];
-      for (let idx = 0; idx < chunk.length; idx++) {
-        const item = chunk[idx];
-        if (item.orderId) {
-          logInserts.push({
-            order_id: item.orderId,
-            email_type: 'event_update',
-            recipient_email: item.email,
-            status: 'sent',
-            resend_message_id: res.data?.data?.[idx]?.id || null,
-            sent_at: new Date().toISOString()
-          });
-          loggedCount++;
-        } else {
-          skippedLogCount++;
-        }
-      }
-
-      if (logInserts.length > 0) {
-        const { error: logError } = await supabaseAdmin
-          .from('ticket_email_log')
-          .insert(logInserts);
-
-        if (logError) {
-          // Log the error but do not fail the request since the emails were sent successfully
-          console.error('[email-attendees] Failed to log email events in database:', logError);
-        }
-      }
-
-      sentCount += chunk.length;
     }
 
     return NextResponse.json({
       ok: true,
       sentCount,
-      loggedCount,
-      skippedLogCount
+      skippedAlreadySentCount,
+      totalEligibleCount
     });
 
   } catch (err: any) {
-    console.error('[email-attendees] Unexpected error:', err);
+    console.error('[email-attendees] Unexpected error in route:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
