@@ -105,6 +105,13 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   const [newGuest, setNewGuest] = useState({ name: '', email: '', quantity: 1, note: '' });
   const [issuingGuest, setIssuingGuest] = useState(false);
 
+  // Email Attendees state
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
   const fetchGuestList = useCallback(async () => {
     if (!ev.id || ev.id.startsWith('new-')) return;
     try {
@@ -184,6 +191,53 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       console.error('Failed to void ticket:', err);
     }
   };
+
+  const handleEmailAttendees = async () => {
+    if (!emailSubject.trim() || !emailMessage.trim()) {
+      alert('Subject and Message are required.');
+      return;
+    }
+
+    if (!confirm('Send this email to all valid/checked-in ticket holders for this event?')) {
+      return;
+    }
+
+    setEmailSending(true);
+    setEmailSuccess(null);
+    setEmailError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/email-attendees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          eventId: ev.id,
+          subject: emailSubject,
+          message: emailMessage
+        })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setEmailSuccess(`Email sent to ${json.sentCount} attendees.`);
+        setEmailSubject('');
+        setEmailMessage('');
+      } else {
+        const err = await res.json();
+        setEmailError(err.error || 'Failed to send emails.');
+      }
+    } catch (err) {
+      console.error('Failed to send broadcast emails:', err);
+      setEmailError('An unexpected error occurred.');
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
   const [selectedArtist, setSelectedArtist] = useState('');
 
   const update = useCallback((patch: Partial<EventLike>) => setEv(prev => ({ ...prev, ...patch })), []);
@@ -703,6 +757,62 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
             </>
           )}
         </section>
+
+        {/* ── Email Attendees ── */}
+        {!ev.id?.startsWith('new-') && (
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Email Attendees</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+              Broadcast a message to all users holding valid or checked-in tickets for this event.
+            </p>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+              <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                <label className={styles.label}>Subject *</label>
+                <input 
+                  className={styles.input} 
+                  value={emailSubject} 
+                  onChange={e => setEmailSubject(e.target.value)} 
+                  placeholder="e.g. Venue change update / Important information" 
+                  disabled={emailSending}
+                />
+              </div>
+
+              <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                <label className={styles.label}>Message *</label>
+                <textarea 
+                  className={`${styles.input} ${styles.textarea}`} 
+                  value={emailMessage} 
+                  onChange={e => setEmailMessage(e.target.value)} 
+                  placeholder="Type your message here..." 
+                  disabled={emailSending}
+                  style={{ minHeight: '150px' }}
+                />
+              </div>
+
+              {emailSuccess && (
+                <div style={{ color: '#00ffb2', fontSize: '0.85rem', marginBottom: '1rem', padding: '0.5rem', background: 'rgba(0,255,178,0.1)', borderRadius: '4px' }}>
+                  ✓ {emailSuccess}
+                </div>
+              )}
+
+              {emailError && (
+                <div style={{ color: '#ff3b5c', fontSize: '0.85rem', marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,59,92,0.1)', borderRadius: '4px' }}>
+                  ✕ {emailError}
+                </div>
+              )}
+
+              <button 
+                className={styles.saveBtn} 
+                style={{ width: '100%', padding: '0.75rem' }}
+                onClick={handleEmailAttendees}
+                disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()}
+              >
+                {emailSending ? 'Sending Email Broadcast...' : 'Send Email to Attendees'}
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* ── Description ── */}
         <section className={styles.section}>

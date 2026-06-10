@@ -52,9 +52,8 @@ export default function Home() {
   }, []);
 
   const upcomingEvents = useMemo(() => {
-    const yesterday = Date.now() - 24 * 60 * 60 * 1000;
     return [...events]
-      .filter(e => !e.isPast && new Date(e.date).getTime() > yesterday)
+      .filter(e => !e.isPast)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [events]);
 

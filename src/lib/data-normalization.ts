@@ -51,12 +51,72 @@ export function normalizeLocalizedField(field: any): Record<Locale, string> {
 }
 
 /**
+ * Computes whether an event has ended, based on the event date and parsed end
+ * time from the `time` field (e.g. "21:00 - 02:00").
+ *
+ * - If end_time < start_time the event crosses midnight → end is next day.
+ * - Falls back to 23:59:59 on the event date if no end time is available.
+ * - All comparisons use the Europe/Oslo timezone.
+ */
+function computeEventIsPast(event: any): boolean {
+  const dateStr: string | undefined = event.date; // e.g. "2026-05-23" or "2026-05-23T21:00:00"
+  if (!dateStr) return false;
+
+  // Extract just the calendar date (YYYY-MM-DD)
+  const calendarDate = String(dateStr).split('T')[0]; // "2026-05-23"
+
+  // Try to parse end time from the `time` field (e.g. "21:00 - 02:00")
+  const timeField: string = event.time || '';
+  const parts = timeField.split('-').map((s: string) => s.trim());
+  const startTimeStr = parts[0] || ''; // "21:00"
+  const endTimeStr = parts[1] || '';   // "02:00" or "???" or ""
+
+  // Parse HH:MM from a string, returns [hours, minutes] or null
+  const parseHM = (s: string): [number, number] | null => {
+    const m = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return [parseInt(m[1], 10), parseInt(m[2], 10)];
+  };
+
+  const startHM = parseHM(startTimeStr);
+  const endHM = parseHM(endTimeStr);
+
+  // Build the end-of-event datetime string in Europe/Oslo local time
+  let endHours = 23;
+  let endMinutes = 59;
+  let addDays = 0;
+
+  if (endHM) {
+    endHours = endHM[0];
+    endMinutes = endHM[1];
+
+    // If end time is earlier than start time, event crosses midnight
+    if (startHM && (endHM[0] < startHM[0] || (endHM[0] === startHM[0] && endHM[1] < startHM[1]))) {
+      addDays = 1;
+    }
+  }
+
+  // Construct end datetime in Europe/Oslo
+  // We build a Date from the calendar date parts and then format in Oslo tz to compare
+  const [year, month, day] = calendarDate.split('-').map(Number);
+
+  // Create a date object representing the end-of-event in Oslo local time.
+  // We use Intl to convert "now" to Oslo time, then compare numerically.
+  const endDate = new Date(year, month - 1, day + addDays, endHours, endMinutes, 59);
+
+  // Get current time in Oslo timezone
+  const nowInOslo = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'Europe/Oslo' })
+  );
+
+  return endDate <= nowInOslo;
+}
+
+/**
  * Normalizes an event from the API/Supabase to the format expected by components.
  */
 export function normalizeEvent(event: any): Event {
-  const eventDate = new Date(event.date);
-  const now = new Date();
-  const isPast = event.isPast ?? event.is_past ?? eventDate < now;
+  const isPast = computeEventIsPast(event);
 
   return {
     ...event,
