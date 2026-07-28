@@ -11,10 +11,22 @@ interface Props {
   ticketTypes: EventTicketType[];
 }
 
+function parseUtcDate(dateStr: string | null): Date | null {
+  if (!dateStr) return null;
+  let sanitized = dateStr;
+  if (!/[Zz]|[+-]\d{2}(:\d{2})?$/.test(sanitized)) {
+    sanitized += 'Z';
+  }
+  return new Date(sanitized);
+}
+
 export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
+  const [nowTime, setNowTime] = useState(Date.now());
+
   // Helper to determine if a ticket type is available
   const isTicketTypeAvailable = (tt: EventTicketType) => {
-    const isDeadlinePassed = tt.saleEndsAt ? new Date(tt.saleEndsAt).getTime() < Date.now() : false;
+    const saleEnd = parseUtcDate(tt.saleEndsAt);
+    const isDeadlinePassed = saleEnd ? saleEnd.getTime() < nowTime : false;
     const isSoldOut = (tt.totalQuantity !== null && tt.soldQuantity >= tt.totalQuantity) || isDeadlinePassed;
     return tt.isActive && !isSoldOut;
   };
@@ -79,7 +91,51 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     } else if (!selectedType && defaultSelected) {
       setSelectedType(defaultSelected);
     }
-  }, [ticketTypes, defaultSelected]);
+  }, [ticketTypes, defaultSelected, nowTime]);
+
+  // Recalculate states and trigger updates based on start/end timers
+  useEffect(() => {
+    const hasFutureSales = ticketTypes.some(tt => {
+      const start = parseUtcDate(tt.saleStartsAt);
+      return start && start.getTime() > Date.now();
+    });
+    const hasFutureEnds = ticketTypes.some(tt => {
+      const end = parseUtcDate(tt.saleEndsAt);
+      return end && end.getTime() > Date.now();
+    });
+
+    if (!hasFutureSales && !hasFutureEnds) return;
+
+    const interval = setInterval(() => {
+      const current = Date.now();
+      setNowTime(current);
+
+      const stillFutureSales = ticketTypes.some(tt => {
+        const start = parseUtcDate(tt.saleStartsAt);
+        return start && start.getTime() > current;
+      });
+      const stillFutureEnds = ticketTypes.some(tt => {
+        const end = parseUtcDate(tt.saleEndsAt);
+        return end && end.getTime() > current;
+      });
+
+      if (!stillFutureSales && !stillFutureEnds) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [ticketTypes]);
+
+  // Dynamically clear the server error if the sales open up while on screen
+  useEffect(() => {
+    if (selectedType && selectedType.saleStartsAt) {
+      const start = parseUtcDate(selectedType.saleStartsAt);
+      if (start && nowTime >= start.getTime() && error && error.includes('Ticket sales have not started yet')) {
+        setError(null);
+      }
+    }
+  }, [nowTime, selectedType, error]);
 
   const checkPendingOrder = async () => {
     if (!user) return;
@@ -186,6 +242,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       setError('Please select an available ticket type');
       return;
     }
+    const start = parseUtcDate(selectedType.saleStartsAt);
+    if (start && Date.now() < start.getTime()) {
+      setError('Ticket sales have not started yet');
+      return;
+    }
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
       return;
@@ -244,6 +305,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     
     if (!selectedType || !isTicketTypeAvailable(selectedType)) {
       setError('Please select an available ticket type');
+      return;
+    }
+    const start = parseUtcDate(selectedType.saleStartsAt);
+    if (start && Date.now() < start.getTime()) {
+      setError('Ticket sales have not started yet');
       return;
     }
     if (!email || !email.includes('@')) {
@@ -396,6 +462,35 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     }
   };
 
+  const salesStart = selectedType ? parseUtcDate(selectedType.saleStartsAt) : null;
+  const salesNotStarted = salesStart ? nowTime < salesStart.getTime() : false;
+  const salesStartError = salesNotStarted && salesStart
+    ? `Ticket sales have not started yet. Sales open at ${salesStart.toLocaleString('en-GB', {
+        timeZone: 'Europe/Oslo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(',', '')}`
+    : null;
+  const displayError = error || salesStartError;
+
+  // Dočasný debug log
+  if (selectedType && selectedType.saleStartsAt) {
+    const rawSalesStart = selectedType.saleStartsAt;
+    const parsedTimestamp = parseUtcDate(rawSalesStart)?.getTime() ?? 0;
+    const nowTs = nowTime;
+    const comparisonResult = nowTs >= parsedTimestamp;
+    console.log('[DEBUG] Client ticket sales start check:', {
+      rawSalesStart,
+      parsedTimestamp,
+      nowTs,
+      comparisonResult
+    });
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -503,7 +598,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             </div>
           )}
 
-          {error && <div className={styles.error}>{error}</div>}
+          {displayError && <div className={styles.error}>{displayError}</div>}
         </div>
 
         <div className={styles.checkoutSummary}>
@@ -558,7 +653,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 className={styles.paymentBtn}
                 style={{ width: '100%', background: 'var(--color-accent-primary)', color: '#000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 onClick={handleFreeTicketSubmit}
-                disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
+                disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree || salesNotStarted}
               >
                 {loading ? 'Processing...' : 'Confirm Free Ticket Claim'}
               </button>
@@ -568,7 +663,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                   type="button"
                   className={`${styles.paymentBtn} ${styles.vippsBtn}`}
                   onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
-                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
+                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree || salesNotStarted}
                 >
                   {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
                 </button>
@@ -576,7 +671,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                   type="button"
                   className={`${styles.paymentBtn} ${styles.cardBtn}`}
                   onClick={() => { setPaymentMethod('CARD'); handleSubmit(undefined, 'CARD'); }}
-                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree}
+                  disabled={loading || !selectedType || !isTicketTypeAvailable(selectedType) || !agree || salesNotStarted}
                 >
                   {loading && paymentMethod === 'CARD' ? '...' : 'Card'}
                 </button>

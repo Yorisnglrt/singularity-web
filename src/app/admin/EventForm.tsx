@@ -32,6 +32,66 @@ function buildGradient(colorA: string, colorB: string, dir: string): string {
   return `linear-gradient(${dirs[dir] || '135deg'}, ${colorA}, ${colorB})`;
 }
 
+function convertLocalToUtc(localDateTimeStr: string, timeZone: string = 'Europe/Oslo'): string | null {
+  if (!localDateTimeStr) return null;
+  const date = new Date(localDateTimeStr + ':00Z');
+  if (isNaN(date.getTime())) return null;
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(date);
+  const getPart = (type: string) => parts.find(p => p.type === type)!.value;
+  
+  const year = parseInt(getPart('year'), 10);
+  const month = parseInt(getPart('month'), 10) - 1;
+  const day = parseInt(getPart('day'), 10);
+  const hour = parseInt(getPart('hour'), 10);
+  const minute = parseInt(getPart('minute'), 10);
+  const second = parseInt(getPart('second'), 10);
+  
+  const tzDateInUtc = Date.UTC(year, month, day, hour, minute, second);
+  const offsetMs = tzDateInUtc - date.getTime();
+  const utcTimestamp = date.getTime() - offsetMs;
+  return new Date(utcTimestamp).toISOString();
+}
+
+function convertUtcToLocal(utcDateStr: string | null | undefined, timeZone: string = 'Europe/Oslo'): string {
+  if (!utcDateStr) return '';
+  const date = new Date(utcDateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(date);
+  const getPart = (type: string) => parts.find(p => p.type === type)!.value;
+
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+  const hour = getPart('hour');
+  const minute = getPart('minute');
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+
 interface Artist { id: string; name: string; }
 interface EventLike {
   id: string;
@@ -673,7 +733,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
               <div className={styles.row2} style={{ marginTop: '0.5rem' }}>
                 <div className={styles.field}>
                   <label className={styles.label}>Sale Starts At</label>
-                  <input type="datetime-local" className={styles.input} value={editingTT.saleStartsAt ? editingTT.saleStartsAt.slice(0, 16) : ''} onChange={e => setEditingTT({ ...editingTT, saleStartsAt: e.target.value ? e.target.value + ':00Z' : null })} />
+                  <input type="datetime-local" className={styles.input} value={editingTT.saleStartsAt ? convertUtcToLocal(editingTT.saleStartsAt) : ''} onChange={e => setEditingTT({ ...editingTT, saleStartsAt: e.target.value ? convertLocalToUtc(e.target.value) : null })} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Sale Ends At</label>
@@ -688,7 +748,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                     }} />
                     <label htmlFor="ttSellUntilSoldOut" style={{ fontSize: '0.78rem' }}>Sell until sold out</label>
                   </div>
-                  <input type="datetime-local" className={styles.input} value={editingTT.saleEndsAt ? editingTT.saleEndsAt.slice(0, 16) : ''} disabled={!editingTT.saleEndsAt && editingTT.saleEndsAt !== ''} style={!editingTT.saleEndsAt && editingTT.saleEndsAt !== '' ? { opacity: 0.4, cursor: 'not-allowed' } : {}} onChange={e => setEditingTT({ ...editingTT, saleEndsAt: e.target.value ? e.target.value + ':00Z' : null })} />
+                  <input type="datetime-local" className={styles.input} value={editingTT.saleEndsAt ? convertUtcToLocal(editingTT.saleEndsAt) : ''} disabled={!editingTT.saleEndsAt && editingTT.saleEndsAt !== ''} style={!editingTT.saleEndsAt && editingTT.saleEndsAt !== '' ? { opacity: 0.4, cursor: 'not-allowed' } : {}} onChange={e => setEditingTT({ ...editingTT, saleEndsAt: e.target.value ? convertLocalToUtc(e.target.value) : null })} />
                   <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Leave empty to sell until sold out or manually disabled.</p>
                   {ttErrors.saleEndsAt && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.saleEndsAt}</span>}
                 </div>

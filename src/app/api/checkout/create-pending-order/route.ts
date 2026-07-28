@@ -20,6 +20,15 @@ function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+function parseUtcDate(dateStr: string | null): Date | null {
+  if (!dateStr) return null;
+  let sanitized = dateStr;
+  if (!/[Zz]|[+-]\d{2}(:\d{2})?$/.test(sanitized)) {
+    sanitized += 'Z';
+  }
+  return new Date(sanitized);
+}
+
 function generateOrderReference(): string {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = crypto.randomBytes(3).toString('hex').toUpperCase();
@@ -91,20 +100,41 @@ export async function POST(req: Request) {
     }
 
     // ── Check sale window ──
-    const now = new Date();
+    const now = Date.now();
 
     if (ticketType.sale_starts_at) {
-      const saleStart = new Date(ticketType.sale_starts_at);
-      if (now < saleStart) {
-        return NextResponse.json({
-          error: `Ticket sales have not started yet. Sales open at ${saleStart.toISOString()}`,
-        }, { status: 409 });
+      const saleStart = parseUtcDate(ticketType.sale_starts_at);
+      if (saleStart) {
+        const saleStartMs = saleStart.getTime();
+
+        // Dočasný debug log
+        console.log('[DEBUG] Server ticket sales start check:', {
+          rawSalesStart: ticketType.sale_starts_at,
+          parsedTimestamp: saleStartMs,
+          nowTs: now,
+          comparisonResult: now >= saleStartMs
+        });
+
+        if (now < saleStartMs) {
+          const formattedStart = saleStart.toLocaleString('en-GB', {
+            timeZone: 'Europe/Oslo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }).replace(',', '');
+          return NextResponse.json({
+            error: `Ticket sales have not started yet. Sales open at ${formattedStart}`,
+          }, { status: 409 });
+        }
       }
     }
 
     if (ticketType.sale_ends_at) {
-      const saleEnd = new Date(ticketType.sale_ends_at);
-      if (now > saleEnd) {
+      const saleEnd = parseUtcDate(ticketType.sale_ends_at);
+      if (saleEnd && now > saleEnd.getTime()) {
         return NextResponse.json({ error: 'Ticket sales have ended for this ticket type' }, { status: 409 });
       }
     }
