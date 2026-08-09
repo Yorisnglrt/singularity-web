@@ -30,7 +30,6 @@ export default function Footer() {
               <Link href="/mixes">{t('nav.mixes')}</Link>
               <Link href="/membership">{t('nav.membership')}</Link>
               <Link href="/supporters">{t('nav.supporters')}</Link>
-              <Link href="/about">{t('nav.about')}</Link>
             </nav>
           </div>
 

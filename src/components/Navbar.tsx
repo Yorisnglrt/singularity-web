@@ -15,7 +15,6 @@ const navLinks = [
   { href: '/mixes', key: 'nav.mixes' },
   { href: '/membership', key: 'nav.membership' },
   { href: '/supporters', key: 'nav.supporters' },
-  { href: '/about', key: 'nav.about' },
 ];
 
 const locales: Locale[] = ['en', 'no', 'cs', 'pl', 'de'];
