@@ -17,6 +17,7 @@ export interface BroadcastRecipient {
 export interface SendEventBroadcastEmailParams {
   subject: string;
   message: string;
+  images?: string[];
   recipients: BroadcastRecipient[];
 }
 
@@ -32,6 +33,7 @@ export interface SendEventBroadcastEmailResult {
 export async function sendEventBroadcastEmail({
   subject,
   message,
+  images,
   recipients,
 }: SendEventBroadcastEmailParams): Promise<SendEventBroadcastEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -50,6 +52,20 @@ export async function sendEventBroadcastEmail({
 
   // Escape HTML characters in user inputs and format linebreaks
   const escapedMessage = escapeHtml(message).replace(/\n/g, '<br />');
+
+  // Render images block if images are present
+  let imagesHtml = '';
+  if (images && images.length > 0) {
+    imagesHtml = `
+      <div style="margin-top: 24px; text-align: center;">
+        ${images.map(img => `
+          <div style="margin-bottom: 16px; text-align: center;">
+            <img src="${img}" alt="Campaign Image" style="max-width: 600px; width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 4px;" />
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
   
   const emailHtml = `
     <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px; border: 1px solid #222;">
@@ -58,6 +74,7 @@ export async function sendEventBroadcastEmail({
       
       <div style="background: #111; padding: 24px; border-radius: 6px; border: 1px solid #222; line-height: 1.6; color: #d0d0d0; font-size: 1rem;">
         ${escapedMessage}
+        ${imagesHtml}
       </div>
       
       <p style="color: #666; font-size: 0.8rem; margin-top: 32px; text-align: center;">
@@ -66,7 +83,10 @@ export async function sendEventBroadcastEmail({
     </div>
   `;
 
-  const emailText = `Singularity — Event Update\n\n${subject}\n\n${message}`;
+  let emailText = `Singularity — Event Update\n\n${subject}\n\n${message}`;
+  if (images && images.length > 0) {
+    emailText += `\n\nImages:\n` + images.map(img => `- ${img}`).join('\n');
+  }
 
   const batchSize = 100;
   let sentCount = 0;

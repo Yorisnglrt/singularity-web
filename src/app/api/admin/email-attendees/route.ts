@@ -35,7 +35,54 @@ export async function POST(req: Request) {
 
     // 2. Request Body and Validation
     const body = await req.json();
-    const { eventId, subject, message, campaignKey, sendMode, autoSendToLateBuyers, startsAt } = body;
+    const { eventId, subject, message, campaignKey, sendMode, autoSendToLateBuyers, startsAt, images, testMode, testEmail } = body;
+
+    if (testMode) {
+      if (!eventId || !subject || !message) {
+        return NextResponse.json({ error: 'eventId, subject, and message are required' }, { status: 400 });
+      }
+      if (
+        typeof eventId !== 'string' ||
+        typeof subject !== 'string' ||
+        typeof message !== 'string'
+      ) {
+        return NextResponse.json({ error: 'Required fields must be strings' }, { status: 400 });
+      }
+      if (!eventId.trim() || !subject.trim() || !message.trim()) {
+        return NextResponse.json({ error: 'Required fields cannot be empty' }, { status: 400 });
+      }
+      if (images !== undefined) {
+        if (!Array.isArray(images) || !images.every(img => typeof img === 'string')) {
+          return NextResponse.json({ error: 'images must be an array of strings' }, { status: 400 });
+        }
+        if (images.length > 5) {
+          return NextResponse.json({ error: 'A maximum of 5 images is allowed' }, { status: 400 });
+        }
+      }
+      if (!testEmail || typeof testEmail !== 'string' || !testEmail.trim() || !testEmail.includes('@')) {
+        return NextResponse.json({ error: 'Valid testEmail is required' }, { status: 400 });
+      }
+
+      // Send test email via shared helper
+      const { sentCount, error: sendError } = await sendEventBroadcastEmail({
+        subject: `[TEST] ${subject.trim()}`,
+        message: message.trim(),
+        images: images || [],
+        recipients: [{ email: testEmail.trim().toLowerCase(), name: 'Test Recipient' }]
+      });
+
+      if (sendError) {
+        console.error('[email-attendees] Resend send test error:', sendError);
+        return NextResponse.json({ error: sendError.message || 'Error sending test email via Resend' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        sentCount: 1,
+        skippedAlreadySentCount: 0,
+        totalEligibleCount: 1
+      });
+    }
 
     if (!eventId || !subject || !message || !campaignKey || !sendMode) {
       return NextResponse.json({ error: 'eventId, subject, message, campaignKey, and sendMode are required' }, { status: 400 });
@@ -49,6 +96,15 @@ export async function POST(req: Request) {
       typeof sendMode !== 'string'
     ) {
       return NextResponse.json({ error: 'Required fields must be strings' }, { status: 400 });
+    }
+
+    if (images !== undefined) {
+      if (!Array.isArray(images) || !images.every(img => typeof img === 'string')) {
+        return NextResponse.json({ error: 'images must be an array of strings' }, { status: 400 });
+      }
+      if (images.length > 5) {
+        return NextResponse.json({ error: 'A maximum of 5 images is allowed' }, { status: 400 });
+      }
     }
 
     const normalizedCampaignKey = campaignKey.trim().toLowerCase();
@@ -90,6 +146,7 @@ export async function POST(req: Request) {
         campaign_key: normalizedCampaignKey,
         subject: subject.trim(),
         message: message.trim(),
+        images: images || [],
         auto_send_to_late_buyers: !!autoSendToLateBuyers,
         starts_at: startsAtDateStr,
         created_by: user.id,
@@ -184,6 +241,7 @@ export async function POST(req: Request) {
     const { sentCount, error: sendError } = await sendEventBroadcastEmail({
       subject,
       message,
+      images: images || [],
       recipients: unsentRecipients
     });
 

@@ -55,7 +55,7 @@ export async function sendActiveBroadcastCampaignsForTickets({
     const now = new Date().toISOString();
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .from('event_broadcast_campaigns')
-      .select('campaign_key, subject, message')
+      .select('campaign_key, subject, message, images')
       .eq('event_id', eventId)
       .eq('auto_send_to_late_buyers', true)
       .not('starts_at', 'is', null)
@@ -108,6 +108,7 @@ export async function sendActiveBroadcastCampaignsForTickets({
         const { sentCount, error: sendError } = await sendEventBroadcastEmail({
           subject: campaign.subject,
           message: campaign.message,
+          images: (campaign as any).images || [],
           recipients: unsentRecipients,
         });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './EventForm.module.css';
 import type { EventTicketType } from './page';
@@ -175,6 +175,121 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   const [sendMode, setSendMode] = useState<'all' | 'unsent_only'>('unsent_only');
   const [autoSendToLateBuyers, setAutoSendToLateBuyers] = useState(false);
   const [startsAt, setStartsAt] = useState('');
+  const [testMode, setTestMode] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+
+  interface ImageItem {
+    id: string;
+    file?: File;
+    previewUrl: string;
+    publicUrl?: string;
+    status: 'uploading' | 'success' | 'error';
+    error?: string;
+  }
+
+  const [imageItems, setImageItems] = useState<ImageItem[]>([]);
+
+  const itemsRef = useRef(imageItems);
+  useEffect(() => {
+    itemsRef.current = imageItems;
+  }, [imageItems]);
+
+  useEffect(() => {
+    return () => {
+      itemsRef.current.forEach(item => {
+        if (item.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
+    };
+  }, []);
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (imageItems.length + files.length > 5) {
+      alert('You can upload a maximum of 5 images.');
+      return;
+    }
+
+    const newItems = files.map(file => {
+      const id = Math.random().toString(36).substring(2, 9);
+      const previewUrl = URL.createObjectURL(file);
+      return {
+        id,
+        file,
+        previewUrl,
+        status: 'uploading' as const
+      };
+    });
+
+    setImageItems(prev => [...prev, ...newItems]);
+
+    // Reset input value so same files can be re-selected if needed
+    e.target.value = '';
+
+    // Upload files sequentially
+    for (const item of newItems) {
+      if (!item.file) continue;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const formData = new FormData();
+        formData.append('file', item.file);
+
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${session?.access_token || ''}`
+          }
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.path) {
+            URL.revokeObjectURL(item.previewUrl);
+            setImageItems(prev => prev.map(p => p.id === item.id ? {
+              ...p,
+              status: 'success',
+              previewUrl: json.path,
+              publicUrl: json.path
+            } : p));
+          } else {
+            setImageItems(prev => prev.map(p => p.id === item.id ? {
+              ...p,
+              status: 'error',
+              error: 'No path returned'
+            } : p));
+          }
+        } else {
+          const err = await res.json();
+          setImageItems(prev => prev.map(p => p.id === item.id ? {
+            ...p,
+            status: 'error',
+            error: err.error || 'Failed to upload'
+          } : p));
+        }
+      } catch (err: any) {
+        setImageItems(prev => prev.map(p => p.id === item.id ? {
+          ...p,
+          status: 'error',
+          error: err.message || 'Upload error'
+        } : p));
+      }
+    }
+  };
+
+  const handleRemoveImage = (id: string) => {
+    setImageItems(prev => {
+      const itemToRemove = prev.find(item => item.id === id);
+      if (itemToRemove && itemToRemove.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
+      }
+      return prev.filter(item => item.id !== id);
+    });
+  };
 
   const handleToggleAutoSend = (checked: boolean) => {
     setAutoSendToLateBuyers(checked);
@@ -275,14 +390,23 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       return;
     }
 
-    if (!campaignKey.trim()) {
-      alert('Campaign Key is required.');
-      return;
+    if (testMode) {
+      if (!testEmail.trim() || !testEmail.includes('@')) {
+        alert('Please enter a valid test recipient email address.');
+        return;
+      }
+    } else {
+      if (!campaignKey.trim()) {
+        alert('Campaign Key is required.');
+        return;
+      }
     }
 
-    const confirmMessage = autoSendToLateBuyers
-      ? 'Send this campaign now and automatically send it to late ticket buyers after the selected time?'
-      : 'Send this email to all valid/checked-in ticket holders for this event?';
+    const confirmMessage = testMode
+      ? `Send this test email to ${testEmail.trim()}?`
+      : autoSendToLateBuyers
+        ? 'Send this campaign now and automatically send it to late ticket buyers after the selected time?'
+        : 'Send this email to all valid/checked-in ticket holders for this event?';
 
     if (!confirm(confirmMessage)) {
       return;
@@ -307,15 +431,23 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
           campaignKey,
           sendMode,
           autoSendToLateBuyers,
-          startsAt: startsAt ? new Date(startsAt).toISOString() : null
+          startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+          images: imageItems.filter(item => item.status === 'success').map(item => item.publicUrl),
+          testMode,
+          testEmail: testMode ? testEmail.trim() : null
         })
       });
 
       if (res.ok) {
         const json = await res.json();
-        setEmailSuccess(`Email sent to ${json.sentCount} attendees. ${json.skippedAlreadySentCount} already had this campaign and were skipped.`);
-        setEmailSubject('');
-        setEmailMessage('');
+        if (testMode) {
+          setEmailSuccess(`Test email sent successfully to ${testEmail.trim()}.`);
+        } else {
+          setEmailSuccess(`Email sent to ${json.sentCount} attendees. ${json.skippedAlreadySentCount} already had this campaign and were skipped.`);
+          setEmailSubject('');
+          setEmailMessage('');
+          setImageItems([]);
+        }
       } else {
         const err = await res.json();
         setEmailError(err.error || 'Failed to send emails.');
@@ -919,6 +1051,31 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                 </div>
               )}
 
+              <div className={styles.toggleRow} style={{ marginBottom: '1rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="testMode" 
+                  checked={testMode} 
+                  onChange={e => setTestMode(e.target.checked)} 
+                  disabled={emailSending}
+                />
+                <label htmlFor="testMode" style={{ fontSize: '0.85rem' }}>Send as test email</label>
+              </div>
+
+              {testMode && (
+                <div className={styles.field} style={{ marginBottom: '1.25rem' }}>
+                  <label className={styles.label}>Test recipient email *</label>
+                  <input 
+                    type="email"
+                    className={styles.input} 
+                    value={testEmail} 
+                    onChange={e => setTestEmail(e.target.value)} 
+                    placeholder="e.g. admin@example.com" 
+                    disabled={emailSending}
+                  />
+                </div>
+              )}
+
               <div className={styles.field} style={{ marginBottom: '1rem' }}>
                 <label className={styles.label}>Message *</label>
                 <textarea 
@@ -929,6 +1086,92 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                   disabled={emailSending}
                   style={{ minHeight: '150px' }}
                 />
+              </div>
+
+              {/* Inline Images Upload Section */}
+              <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                <label className={styles.label}>Images (Max 5)</label>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
+                  {imageItems.map((item) => (
+                    <div key={item.id} style={{ position: 'relative', width: '80px', height: '80px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', background: '#1a1a1a' }}>
+                      <img src={item.previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: item.status === 'uploading' ? 0.4 : 1 }} />
+                      
+                      {item.status === 'uploading' && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                          <span style={{ fontSize: '0.65rem', color: '#fff', textAlign: 'center', width: '100%' }}>Uploading...</span>
+                        </div>
+                      )}
+                      
+                      {item.status === 'error' && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,59,92,0.8)' }} title={item.error || 'Upload failed'}>
+                          <span style={{ fontSize: '0.65rem', color: '#fff', textAlign: 'center', width: '100%' }}>Failed</span>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(item.id)}
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(255, 59, 92, 0.9)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          padding: 0,
+                          lineHeight: 1
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  {imageItems.length < 5 && (
+                    <label 
+                      style={{ 
+                        width: '80px', 
+                        height: '80px', 
+                        border: '1px dashed var(--color-border)', 
+                        borderRadius: 'var(--radius-sm)', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        cursor: 'pointer', 
+                        background: 'rgba(255,255,255,0.01)',
+                        transition: 'border-color 0.2s, color 0.2s',
+                        color: 'var(--color-text-muted)'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent-primary)'; e.currentTarget.style.color = 'var(--color-accent-primary)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+                    >
+                      <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>+</span>
+                      <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>Upload</span>
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleImageSelect} 
+                        style={{ display: 'none' }} 
+                        disabled={emailSending}
+                      />
+                    </label>
+                  )}
+                </div>
+                {imageItems.some(item => item.status === 'error') && (
+                  <div style={{ color: '#ff3b5c', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    ✕ Some images failed to upload. Please remove them to send.
+                  </div>
+                )}
               </div>
 
               {emailSuccess && (
@@ -947,9 +1190,18 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                 className={styles.saveBtn} 
                 style={{ width: '100%', padding: '0.75rem' }}
                 onClick={handleEmailAttendees}
-                disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()}
+                disabled={
+                  emailSending || 
+                  !emailSubject.trim() || 
+                  !emailMessage.trim() || 
+                  (testMode && (!testEmail.trim() || !testEmail.includes('@'))) ||
+                  imageItems.some(item => item.status === 'uploading') || 
+                  imageItems.some(item => item.status === 'error')
+                }
               >
-                {emailSending ? 'Sending Email Broadcast...' : 'Send Email to Attendees'}
+                {emailSending 
+                  ? (testMode ? 'Sending Test Email...' : 'Sending Email Broadcast...') 
+                  : (testMode ? 'SEND TEST EMAIL' : 'Send Email to Attendees')}
               </button>
             </div>
           </section>
