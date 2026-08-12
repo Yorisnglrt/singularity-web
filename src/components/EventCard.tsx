@@ -86,7 +86,7 @@ export default function EventCard({ event, featured }: EventCardProps) {
         <p className={styles.meta}>
           <span className={styles.metaIcon}>◷</span> {event.time}
           <span className={styles.metaDivider}>·</span>
-          <span className={styles.metaIcon}>◈</span> {typeof event.venue === 'string' ? event.venue : event.venue[locale]}
+          <span className={styles.metaIcon}>◈</span> {typeof event.venue === 'string' ? event.venue : (event.venue.en || event.venue[locale] || '')}
         </p>
 
         {event.description[locale] && (

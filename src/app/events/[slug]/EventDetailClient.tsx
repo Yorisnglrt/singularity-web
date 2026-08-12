@@ -107,7 +107,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>Venue</span>
                 <span className={styles.metaValue}>
-                  {typeof event.venue === 'string' ? event.venue : event.venue['en']}
+                  {typeof event.venue === 'string' ? event.venue : (event.venue['en'] || event.venue[locale] || '')}
                 </span>
               </div>
               <div className={styles.metaItem}>
