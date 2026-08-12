@@ -204,3 +204,10 @@
   }
   .sidebar { order: 10; }
 }
+
+.description {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  white-space: pre-line;
+}

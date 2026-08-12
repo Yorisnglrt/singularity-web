@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function EventDetailClient({ event, artists, ticketTypes }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
@@ -142,6 +142,16 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
                 </div>
               )}
             </div>
+
+            {/* Event Description */}
+            {event.description[locale] && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>{t('events.about')}</h2>
+                <div className={styles.description}>
+                  {event.description[locale]}
+                </div>
+              </div>
+            )}
 
             {/* Actions — interactions + ticket */}
             <div className={styles.section}>
