@@ -138,6 +138,7 @@ export function normalizeEvent(event: any): Event {
     ticketProvider: event.ticketProvider || event.ticket_provider || 'external',
     ticketPriceOre: event.ticketPriceOre ?? event.ticket_price_ore ?? null,
     isFeatured: !!(event.isFeatured ?? event.is_featured),
+    isTestEvent: !!(event.isTestEvent ?? event.is_test_event),
     isPast,
     ageRestriction: (event.ageRestriction ?? event.age_restriction ?? '18+') as '18+' | '20+' | '21+',
   };

@@ -21,6 +21,7 @@ export interface Event {
   ticketPriceOre?: number | null;
   isPast?: boolean;
   isFeatured?: boolean;
+  isTestEvent?: boolean;
   ageRestriction?: '18+' | '20+' | '21+';
 }
 

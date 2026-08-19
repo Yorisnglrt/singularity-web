@@ -84,6 +84,7 @@ export function mapEventToDb(event: any, isLegacy: boolean = false) {
     ticket_provider: rest.ticketProvider || rest.ticket_provider || 'external',
     ticket_price_ore: rest.ticketPriceOre ?? rest.ticket_price_ore ?? null,
     is_past: !!(rest.isPast ?? rest.is_past),
+    is_test_event: !!(rest.isTestEvent ?? rest.is_test_event),
     age_restriction: rest.ageRestriction ?? rest.age_restriction ?? '18+',
   };
 

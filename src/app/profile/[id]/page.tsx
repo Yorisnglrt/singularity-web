@@ -54,10 +54,11 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const uniqueEventIds = Array.from(new Set(interactions.map(i => i.eventId)));
   
-  // Fetch event details for activity
+  // Fetch event details for activity (excluding test events from public activity)
   const { data: dbEvents } = await supabase
     .from('events')
     .select('*')
+    .eq('is_test_event', false)
     .in('id', uniqueEventIds);
 
   const getEventData = (eventId: string) => {

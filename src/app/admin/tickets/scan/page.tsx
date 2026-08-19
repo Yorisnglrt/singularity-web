@@ -30,6 +30,7 @@ interface EventOption {
   id: string;
   title: string;
   date: string;
+  is_test_event?: boolean;
 }
 
 interface Stats {
@@ -92,7 +93,7 @@ export default function TicketScannerPage() {
     const fetchEvents = async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, date')
+        .select('id, title, date, is_test_event')
         .order('date', { ascending: false });
 
       if (error || !data) return;
@@ -507,7 +508,7 @@ export default function TicketScannerPage() {
             <option value="">Select event...</option>
             {displayedEvents.map(ev => (
               <option key={ev.id} value={ev.id}>
-                {ev.title} — {new Date(ev.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {ev.is_test_event ? '[TEST] ' : ''}{ev.title} — {new Date(ev.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
               </option>
             ))}
           </select>

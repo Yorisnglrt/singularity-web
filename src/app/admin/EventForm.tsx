@@ -112,6 +112,7 @@ interface EventLike {
   ticketPriceOre?: number | null;
   isPast: boolean;
   isFeatured?: boolean;
+  isTestEvent?: boolean;
   ageRestriction?: '18+' | '20+' | '21+';
 }
 
@@ -126,6 +127,7 @@ interface Props {
   uploading: boolean;
   onSaveTicketType: (tt: EventTicketType) => void;
   onDeleteTicketType: (id: string) => void;
+  onDeleteSuccess?: () => void;
 }
 
 const LOCALES = [
@@ -137,13 +139,76 @@ const LOCALES = [
 
 type Locale = typeof LOCALES[number]['key'];
 
-export default function EventForm({ item, allArtists, ticketTypes, onSave, onDuplicate, onCancel, onUpload, uploading, onSaveTicketType, onDeleteTicketType }: Props) {
+export default function EventForm({ item, allArtists, ticketTypes, onSave, onDuplicate, onCancel, onUpload, uploading, onSaveTicketType, onDeleteTicketType, onDeleteSuccess }: Props) {
   const [ev, setEv] = useState<EventLike>(item);
   const [descLocale, setDescLocale] = useState<Locale>('en');
 
   // ── Ticket-type editing state ──
   const [editingTT, setEditingTT] = useState<EventTicketType | null>(null);
   const [ttErrors, setTtErrors] = useState<Record<string, string>>({});
+
+  // ── Test event delete modal state ──
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteStats, setDeleteStats] = useState<any>(null);
+  const [deleteStatsLoading, setDeleteStatsLoading] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingTestEvent, setDeletingTestEvent] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleOpenDeleteModal = async () => {
+    setDeleteModalOpen(true);
+    setDeleteStats(null);
+    setDeleteStatsLoading(true);
+    setDeleteConfirmText('');
+    setDeleteError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/events/delete-test-event?eventId=${ev.id}`, {
+        headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeleteStats(data);
+      } else {
+        const err = await res.json();
+        setDeleteError(err.error || 'Failed to load test event stats');
+      }
+    } catch (err: any) {
+      setDeleteError(err?.message || 'Connection error');
+    } finally {
+      setDeleteStatsLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeletingTestEvent(true);
+    setDeleteError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/events/delete-test-event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ eventId: ev.id }),
+      });
+
+      if (res.ok) {
+        setDeleteModalOpen(false);
+        onDeleteSuccess?.();
+        onCancel();
+      } else {
+        const err = await res.json();
+        setDeleteError(err.error || 'Failed to delete test event');
+      }
+    } catch (err: any) {
+      setDeleteError(err?.message || 'Connection error');
+    } finally {
+      setDeletingTestEvent(false);
+    }
+  };
 
   // Parse out date/time parts
   const dateOnly = ev.date?.split('T')[0] || '';
@@ -559,7 +624,24 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   return (
     <div className={styles.wrapper}>
       <div className={styles.formArea}>
-        <h2 className={styles.heading}>Edit Event</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h2 className={styles.heading} style={{ margin: 0 }}>
+            {ev.id?.startsWith('new-') ? 'Create Event' : 'Edit Event'}
+          </h2>
+          {ev.isTestEvent && (
+            <span style={{
+              background: '#ff8c00',
+              color: '#000',
+              padding: '0.3rem 0.8rem',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 900,
+              letterSpacing: '1px'
+            }}>
+              TEST EVENT
+            </span>
+          )}
+        </div>
 
         {/* ── Basic Info ── */}
         <section className={styles.section}>
@@ -665,6 +747,33 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                 <input type="checkbox" id="isFeatured" checked={ev.isFeatured || false} onChange={e => update({ isFeatured: e.target.checked })} />
                 <label htmlFor="isFeatured">Featured event</label>
               </div>
+            </div>
+          </div>
+
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '0.75rem 1rem',
+            background: ev.isTestEvent ? 'rgba(255, 140, 0, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+            border: ev.isTestEvent ? '1px solid #ff8c00' : '1px solid var(--color-border)',
+            borderRadius: '8px',
+            transition: 'all 0.2s'
+          }}>
+            <div className={styles.toggleRow} style={{ margin: 0, alignItems: 'flex-start', gap: '0.75rem' }}>
+              <input 
+                type="checkbox" 
+                id="isTestEvent" 
+                checked={ev.isTestEvent || false} 
+                onChange={e => update({ isTestEvent: e.target.checked })} 
+                style={{ marginTop: '0.25rem', width: '18px', height: '18px' }}
+              />
+              <label htmlFor="isTestEvent" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <span style={{ fontWeight: 800, color: ev.isTestEvent ? '#ff8c00' : '#fff', fontSize: '0.9rem' }}>
+                  Test event
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 400, lineHeight: 1.4 }}>
+                  Only admins can see and access this event. Use this for testing checkout, tickets, emails and check-in.
+                </span>
+              </label>
             </div>
           </div>
         </section>
@@ -1234,7 +1343,168 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
           <button className={styles.dupBtn} onClick={handleDuplicate}>Duplicate</button>
           <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
         </div>
+
+        {/* ── Destructive Test Event Cleanup Section ── */}
+        {ev.isTestEvent && !ev.id?.startsWith('new-') && (
+          <section style={{
+            marginTop: '2.5rem',
+            padding: '1.25rem',
+            background: 'rgba(255, 59, 92, 0.05)',
+            border: '1px solid rgba(255, 59, 92, 0.3)',
+            borderRadius: '10px'
+          }}>
+            <h3 style={{ color: '#ff3b5c', margin: '0 0 0.4rem 0', fontSize: '0.95rem', fontWeight: 800 }}>
+              Test Event Cleanup
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+              Completely remove this test event and all its tickets (valid and used), ticket types, check-in records, and exclusive test orders from the database.
+            </p>
+            <button
+              type="button"
+              onClick={handleOpenDeleteModal}
+              style={{
+                background: '#ff3b5c',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.6rem 1.25rem',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              🗑 Delete Test Event and All Test Data
+            </button>
+          </section>
+        )}
       </div>
+
+      {/* ── Delete Test Event Modal ── */}
+      {deleteModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.8)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#111',
+            border: '1px solid #ff3b5c',
+            borderRadius: '12px',
+            maxWidth: '480px',
+            width: '100%',
+            padding: '1.5rem',
+            color: '#fff'
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#ff3b5c', fontSize: '1.15rem' }}>
+              Delete Test Event
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+              This will permanently delete <strong>{ev.title}</strong> and all related test data. This action cannot be undone.
+            </p>
+
+            {deleteStatsLoading ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                Analyzing test records to be deleted...
+              </div>
+            ) : deleteStats ? (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                fontSize: '0.8rem'
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#ff8c00' }}>
+                  Records to be deleted:
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <li><strong>1</strong> Event: {deleteStats.title}</li>
+                  <li><strong>{deleteStats.ticketTypesCount}</strong> Ticket type(s)</li>
+                  <li><strong>{deleteStats.ticketsTotal}</strong> Total tickets ({deleteStats.ticketsValid} valid, {deleteStats.ticketsUsed} used, {deleteStats.ticketsGuest} guest)</li>
+                  <li><strong>{deleteStats.exclusiveOrdersCount}</strong> Exclusive test order(s)</li>
+                  {deleteStats.sharedOrdersCount > 0 && (
+                    <li style={{ color: '#aaa' }}>
+                      <strong>{deleteStats.sharedOrdersCount}</strong> Shared orders (parent orders retained, only items for this event removed)
+                    </li>
+                  )}
+                  <li><strong>{deleteStats.checkinsCount}</strong> Event check-in(s)</li>
+                </ul>
+              </div>
+            ) : null}
+
+            {deleteError && (
+              <div style={{ color: '#ff3b5c', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                ⚠ {deleteError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                To confirm, type <strong style={{ color: '#fff' }}>DELETE</strong> below:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                style={{
+                  width: '100%',
+                  background: '#000',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  padding: '0.6rem 0.75rem',
+                  color: '#fff',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.85rem'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deletingTestEvent}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  padding: '0.5rem 1rem',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleteConfirmText !== 'DELETE' || deletingTestEvent}
+                style={{
+                  background: deleteConfirmText === 'DELETE' ? '#ff3b5c' : 'rgba(255, 59, 92, 0.3)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.5rem 1.2rem',
+                  fontWeight: 800,
+                  cursor: deleteConfirmText === 'DELETE' && !deletingTestEvent ? 'pointer' : 'not-allowed',
+                  fontSize: '0.8rem'
+                }}
+              >
+                {deletingTestEvent ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Live Preview ── */}
       <div className={styles.preview}>

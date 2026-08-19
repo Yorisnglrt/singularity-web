@@ -226,7 +226,8 @@ export async function sendOrderTicketsEmail(
       events (
         title,
         date,
-        venue
+        venue,
+        is_test_event
       )
     `)
     .eq('order_id', orderId);
@@ -303,15 +304,24 @@ export async function sendOrderTicketsEmail(
     return `Ticket Code: ${displayCode}\nView Online: ${ticketUrl}\nRef: ${t.ticket_code}`;
   }).join('\n\n');
 
+  const isTest = !!event?.is_test_event;
+  const testBadgeHtml = isTest ? `
+    <div style="background: #ff8c00; color: #000; font-weight: bold; font-size: 0.85rem; padding: 8px 12px; border-radius: 4px; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">
+      ⚠ TEST EVENT ORDER
+    </div>
+  ` : '';
+  const testBadgeText = isTest ? `*** TEST EVENT ORDER ***\n\n` : '';
+
   // 4. Send via Resend
   const { data, error: sendError } = await resend.emails.send({
     from,
     to: [order.customer_email],
     replyTo,
-    subject: `Your Singularity ticket & receipt (${order.order_reference})`,
+    subject: `${isTest ? '[TEST] ' : ''}Your Singularity ticket & receipt (${order.order_reference})`,
     attachments,
     html: `
       <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+        ${testBadgeHtml}
         <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px;">Singularity</h1>
         <h2 style="color: #fff; margin: 0 0 24px;">Order Confirmation</h2>
         
@@ -401,7 +411,8 @@ export async function sendGuestTicketEmail(
       events (
         title,
         date,
-        venue
+        venue,
+        is_test_event
       )
     `)
     .in('id', ticketIds);
@@ -471,17 +482,25 @@ export async function sendGuestTicketEmail(
     return `Ticket Code: ${displayCode}\nView Online: ${ticketUrl}\nRef: ${t.ticket_code}`;
   }).join('\n\n');
 
+  const isTest = !!(event as any)?.is_test_event;
+  const testBadgeHtml = isTest ? `
+    <div style="background: #ff8c00; color: #000; font-weight: bold; font-size: 0.85rem; padding: 8px 12px; border-radius: 4px; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">
+      ⚠ TEST EVENT GUEST PASS
+    </div>
+  ` : '';
+
   // 3. Send via Resend
   const { data, error: sendError } = await resend.emails.send({
     from,
     to: [recipientEmail],
     replyTo,
-    subject: `Your Guest List: ${eventTitle}`,
+    subject: `${isTest ? '[TEST] ' : ''}Your Guest List: ${eventTitle}`,
     attachments,
     html: `
       <div style="font-family: sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+        ${testBadgeHtml}
         <h1 style="color: #00ffb2; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px;">Singularity</h1>
-        <h2 style="color: #fff; margin: 0 0 24px;">Guest List Invitation</h2>
+        <h2 style="color: #fff; margin: 0 0 24px;">Guest Pass Confirmation</h2>
         
         <div style="background: #1a1a1a; padding: 20px; border-radius: 4px; margin-bottom: 32px;">
           <div style="margin-bottom: 8px;"><strong style="color: #888;">Event:</strong> ${eventTitle}</div>

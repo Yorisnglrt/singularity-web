@@ -675,8 +675,21 @@ export default function AdminPage() {
                   className={`${styles.sidebarItem} ${activeItem?.id === item.id ? styles.sidebarItemActive : ''}`}
                   onClick={() => setActiveItem(item)}
                 >
-                  <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                    {isMixTab ? `${item.artist} — ${item.label || ''}` : (item.name || item.title)}
+                  <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+                    {isEventTab && (item.isTestEvent || item.is_test_event) && (
+                      <span style={{
+                        background: '#ff8c00',
+                        color: '#000',
+                        fontSize: '0.6rem',
+                        fontWeight: 900,
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '3px',
+                        flexShrink: 0
+                      }}>
+                        TEST
+                      </span>
+                    )}
+                    <span>{isMixTab ? `${item.artist} — ${item.label || ''}` : (item.name || item.title)}</span>
                   </span>
                   <button onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id); }} style={{background:'none', border:'none', color:'#ff3b5c', cursor:'pointer'}}>×</button>
                 </div>
@@ -701,6 +714,7 @@ export default function AdminPage() {
                   uploading={uploading}
                   onSaveTicketType={saveTicketType}
                   onDeleteTicketType={deleteTicketType}
+                  onDeleteSuccess={() => fetchData('events')}
                 />
               ) : (
                 <div>

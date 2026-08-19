@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        if (typeof document !== 'undefined' && session.access_token) {
+          document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        }
         await fetchProfile(session.user.id, session.user.email || '');
         claimStartingPoints();
       }
@@ -59,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
       if (session?.user) {
+        if (typeof document !== 'undefined' && session.access_token) {
+          document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        }
         // Fetch profile asynchronously to not block the main auth loop
         fetchProfile(session.user.id, session.user.email || '').finally(() => {
           setIsLoading(false);
@@ -68,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         });
       } else {
+        if (typeof document !== 'undefined') {
+          document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
+        }
         setUser(null);
         setInteractions([]);
         setIsLoading(false);

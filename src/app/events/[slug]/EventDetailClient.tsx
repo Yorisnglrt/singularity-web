@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -9,6 +10,8 @@ import { Event, EventTicketType } from '@/data/events';
 import EventActions from '@/components/EventActions';
 import { resolveLineupArtists } from '@/lib/data-normalization';
 import { useI18n } from '@/i18n';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 // Lazy-load non-critical interactive components
@@ -19,10 +22,56 @@ interface Props {
   event: Event;
   artists: Artist[];
   ticketTypes: EventTicketType[];
+  initialIsAdmin?: boolean;
 }
 
-export default function EventDetailClient({ event, artists, ticketTypes }: Props) {
+export default function EventDetailClient({ event, artists, ticketTypes, initialIsAdmin }: Props) {
   const { t, locale } = useI18n();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (user?.isAdmin && typeof document !== 'undefined') {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        }
+      });
+    }
+  }, [user?.isAdmin]);
+
+  // If this is a test event and server was not able to verify admin via cookies, verify via client auth
+  if (event.isTestEvent && !initialIsAdmin) {
+    if (isAuthLoading) {
+      return (
+        <div className={styles.page} style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>Loading event…</div>
+        </div>
+      );
+    }
+
+    if (!user || !user.isAdmin) {
+      return (
+        <div className={styles.page} style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '3rem 1rem' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.75rem', color: '#fff' }}>404</h1>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.75rem', fontSize: '1rem' }}>
+            This event could not be found.
+          </p>
+          <Link href="/events" style={{
+            background: 'var(--color-primary, #00ffb2)',
+            color: '#000',
+            padding: '0.65rem 1.4rem',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            fontWeight: 800,
+            fontSize: '0.85rem'
+          }}>
+            Back to events
+          </Link>
+        </div>
+      );
+    }
+  }
+
   const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
@@ -38,6 +87,24 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
 
   return (
     <div className={styles.page}>
+      {event.isTestEvent && (
+        <div style={{
+          background: '#ff8c00',
+          color: '#000',
+          padding: '0.6rem 1rem',
+          textAlign: 'center',
+          fontWeight: 800,
+          fontSize: '0.85rem',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+        }}>
+          ⚠ TEST EVENT — VISIBLE ONLY TO ADMINS
+        </div>
+      )}
       {/* Wide cover hero — full width, ~1.91:1 aspect */}
       {wideImage ? (
         <div className={styles.coverHero}>
@@ -73,6 +140,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
             <div className={styles.heroBadge}>
               <span className={`tag ${event.type === 'outdoor' ? 'tag--purple' : ''}`}>{event.type}</span>
               {event.isPast && <span className="tag">Archive</span>}
+              {event.isTestEvent && <span className="tag" style={{ background: '#ff8c00', color: '#000', fontWeight: 800 }}>TEST</span>}
             </div>
             <h1 className={styles.heroTitle}>{event.title}</h1>
             <p className={styles.heroDate}>{weekday}, {day} {month} {year}</p>
@@ -88,6 +156,7 @@ export default function EventDetailClient({ event, artists, ticketTypes }: Props
             <div className={styles.heroBadge}>
               <span className={`tag ${event.type === 'outdoor' ? 'tag--purple' : ''}`}>{event.type}</span>
               {event.isPast && <span className="tag">Archive</span>}
+              {event.isTestEvent && <span className="tag" style={{ background: '#ff8c00', color: '#000', fontWeight: 800 }}>TEST</span>}
             </div>
             <h1 className={styles.titleBarHeading}>{event.title}</h1>
             <p className={styles.titleBarDate}>{weekday}, {day} {month} {year}</p>

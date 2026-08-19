@@ -59,6 +59,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'customerEmail is required and must be a valid email address' }, { status: 400 });
     }
 
+    // 5b. Validate test event restriction
+    const { data: event, error: eventErr } = await userSupabase
+      .from('events')
+      .select('id, is_test_event')
+      .eq('id', eventId)
+      .single();
+
+    if (eventErr || !event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
+    if (event.is_test_event) {
+      const { data: profile } = await userSupabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.is_admin) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+    }
+
     // 6. Call use_free_ticket_reward RPC
     const { data: orderId, error: rpcError } = await userSupabase.rpc('use_free_ticket_reward', {
       p_event_id: eventId,

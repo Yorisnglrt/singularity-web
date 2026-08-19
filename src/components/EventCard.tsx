@@ -68,6 +68,11 @@ export default function EventCard({ event, featured }: EventCardProps) {
         <div className={styles.topRow}>
           <span className={styles.dateText}>{day} {month} {year}</span>
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+            {event.isTestEvent && (
+              <span className="tag" style={{ background: '#ff8c00', color: '#000', fontWeight: 800, fontSize: 'var(--text-xs)', padding: '0.15em 0.5em' }}>
+                TEST
+              </span>
+            )}
             {event.ageRestriction && (
               <span className="tag" style={{ fontSize: 'var(--text-xs)', padding: '0.15em 0.5em' }}>{event.ageRestriction}</span>
             )}

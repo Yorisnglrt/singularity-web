@@ -27,7 +27,8 @@ export async function GET(req: Request) {
         events (
           title,
           date,
-          venue
+          venue,
+          is_test_event
         ),
         event_ticket_types (
           name

@@ -5,12 +5,15 @@ import { useI18n, Locale } from '@/i18n';
 import { Event as AppEvent } from '@/data/events';
 import EventCard from '@/components/EventCard';
 import { normalizeEvent } from '@/lib/data-normalization';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 type PageEvent = AppEvent;
 
 export default function EventsPage() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,17 @@ export default function EventsPage() {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const res = await fetch('/api/events', { cache: 'no-store' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const url = user?.isAdmin 
+          ? '/api/events?includeTest=true' 
+          : '/api/events';
+
+        const res = await fetch(url, { headers, cache: 'no-store' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -41,7 +54,7 @@ export default function EventsPage() {
     };
 
     loadEvents();
-  }, []);
+  }, [user?.isAdmin]);
 
   const normalizedEvents = useMemo<AppEvent[]>(() => {
     return events.map(normalizeEvent);

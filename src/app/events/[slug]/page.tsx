@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import EventDetailClient from './EventDetailClient';
 import { supabase } from '@/lib/supabase';
 import { normalizeEvent, normalizeArtist, normalizeTicketType } from '@/lib/data-normalization';
@@ -10,6 +12,51 @@ interface Props {
 }
 
 export const dynamic = 'force-dynamic';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+async function checkIsAdmin(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    let token = cookieStore.get('sb-access-token')?.value || cookieStore.get('sb-token')?.value;
+
+    if (!token) {
+      const allCookies = cookieStore.getAll();
+      for (const c of allCookies) {
+        if (c.name.startsWith('sb-') && c.name.endsWith('-auth-token')) {
+          try {
+            const parsed = JSON.parse(decodeURIComponent(c.value));
+            if (Array.isArray(parsed) && parsed[0]) {
+              token = parsed[0];
+              break;
+            } else if (parsed?.access_token) {
+              token = parsed.access_token;
+              break;
+            }
+          } catch {}
+        }
+      }
+    }
+
+    if (!token) return false;
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return false;
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+
+    return !!profile?.is_admin;
+  } catch {
+    return false;
+  }
+}
 
 const LEGACY_SLUG_MAP: Record<string, string> = {
   'dnb-singularity-aftermatch': '75facad9-f20b-5f7f-a68c-919aed1fe4e6',
@@ -46,6 +93,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   if (!eventData) return {};
+
+  // If this is a test event, do not leak metadata to non-admins
+  if (eventData.is_test_event) {
+    const isAdmin = await checkIsAdmin();
+    if (!isAdmin) return {};
+  }
 
   const normalized = normalizeEvent(eventData);
   const title = `${normalized.title} — SINGULARITY`;
@@ -123,6 +176,11 @@ export default async function EventDetailPage({ params, searchParams }: Props) {
     notFound();
   }
 
+  // Access control check for test events
+  let isServerAdmin = false;
+  if (event.is_test_event) {
+    isServerAdmin = await checkIsAdmin();
+  }
 
   // Prepare lineup filter
   const lineupStrings = Array.isArray(event.lineup) ? event.lineup.map((s: any) => String(s)) : [];
@@ -160,7 +218,8 @@ export default async function EventDetailPage({ params, searchParams }: Props) {
     <EventDetailClient 
       event={normalizedEvent} 
       artists={normalizedArtists} 
-      ticketTypes={normalizedTicketTypes} 
+      ticketTypes={normalizedTicketTypes}
+      initialIsAdmin={isServerAdmin}
     />
   );
 }

@@ -51,7 +51,8 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
               events (
                 title,
                 date,
-                venue
+                venue,
+                is_test_event
               ),
               event_ticket_types (
                 name
@@ -116,11 +117,31 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
     year: 'numeric' 
   }) : 'Date TBA';
 
+  const isTest = !!ticket.events?.is_test_event;
+
   return (
     <div className={styles.page}>
       <Link href={backHref} className={styles.backLink}>{backLabel}</Link>
       
       <div className={`${styles.ticketContainer} ${styles[ticket.status] || ''}`}>
+        {/* Test Event Banner */}
+        {isTest && (
+          <div style={{
+            background: '#ff8c00',
+            color: '#000',
+            fontWeight: 900,
+            fontSize: '0.75rem',
+            padding: '0.35rem',
+            borderRadius: '6px',
+            textAlign: 'center',
+            marginBottom: '0.75rem',
+            letterSpacing: '1px',
+            textTransform: 'uppercase'
+          }}>
+            ⚠ TEST EVENT TICKET
+          </div>
+        )}
+
         {/* Top Status Row */}
         <div className={styles.ticketStatusRow}>
           <span className={`${styles.statusBadge} ${styles[ticket.status] || ''}`}>

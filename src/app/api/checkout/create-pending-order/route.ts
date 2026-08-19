@@ -78,15 +78,33 @@ export async function POST(req: Request) {
       // If token is invalid, we silently treat as guest — no error
     }
 
-    // ── Fetch ticket type ──
-    const { data: ticketType, error: ttError } = await supabase
-      .from('event_ticket_types')
-      .select('*')
-      .eq('id', ticketTypeId)
-      .single();
+    // ── Fetch ticket type and event ──
+    const [ticketTypeRes, eventRes] = await Promise.all([
+      supabase.from('event_ticket_types').select('*').eq('id', ticketTypeId).single(),
+      supabase.from('events').select('id, is_test_event').eq('id', eventId).single(),
+    ]);
 
-    if (ttError || !ticketType) {
-      return NextResponse.json({ error: 'Ticket type not found' }, { status: 404 });
+    const ticketType = ticketTypeRes.data;
+    const event = eventRes.data;
+
+    if (ticketTypeRes.error || !ticketType || eventRes.error || !event) {
+      return NextResponse.json({ error: 'Ticket type or event not found' }, { status: 404 });
+    }
+
+    // ── If test event: strictly require authenticated admin ──
+    if (event.is_test_event) {
+      if (!profileId) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+      const { data: adminProfile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', profileId)
+        .single();
+
+      if (!adminProfile?.is_admin) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
     }
 
     // ── Validate ticket type belongs to the event ──
