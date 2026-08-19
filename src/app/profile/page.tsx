@@ -68,7 +68,13 @@ export default function ProfilePage() {
       if (!error) {
         setClaims(data || []);
       } else {
-        console.error('Supabase error fetching claims:', error);
+        console.error('Supabase error fetching claims:', {
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          error
+        });
         setClaims([]);
       }
     } catch (err) {

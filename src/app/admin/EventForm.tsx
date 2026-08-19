@@ -225,11 +225,6 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   // Lineup
   const [newName, setNewName] = useState('');
 
-  // Guest list states
-  const [guestList, setGuestList] = useState<any[]>([]);
-  const [newGuest, setNewGuest] = useState({ name: '', email: '', quantity: 1, note: '' });
-  const [issuingGuest, setIssuingGuest] = useState(false);
-
   // Email Attendees state
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
@@ -369,6 +364,50 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
     }
   };
 
+  // Guest list & DJ Guest Codes state
+  const [guestCodes, setGuestCodes] = useState<any[]>([]);
+  const [loadingGuestCodes, setLoadingGuestCodes] = useState(false);
+  const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [editingCode, setEditingCode] = useState<any | null>(null);
+  const [codeForm, setCodeForm] = useState({
+    dj_name: '',
+    code: '',
+    guest_limit: 5,
+    price_nok: 0,
+    note: '',
+    expires_at: '',
+    is_active: true,
+  });
+  const [codeFormSaving, setCodeFormSaving] = useState(false);
+  const [codeFormError, setCodeFormError] = useState<string | null>(null);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [showManualGuestSection, setShowManualGuestSection] = useState(false);
+
+  // Manual guest list state (legacy fallback)
+  const [guestList, setGuestList] = useState<any[]>([]);
+  const [newGuest, setNewGuest] = useState({ name: '', email: '', quantity: 1, note: '' });
+  const [issuingGuest, setIssuingGuest] = useState(false);
+
+  const fetchGuestCodes = useCallback(async () => {
+    if (!ev.id || ev.id.startsWith('new-')) return;
+    setLoadingGuestCodes(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/guest-codes?event_id=${ev.id}`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token || ''}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setGuestCodes(json);
+      }
+    } catch (err) {
+      console.error('Failed to fetch guest codes:', err);
+    } finally {
+      setLoadingGuestCodes(false);
+    }
+  }, [ev.id]);
+
   const fetchGuestList = useCallback(async () => {
     if (!ev.id || ev.id.startsWith('new-')) return;
     try {
@@ -386,8 +425,194 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
   }, [ev.id]);
 
   useEffect(() => {
+    fetchGuestCodes();
     fetchGuestList();
-  }, [fetchGuestList]);
+  }, [fetchGuestCodes, fetchGuestList]);
+
+  const handleOpenAddCodeModal = () => {
+    setEditingCode(null);
+    setCodeForm({
+      dj_name: '',
+      code: '',
+      guest_limit: 5,
+      price_nok: 0,
+      note: '',
+      expires_at: '',
+      is_active: true,
+    });
+    setCodeFormError(null);
+    setCodeModalOpen(true);
+  };
+
+  const handleOpenEditCodeModal = (gc: any) => {
+    setEditingCode(gc);
+    setCodeForm({
+      dj_name: gc.dj_name,
+      code: gc.code,
+      guest_limit: gc.guest_limit,
+      price_nok: gc.price_nok !== undefined ? gc.price_nok : Math.round((gc.price_ore || 0) / 100),
+      note: gc.note || '',
+      expires_at: gc.expires_at ? gc.expires_at.slice(0, 16) : '',
+      is_active: gc.is_active,
+    });
+    setCodeFormError(null);
+    setCodeModalOpen(true);
+  };
+
+  const handleSaveCodeForm = async () => {
+    if (!codeForm.dj_name.trim() || !codeForm.code.trim()) {
+      setCodeFormError('DJ Name and Guest Code are required');
+      return;
+    }
+
+    setCodeFormSaving(true);
+    setCodeFormError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const payload: any = {
+        action: editingCode ? 'update' : 'create',
+        event_id: ev.id,
+        id: editingCode?.id,
+        dj_name: codeForm.dj_name.trim(),
+        code: codeForm.code.trim().toUpperCase(),
+        guest_limit: codeForm.guest_limit,
+        price_nok: codeForm.price_nok || 0,
+        note: codeForm.note.trim() || null,
+        expires_at: codeForm.expires_at ? new Date(codeForm.expires_at).toISOString() : null,
+        is_active: codeForm.is_active,
+      };
+
+      const res = await fetch('/api/admin/guest-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setCodeModalOpen(false);
+        fetchGuestCodes();
+      } else {
+        setCodeFormError(data.error || 'Failed to save guest code');
+      }
+    } catch (err: any) {
+      setCodeFormError(err.message || 'Connection error');
+    } finally {
+      setCodeFormSaving(false);
+    }
+  };
+
+  const handleToggleCodeActive = async (gc: any) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch('/api/admin/guest-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'toggle_active',
+          id: gc.id,
+          is_active: !gc.is_active,
+        })
+      });
+      fetchGuestCodes();
+    } catch (err) {
+      console.error('Failed to toggle code status:', err);
+    }
+  };
+
+  const handleDeleteCode = async (gc: any) => {
+    if (!confirm(`Delete unused guest code "${gc.code}"?`)) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/guest-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          id: gc.id,
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        fetchGuestCodes();
+      } else {
+        alert(data.error || 'Failed to delete guest code');
+      }
+    } catch (err) {
+      console.error('Failed to delete code:', err);
+    }
+  };
+
+  const handleCopyLink = (code: string, id: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/guest?code=${encodeURIComponent(code)}`;
+    navigator.clipboard.writeText(url);
+    setCopiedCodeId(id);
+    setTimeout(() => setCopiedCodeId(null), 2000);
+  };
+
+  const handleResendClaimEmail = async (ticketId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/guest-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'resend_email',
+          ticket_id: ticketId,
+        })
+      });
+      if (res.ok) {
+        alert('Ticket confirmation email resent successfully!');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to resend ticket email');
+      }
+    } catch (err) {
+      console.error('Resend email error:', err);
+    }
+  };
+
+  const handleVoidClaimedTicket = async (ticketId: string) => {
+    if (!confirm('Void this guest ticket? This will restore 1 available slot in the DJ allocation.')) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/guest-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'void_ticket',
+          ticket_id: ticketId,
+        })
+      });
+      if (res.ok) {
+        fetchGuestCodes();
+        fetchGuestList();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to void ticket');
+      }
+    } catch (err) {
+      console.error('Void ticket error:', err);
+    }
+  };
 
   const handleIssueGuest = async () => {
     if (!newGuest.name || !newGuest.email) {
@@ -1017,74 +1242,400 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
           )}
         </section>
 
-        {/* ── Guest List ── */}
+        {/* ── Guest Lists (DJ Allocations & Codes) ── */}
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Guest List</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div>
+              <h3 className={styles.sectionTitle} style={{ margin: 0 }}>Guest Lists</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0.25rem 0 0 0' }}>
+                Self-service guest allocations with custom DJ codes and direct claim links.
+              </p>
+            </div>
+            {!ev.id?.startsWith('new-') && (
+              <button
+                type="button"
+                className={styles.addBtn}
+                style={{ padding: '0.45rem 0.9rem', fontSize: '0.8rem' }}
+                onClick={handleOpenAddCodeModal}
+              >
+                + Add Guest Code
+              </button>
+            )}
+          </div>
+
           {ev.id?.startsWith('new-') ? (
             <div style={{ padding: '1.5rem', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
               Guest List management is available after saving the event.
             </div>
           ) : (
             <>
-              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                Create free tickets and send them to guests via email.
-              </p>
-
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
-                <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add to Guest List</h4>
-                <div className={styles.row2}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Guest Name *</label>
-                    <input className={styles.input} value={newGuest.name} onChange={e => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full name" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Guest Email *</label>
-                    <input className={styles.input} value={newGuest.email} onChange={e => setNewGuest({ ...newGuest, email: e.target.value })} placeholder="email@example.com" />
-                  </div>
+              {loadingGuestCodes ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                  Loading guest lists...
                 </div>
-                <div className={styles.row2} style={{ marginTop: '0.75rem' }}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Quantity</label>
-                    <input type="number" className={styles.input} value={newGuest.quantity} onChange={e => setNewGuest({ ...newGuest, quantity: parseInt(e.target.value) || 1 })} min={1} max={20} />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Note (Optional)</label>
-                    <input className={styles.input} value={newGuest.note} onChange={e => setNewGuest({ ...newGuest, note: e.target.value })} placeholder="e.g. DJ Guest" />
-                  </div>
-                </div>
-                <button 
-                  className={styles.addBtn} 
-                  style={{ marginTop: '1rem', width: '100%' }}
-                  onClick={handleIssueGuest}
-                  disabled={issuingGuest || !newGuest.name || !newGuest.email}
-                >
-                  {issuingGuest ? 'Issuing...' : 'Issue Guest Ticket(s) & Send Email'}
-                </button>
-              </div>
+              ) : guestCodes.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                  {guestCodes.map(gc => {
+                    const isExpanded = expandedCodeId === gc.id;
+                    const isCopied = copiedCodeId === gc.id;
+                    const percent = gc.guest_limit > 0 ? Math.min(100, Math.round((gc.claimed_count / gc.guest_limit) * 100)) : 0;
+                    const isFullyClaimed = gc.claimed_count >= gc.guest_limit;
 
-              {guestList.length > 0 ? (
-                <div className={styles.guestList}>
-                  {guestList.map(t => (
-                    <div key={t.id} className={styles.guestItem}>
-                      <div className={styles.guestInfo}>
-                        <span className={styles.guestName}>{t.holder_name}</span>
-                        <span className={styles.guestEmail}>{t.holder_email} · {t.ticket_code}</span>
-                        {t.note && <span className={styles.guestNote}>{t.note}</span>}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span className={`${styles.guestBadge} ${t.status === 'void' ? styles.guestBadgeVoid : ''}`}>
-                          {t.status.toUpperCase()}
-                        </span>
-                        {t.status !== 'void' && (
-                          <button className={styles.removeBtn} onClick={() => handleVoidGuest(t.id)} title="Void Ticket">✕</button>
+                    return (
+                      <div
+                        key={gc.id}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          border: gc.is_active ? '1px solid var(--color-border)' : '1px dashed rgba(255, 255, 255, 0.1)',
+                          borderRadius: '10px',
+                          padding: '1rem 1.25rem',
+                          opacity: gc.is_active ? 1 : 0.65,
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {/* Top row: DJ name, Code, Price, Status, Quick Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <strong style={{ fontSize: '1rem', color: '#fff' }}>{gc.dj_name}</strong>
+                                <span style={{
+                                  background: 'rgba(0, 255, 178, 0.12)',
+                                  color: '#00ffb2',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '4px',
+                                  fontFamily: 'var(--font-mono)',
+                                  fontWeight: 800,
+                                  fontSize: '0.8rem',
+                                  letterSpacing: '1px'
+                                }}>
+                                  {gc.code}
+                                </span>
+                                {gc.price_nok > 0 ? (
+                                  <span style={{
+                                    background: 'rgba(255, 140, 0, 0.15)',
+                                    color: '#ff8c00',
+                                    padding: '0.15rem 0.5rem',
+                                    borderRadius: '4px',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    {gc.price_nok} NOK
+                                  </span>
+                                ) : (
+                                  <span style={{
+                                    background: 'rgba(0, 255, 178, 0.12)',
+                                    color: '#00ffb2',
+                                    padding: '0.15rem 0.5rem',
+                                    borderRadius: '4px',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    FREE
+                                  </span>
+                                )}
+                                {!gc.is_active && (
+                                  <span style={{ background: '#444', color: '#aaa', padding: '0.1rem 0.4rem', borderRadius: '3px', fontSize: '0.65rem' }}>
+                                    Inactive
+                                  </span>
+                                )}
+                              </div>
+                              {gc.note && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>
+                                  {gc.note}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLink(gc.code, gc.id)}
+                              style={{
+                                background: isCopied ? 'rgba(0, 255, 178, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                color: isCopied ? '#00ffb2' : '#fff',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.75rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {isCopied ? '✓ Link Copied' : '📋 Copy Link'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setExpandedCodeId(isExpanded ? null : gc.id)}
+                              style={{
+                                background: isExpanded ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                color: '#fff',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.75rem',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              👥 Guests ({gc.claimed_count}) {isExpanded ? '▲' : '▼'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditCodeModal(gc)}
+                              style={{
+                                background: 'transparent',
+                                color: 'var(--color-text-secondary)',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.6rem',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✏ Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCodeActive(gc)}
+                              style={{
+                                background: 'transparent',
+                                color: gc.is_active ? '#ff8c00' : '#00ffb2',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.6rem',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {gc.is_active ? 'Disable' : 'Enable'}
+                            </button>
+
+                            {gc.claimed_count === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCode(gc)}
+                                style={{
+                                  background: 'transparent',
+                                  color: '#ff3b5c',
+                                  border: '1px solid rgba(255, 59, 92, 0.3)',
+                                  borderRadius: '6px',
+                                  padding: '0.35rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete unused code"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div style={{ marginTop: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem', flexWrap: 'wrap', gap: '0.25rem' }}>
+                            <span style={{ color: isFullyClaimed ? '#ff8c00' : 'var(--color-text-muted)' }}>
+                              <strong>{gc.claimed_count}</strong> / {gc.guest_limit} claimed {isFullyClaimed && '(Fully claimed)'}
+                              {gc.pending_count > 0 && (
+                                <span style={{ color: '#ff8c00', marginLeft: '0.5rem', fontWeight: 600 }}>
+                                  ({gc.pending_count} payment pending)
+                                </span>
+                              )}
+                            </span>
+                            <span style={{ color: 'var(--color-text-muted)' }}>{percent}%</span>
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${percent}%`,
+                              height: '100%',
+                              background: isFullyClaimed ? '#ff8c00' : '#00ffb2',
+                              borderRadius: '3px',
+                              transition: 'width 0.3s ease'
+                            }} />
+                          </div>
+                        </div>
+
+                        {/* Expanded Claimed Guests List */}
+                        {isExpanded && (
+                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                            <h5 style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Claimed Guests ({gc.tickets?.length || 0})
+                            </h5>
+
+                            {gc.tickets && gc.tickets.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {gc.tickets.map((t: any) => (
+                                  <div
+                                    key={t.id}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      background: 'rgba(0, 0, 0, 0.4)',
+                                      padding: '0.6rem 0.75rem',
+                                      borderRadius: '6px',
+                                      fontSize: '0.8rem',
+                                      flexWrap: 'wrap',
+                                      gap: '0.5rem'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <strong style={{ color: '#fff' }}>{t.holder_name || 'Guest'}</strong>
+                                        <span style={{ color: 'var(--color-text-muted)' }}>·</span>
+                                        <span style={{ color: '#aaa' }}>{t.holder_email}</span>
+                                        {t.order_id && (
+                                          <span style={{ background: 'rgba(255, 140, 0, 0.2)', color: '#ff8c00', fontSize: '0.65rem', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: 700 }}>
+                                            PAID
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div style={{ fontSize: '0.7rem', color: '#666', fontFamily: 'var(--font-mono)' }}>
+                                        Code: <strong style={{ color: '#00ffb2' }}>{t.short_code}</strong> · {t.ticket_code}
+                                        {t.used_at && ` · Checked in at ${new Date(t.used_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <span style={{
+                                        background: t.status === 'used' ? 'rgba(0, 150, 255, 0.2)' : t.status === 'void' ? 'rgba(255, 59, 92, 0.2)' : 'rgba(0, 255, 178, 0.15)',
+                                        color: t.status === 'used' ? '#00b4ff' : t.status === 'void' ? '#ff3b5c' : '#00ffb2',
+                                        padding: '0.15rem 0.45rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 800,
+                                        fontSize: '0.65rem'
+                                      }}>
+                                        {t.status.toUpperCase()}
+                                      </span>
+
+                                      {t.status !== 'void' && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleResendClaimEmail(t.id)}
+                                            style={{
+                                              background: 'transparent',
+                                              color: 'var(--color-text-secondary)',
+                                              border: '1px solid var(--color-border)',
+                                              borderRadius: '4px',
+                                              padding: '0.2rem 0.5rem',
+                                              fontSize: '0.7rem',
+                                              cursor: 'pointer'
+                                            }}
+                                            title="Resend ticket email"
+                                          >
+                                            ✉ Resend
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleVoidClaimedTicket(t.id)}
+                                            style={{
+                                              background: 'transparent',
+                                              color: '#ff3b5c',
+                                              border: '1px solid rgba(255, 59, 92, 0.3)',
+                                              borderRadius: '4px',
+                                              padding: '0.2rem 0.5rem',
+                                              fontSize: '0.7rem',
+                                              cursor: 'pointer'
+                                            }}
+                                            title="Void ticket"
+                                          >
+                                            ✕ Void
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                                No tickets claimed yet with this code.
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem' }}>Guest list is empty.</p>
+                <div style={{ padding: '1.25rem', border: '1px dashed var(--color-border)', borderRadius: '8px', textAlign: 'center', marginTop: '1rem' }}>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
+                    No DJ guest codes created yet for this event.
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.addBtn}
+                    onClick={handleOpenAddCodeModal}
+                  >
+                    + Create First DJ Guest Code
+                  </button>
+                </div>
               )}
+
+              {/* ── Secondary Accordion: Issue Guest Ticket Manually ── */}
+              <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowManualGuestSection(!showManualGuestSection)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--color-text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: 0
+                  }}
+                >
+                  <span>{showManualGuestSection ? '▼' : '►'}</span>
+                  <span>Issue Guest Ticket Manually (Admin Override / VIP)</span>
+                </button>
+
+                {showManualGuestSection && (
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', marginTop: '1rem' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                      Manually issue free guest tickets and send them directly to an email address without a DJ code.
+                    </p>
+                    <div className={styles.row2}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Guest Name *</label>
+                        <input className={styles.input} value={newGuest.name} onChange={e => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full name" />
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Guest Email *</label>
+                        <input className={styles.input} value={newGuest.email} onChange={e => setNewGuest({ ...newGuest, email: e.target.value })} placeholder="email@example.com" />
+                      </div>
+                    </div>
+                    <div className={styles.row2} style={{ marginTop: '0.75rem' }}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Quantity</label>
+                        <input type="number" className={styles.input} value={newGuest.quantity} onChange={e => setNewGuest({ ...newGuest, quantity: parseInt(e.target.value) || 1 })} min={1} max={20} />
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Note (Optional)</label>
+                        <input className={styles.input} value={newGuest.note} onChange={e => setNewGuest({ ...newGuest, note: e.target.value })} placeholder="e.g. VIP Door Pass" />
+                      </div>
+                    </div>
+                    <button 
+                      className={styles.addBtn} 
+                      style={{ marginTop: '1rem', width: '100%' }}
+                      onClick={handleIssueGuest}
+                      disabled={issuingGuest || !newGuest.name || !newGuest.email}
+                    >
+                      {issuingGuest ? 'Issuing...' : 'Issue Manual Guest Ticket(s) & Send Email'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </section>
@@ -1500,6 +2051,161 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                 }}
               >
                 {deletingTestEvent ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add / Edit DJ Guest Code Modal ── */}
+      {codeModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.8)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#111',
+            border: '1px solid var(--color-border)',
+            borderRadius: '12px',
+            maxWidth: '480px',
+            width: '100%',
+            padding: '1.5rem',
+            color: '#fff'
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#fff', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>{editingCode ? '✏ Edit Guest Code' : '➕ Create DJ Guest Code'}</span>
+            </h3>
+
+            {codeFormError && (
+              <div style={{ background: 'rgba(255, 59, 92, 0.1)', border: '1px solid rgba(255, 59, 92, 0.3)', color: '#ff3b5c', padding: '0.6rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                ⚠ {codeFormError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className={styles.field}>
+                <label className={styles.label}>DJ / Artist Name *</label>
+                <input
+                  className={styles.input}
+                  value={codeForm.dj_name}
+                  onChange={e => setCodeForm({ ...codeForm, dj_name: e.target.value })}
+                  placeholder="e.g. XCSTNZ or Yori"
+                  required
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  <span>Guest Code *</span>
+                  <span style={{ fontSize: '0.7rem', color: '#888', textTransform: 'none' }}>Unique code for guests</span>
+                </label>
+                <input
+                  className={styles.input}
+                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '1px', textTransform: 'uppercase' }}
+                  value={codeForm.code}
+                  onChange={e => setCodeForm({ ...codeForm, code: e.target.value.toUpperCase() })}
+                  placeholder="e.g. XCSTNZ25"
+                  disabled={!!editingCode}
+                  required
+                />
+              </div>
+
+              <div className={styles.row2}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Guest Limit *</label>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    value={codeForm.guest_limit}
+                    onChange={e => setCodeForm({ ...codeForm, guest_limit: parseInt(e.target.value, 10) || 0 })}
+                    min={0}
+                    max={1000}
+                    required
+                  />
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>
+                    <span>Ticket Price (NOK)</span>
+                    <span style={{ fontSize: '0.7rem', color: '#888', textTransform: 'none' }}>0 = Free</span>
+                  </label>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    value={codeForm.price_nok}
+                    onChange={e => setCodeForm({ ...codeForm, price_nok: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    min={0}
+                    step={1}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Expiration (Optional)</label>
+                <input
+                  type="datetime-local"
+                  className={styles.input}
+                  value={codeForm.expires_at}
+                  onChange={e => setCodeForm({ ...codeForm, expires_at: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Admin Note (Optional)</label>
+                <input
+                  className={styles.input}
+                  value={codeForm.note}
+                  onChange={e => setCodeForm({ ...codeForm, note: e.target.value })}
+                  placeholder="e.g. 5 complimentary passes for warm-up DJ"
+                />
+              </div>
+
+              <div className={styles.toggleRow} style={{ marginTop: '0.25rem' }}>
+                <input
+                  type="checkbox"
+                  id="codeIsActive"
+                  checked={codeForm.is_active}
+                  onChange={e => setCodeForm({ ...codeForm, is_active: e.target.checked })}
+                />
+                <label htmlFor="codeIsActive" style={{ fontSize: '0.85rem' }}>
+                  Active (allows guests to claim tickets)
+                </label>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setCodeModalOpen(false)}
+                disabled={codeFormSaving}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  padding: '0.5rem 1rem',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCodeForm}
+                disabled={codeFormSaving || !codeForm.dj_name.trim() || !codeForm.code.trim()}
+                className={styles.saveBtn}
+                style={{ padding: '0.5rem 1.25rem' }}
+              >
+                {codeFormSaving ? 'Saving...' : editingCode ? 'Save Changes' : 'Create Guest Code'}
               </button>
             </div>
           </div>

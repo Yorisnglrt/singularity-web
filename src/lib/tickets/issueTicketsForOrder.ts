@@ -53,7 +53,7 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
   // 3. Fetch order items
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('ticket_order_items')
-    .select('id, event_id, ticket_type_id, quantity')
+    .select('id, event_id, ticket_type_id, guest_code_id, quantity')
     .eq('order_id', orderId);
 
   if (itemsError || !items || items.length === 0) {
@@ -68,14 +68,16 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
     for (let i = 0; i < item.quantity; i++) {
       const ticketCode = `${order.order_reference}-${ticketCounter}`;
       const nonce = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const qrPayload = `SG:TKT:${order.id}:${ticketCode}:${nonce}`;
       const shortCode = generateShortCode();
+      const qrPayload = shortCode;
 
       ticketInserts.push({
         order_id: orderId,
         order_item_id: item.id,
         event_id: item.event_id,
-        ticket_type_id: item.ticket_type_id,
+        ticket_type_id: item.ticket_type_id || null,
+        guest_code_id: item.guest_code_id || null,
+        ticket_type: item.guest_code_id ? 'guest' : 'paid',
         ticket_code: ticketCode,
         qr_payload: qrPayload,
         short_code: shortCode,
@@ -126,22 +128,36 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
     console.error(`[tickets] Error grouping tickets for active campaign send for orderId: ${orderId}:`, err);
   }
 
-  // 5.5 Update sold_quantity in event_ticket_types
+  // 5.5 Update sold_quantity in event_ticket_types and increment claimed_count in event_guest_codes
   try {
-    const ttUpdates = items.map(item => ({
-      ticket_type_id: item.ticket_type_id,
-      quantity: item.quantity
-    }));
+    const regularTtUpdates = items
+      .filter(item => item.ticket_type_id)
+      .map(item => ({
+        ticket_type_id: item.ticket_type_id,
+        quantity: item.quantity
+      }));
     
-    const { error: ttError } = await supabaseAdmin.rpc('increment_ticket_sold_counts', { 
-      items: ttUpdates 
-    });
-    
-    if (ttError) {
-      console.error(`[tickets] Failed to increment sold counts for order ${order.order_reference}:`, ttError);
+    if (regularTtUpdates.length > 0) {
+      const { error: ttError } = await supabaseAdmin.rpc('increment_ticket_sold_counts', { 
+        items: regularTtUpdates 
+      });
+      if (ttError) {
+        console.error(`[tickets] Failed to increment sold counts for order ${order.order_reference}:`, ttError);
+      }
+    }
+
+    // Increment guest code claimed_count for paid guest items
+    for (const item of items) {
+      if (item.guest_code_id) {
+        for (let q = 0; q < (item.quantity || 1); q++) {
+          await supabaseAdmin.rpc('increment_guest_claimed_count', {
+            p_guest_code_id: item.guest_code_id
+          });
+        }
+      }
     }
   } catch (ttErr: any) {
-    console.error(`[tickets] sold_quantity increment crashed for ${order.order_reference}:`, ttErr.message);
+    console.error(`[tickets] sold_quantity/guest count increment crashed for ${order.order_reference}:`, ttErr.message);
   }
 
   // 6. Mark order as issued

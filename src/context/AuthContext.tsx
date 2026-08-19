@@ -97,7 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching profile', {
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          error
+        });
         // If profile doesn't exist, we might want to handle it (but signup should create it)
         return;
       }
