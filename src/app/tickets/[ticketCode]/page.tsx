@@ -136,7 +136,7 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
           <div className={styles.qrPanel}>
             <div className={styles.qrWrapper}>
               <QRCodeSVG 
-                value={ticket.qr_payload || ticket.ticket_code} 
+                value={ticket.short_code || ticket.qr_payload || ticket.ticket_code} 
                 size={180}
                 level="H"
                 includeMargin={false}
@@ -144,7 +144,10 @@ function TicketContent({ ticketCode }: { ticketCode: string }) {
             </div>
           </div>
           <div className={styles.qrInstruction}>Show this QR at the entrance</div>
-          <div className={styles.ticketCode}>{ticket.ticket_code}</div>
+          <div className={styles.ticketCode}>{ticket.short_code || ticket.ticket_code}</div>
+          {ticket.short_code && ticket.short_code !== ticket.ticket_code && (
+            <div className={styles.ticketCodeSecondary}>{ticket.ticket_code}</div>
+          )}
         </div>
 
         {/* Event Info */}

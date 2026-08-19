@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { sendGuestTicketEmail } from '@/lib/email/sendTicketEmail';
+import { generateShortCode } from '@/lib/tickets/shortCode';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
         holder_email: guest_email,
         ticket_code: ticketCode,
         qr_payload: qrPayload,
+        short_code: generateShortCode(),
         ticket_type: 'guest',
         status: 'valid',
         created_by_admin: user.id,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Event, EventTicketType } from '@/data/events';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -54,6 +54,42 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [checkingPending, setCheckingPending] = useState(false);
   const [freeTicketsCount, setFreeTicketsCount] = useState(0);
   const [useFreeTicket, setUseFreeTicket] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'PAID' | 'FREE' | null>(null);
+  const [pendingMethod, setPendingMethod] = useState<'WALLET' | 'CARD' | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCloseModal = () => {
+    if (loading) return;
+    setShowConfirmModal(false);
+    setPendingAction(null);
+    setPendingMethod(null);
+    if (emailInputRef.current) {
+      emailInputRef.current.focus();
+    }
+  };
+
+  const handleConfirmEmail = () => {
+    if (loading) return;
+    setShowConfirmModal(false);
+    if (pendingAction === 'PAID' && pendingMethod) {
+      executePaidCheckout(pendingMethod);
+    } else if (pendingAction === 'FREE') {
+      executeFreeTicketCheckout();
+    }
+    setPendingAction(null);
+    setPendingMethod(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showConfirmModal && !loading) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showConfirmModal, loading]);
 
   useEffect(() => {
     if (user) {
@@ -236,30 +272,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     if (quantity > 1) setQuantity(q => q - 1);
   };
 
-  const handleFreeTicketSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
-      setError('Please select an available ticket type');
-      return;
-    }
-    const start = parseUtcDate(selectedType.saleStartsAt);
-    if (start && Date.now() < start.getTime()) {
-      setError('Ticket sales have not started yet');
-      return;
-    }
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
-      setError('A name is required for Supporter tickets.');
-      return;
-    }
-    if (!agree) {
-      setError('You must agree to the Terms of Sale');
-      return;
-    }
-
+  const executeFreeTicketCheckout = async () => {
     setLoading(true);
     setError(null);
 
@@ -277,7 +290,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         },
         body: JSON.stringify({
           eventId: event.id,
-          ticketTypeId: selectedType.id,
+          ticketTypeId: selectedType?.id,
           customerEmail: email,
           customerName: name,
           customerPhone: phone
@@ -299,32 +312,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent, methodOverride?: 'WALLET' | 'CARD') => {
-    if (e) e.preventDefault();
-    const method = methodOverride || paymentMethod;
-    
-    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
-      setError('Please select an available ticket type');
-      return;
-    }
-    const start = parseUtcDate(selectedType.saleStartsAt);
-    if (start && Date.now() < start.getTime()) {
-      setError('Ticket sales have not started yet');
-      return;
-    }
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
-      setError('A name is required for Supporter tickets to be listed on our /supporters page.');
-      return;
-    }
-    if (!agree) {
-      setError('You must agree to the Terms of Sale');
-      return;
-    }
-
+  const executePaidCheckout = async (method: 'WALLET' | 'CARD') => {
     setLoading(true);
     setError(null);
 
@@ -340,7 +328,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         },
         body: JSON.stringify({
           eventId: event.id,
-          ticketTypeId: selectedType.id,
+          ticketTypeId: selectedType?.id,
           quantity,
           customerEmail: email,
           customerName: name,
@@ -383,6 +371,68 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFreeTicketSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
+      setError('Please select an available ticket type');
+      return;
+    }
+    const start = parseUtcDate(selectedType.saleStartsAt);
+    if (start && Date.now() < start.getTime()) {
+      setError('Ticket sales have not started yet');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
+      setError('A name is required for Supporter tickets.');
+      return;
+    }
+    if (!agree) {
+      setError('You must agree to the Terms of Sale');
+      return;
+    }
+
+    setError(null);
+    setPendingAction('FREE');
+    setPendingMethod(null);
+    setShowConfirmModal(true);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent, methodOverride?: 'WALLET' | 'CARD') => {
+    if (e) e.preventDefault();
+    const method = methodOverride || paymentMethod;
+    
+    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
+      setError('Please select an available ticket type');
+      return;
+    }
+    const start = parseUtcDate(selectedType.saleStartsAt);
+    if (start && Date.now() < start.getTime()) {
+      setError('Ticket sales have not started yet');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
+      setError('A name is required for Supporter tickets to be listed on our /supporters page.');
+      return;
+    }
+    if (!agree) {
+      setError('You must agree to the Terms of Sale');
+      return;
+    }
+
+    setError(null);
+    setPendingAction('PAID');
+    setPendingMethod(method);
+    setShowConfirmModal(true);
   };
 
   if (success) {
@@ -568,6 +618,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             <div className={styles.field}>
               <label className={styles.label}>Email Address *</label>
               <input 
+                ref={emailInputRef}
                 className={styles.input} 
                 type="email"
                 value={email} 
@@ -680,6 +731,46 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           </div>
         </div>
       </form>
+
+      {showConfirmModal && (
+        <div className={styles.modalOverlay} onClick={handleCloseModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className={styles.modalClose} onClick={handleCloseModal} aria-label="Close modal">
+              ✕
+            </button>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Check your email</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>Your ticket and QR code will be sent to:</p>
+              <div className={styles.modalEmailBox}>
+                {email}
+              </div>
+              <p>
+                Please make sure the address is correct. If the email is wrong, you may not receive your ticket or QR code.
+              </p>
+            </div>
+            <div className={styles.modalActions}>
+              <button 
+                type="button" 
+                className={styles.modalSecondaryBtn} 
+                onClick={handleCloseModal}
+                disabled={loading}
+              >
+                Edit email
+              </button>
+              <button 
+                type="button" 
+                className={styles.modalPrimaryBtn} 
+                onClick={handleConfirmEmail}
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : (pendingAction === 'FREE' ? 'Email is correct – Confirm ticket' : 'Email is correct – Continue to payment')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,14 +3,30 @@ import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
 
-const cwd = process.cwd();
-const p12Path = path.join(cwd, 'certs', 'singularity-wallet-pass-cert.p12');
-const p12Passphrase = 'Dj.fabrikken$0583!';
-const wwdrPath = path.join(cwd, 'certs', 'AppleWWDRCAG4.pem');
-const iconPath = path.join(cwd, 'public', 'wallet', 'icon.png');
-const logoPath = path.join(cwd, 'public', 'wallet', 'logo.png');
+const envContent = fs.readFileSync('.env.local', 'utf-8');
+const getEnvVal = (key) => {
+  const match = envContent.match(new RegExp(`^${key}=(.*)$`, 'm'));
+  if (!match) return null;
+  let val = match[1].trim();
+  if (val.startsWith('"') && val.endsWith('"')) {
+    val = val.substring(1, val.length - 1);
+  }
+  return val;
+};
 
-console.log("Loading files...");
+const p12Path = getEnvVal('APPLE_WALLET_P12_PATH');
+const p12Passphrase = getEnvVal('APPLE_WALLET_P12_PASSPHRASE');
+const wwdrPath = getEnvVal('APPLE_WALLET_WWDR_PATH');
+const iconPath = getEnvVal('APPLE_WALLET_ICON_PATH');
+const logoPath = getEnvVal('APPLE_WALLET_LOGO_PATH');
+
+console.log("Loading files from paths in .env.local...", {
+  p12Path,
+  wwdrPath,
+  iconPath,
+  logoPath
+});
+
 const p12Buffer = fs.readFileSync(p12Path);
 const wwdrBuffer = fs.readFileSync(wwdrPath);
 const iconBuffer = fs.readFileSync(iconPath);
@@ -29,8 +45,8 @@ for (const safeContents of p12.safeContents) {
 
 const passJson = {
   formatVersion: 1,
-  passTypeIdentifier: 'pass.no.singularityoslo.membership',
-  teamIdentifier: '4BRG5L8P7P',
+  passTypeIdentifier: getEnvVal('APPLE_WALLET_PASS_TYPE_ID') || 'pass.no.singularityoslo.membership',
+  teamIdentifier: getEnvVal('APPLE_WALLET_TEAM_ID') || '4BRG5L8P7P',
   organizationName: 'Singularity Oslo',
   description: 'Membership',
   foregroundColor: 'rgb(255, 255, 255)',
@@ -42,6 +58,7 @@ const passJson = {
 };
 
 const buffers = {
+  'pass.json': Buffer.from(JSON.stringify(passJson)),
   'icon.png': iconBuffer,
   'icon@2x.png': iconBuffer,
   'logo.png': logoBuffer,
@@ -49,23 +66,26 @@ const buffers = {
 };
 
 console.log("Generating pass...");
-try {
-  const pass = new PKPass(buffers, {
-    wwdr: wwdrBuffer,
-    signerCert,
-    signerKey,
-    signerKeyPassphrase: p12Passphrase
-  }, {
-    serialNumber: '123'
-  });
-  
-  // Test how passJson injection works in passkit-generator v3
-  // In v3, pass.json is usually passed in the first parameter `buffers` or created via pass object methods.
-  // Wait, if passing buffers, it just inserts them. But PKPass v3 has specific APIs for pass.json.
-  
-  const buf = pass.getAsBuffer();
-  fs.writeFileSync('test.pkpass', buf);
-  console.log("Generated test.pkpass (" + buf.length + " bytes)");
-} catch (e) {
-  console.error("Pass generation failed:", e);
+async function generate() {
+  try {
+    const pass = new PKPass(buffers, {
+      wwdr: wwdrBuffer,
+      signerCert,
+      signerKey,
+      signerKeyPassphrase: p12Passphrase
+    }, {
+      serialNumber: '123'
+    });
+    
+    const bufPromise = pass.getAsBuffer();
+    console.log("Is promise:", bufPromise instanceof Promise);
+    const buf = await bufPromise;
+    fs.writeFileSync('test.pkpass', buf);
+    console.log("Generated test.pkpass (" + buf.length + " bytes)");
+  } catch (e) {
+    console.error("Pass generation failed:", e);
+  }
 }
+
+generate();
+

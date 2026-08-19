@@ -219,6 +219,7 @@ export async function sendOrderTicketsEmail(
     .from('tickets')
     .select(`
       ticket_code,
+      short_code,
       access_token,
       qr_payload,
       event_id,
@@ -252,9 +253,12 @@ export async function sendOrderTicketsEmail(
   // 3. Generate QR codes and construct email content
   const attachments: any[] = [];
   const ticketListHtml = await Promise.all(tickets.map(async (t) => {
-    const qrBuffer = await QRCode.toBuffer(t.qr_payload, {
+    const qrData = t.short_code || t.qr_payload || t.ticket_code;
+    const displayCode = t.short_code || t.ticket_code;
+    const qrBuffer = await QRCode.toBuffer(qrData, {
       margin: 1,
       width: 400,
+      errorCorrectionLevel: 'H',
       color: {
         dark: '#000000',
         light: '#ffffff',
@@ -273,7 +277,7 @@ export async function sendOrderTicketsEmail(
 
     return `
       <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
-        <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">Ticket: ${t.ticket_code}</div>
+        <div style="color: #00ffb2; font-size: 1.2rem; font-weight: bold; margin-bottom: 16px; letter-spacing: 1px;">Ticket code: ${displayCode}</div>
         
         <div style="margin-bottom: 16px;">
           <img src="cid:${cid}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 4px; display: block; margin: 0 auto;" />
@@ -288,14 +292,15 @@ export async function sendOrderTicketsEmail(
         </div>
 
         <div style="color: #fff; font-size: 0.9rem; font-weight: bold; margin-bottom: 4px;">Show this QR at the entrance</div>
-        <div style="color: #888; font-size: 0.7rem; word-break: break-all; opacity: 0.5;">${t.qr_payload}</div>
+        <div style="color: #888; font-size: 0.75rem; font-family: monospace; letter-spacing: 0.5px;">Code: ${displayCode}</div>
       </div>
     `;
   })).then(htmls => htmls.join(''));
 
   const ticketListText = tickets.map(t => {
     const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
-    return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
+    const displayCode = t.short_code || t.ticket_code;
+    return `Ticket Code: ${displayCode}\nView Online: ${ticketUrl}\nRef: ${t.ticket_code}`;
   }).join('\n\n');
 
   // 4. Send via Resend
@@ -387,6 +392,7 @@ export async function sendGuestTicketEmail(
     .from('tickets')
     .select(`
       ticket_code,
+      short_code,
       access_token,
       qr_payload,
       holder_name,
@@ -418,9 +424,12 @@ export async function sendGuestTicketEmail(
   // 2. Generate QR codes and construct email content
   const attachments: any[] = [];
   const ticketListHtml = await Promise.all(tickets.map(async (t) => {
-    const qrBuffer = await QRCode.toBuffer(t.qr_payload, {
+    const qrData = t.short_code || t.qr_payload || t.ticket_code;
+    const displayCode = t.short_code || t.ticket_code;
+    const qrBuffer = await QRCode.toBuffer(qrData, {
       margin: 1,
       width: 400,
+      errorCorrectionLevel: 'H',
       color: { dark: '#000000', light: '#ffffff' },
     });
 
@@ -436,7 +445,7 @@ export async function sendGuestTicketEmail(
 
     return `
       <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #333; border-radius: 8px; background: #111; text-align: center;">
-        <div style="color: #00ffb2; font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">Guest List: ${t.ticket_code}</div>
+        <div style="color: #00ffb2; font-size: 1.2rem; font-weight: bold; margin-bottom: 16px; letter-spacing: 1px;">Guest List: ${displayCode}</div>
         
         <div style="margin-bottom: 16px;">
           <img src="cid:${cid}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 4px; display: block; margin: 0 auto;" />
@@ -451,14 +460,15 @@ export async function sendGuestTicketEmail(
         </div>
 
         <div style="color: #fff; font-size: 0.9rem; font-weight: bold; margin-bottom: 4px;">Show this QR at the entrance</div>
-        <div style="color: #888; font-size: 0.7rem; word-break: break-all; opacity: 0.5;">${t.qr_payload}</div>
+        <div style="color: #888; font-size: 0.75rem; font-family: monospace; letter-spacing: 0.5px;">Code: ${displayCode}</div>
       </div>
     `;
   })).then(htmls => htmls.join(''));
 
   const ticketListText = tickets.map(t => {
     const ticketUrl = `${BASE_URL}/tickets/${encodeURIComponent(t.ticket_code)}?access=${t.access_token}`;
-    return `Ticket Code: ${t.ticket_code}\nView Online: ${ticketUrl}\nQR Payload: ${t.qr_payload}`;
+    const displayCode = t.short_code || t.ticket_code;
+    return `Ticket Code: ${displayCode}\nView Online: ${ticketUrl}\nRef: ${t.ticket_code}`;
   }).join('\n\n');
 
   // 3. Send via Resend

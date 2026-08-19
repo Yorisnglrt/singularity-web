@@ -35,21 +35,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Perform Check-in
+    // Atomic Check-in: only update if status is currently 'valid'
+    // This prevents two staff devices from both getting a success result.
+    const now = new Date().toISOString();
     const { data: ticket, error: checkError } = await supabaseAdmin
       .from('tickets')
       .update({
         status: 'used',
-        used_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        used_at: now,
+        updated_at: now
       })
       .eq('id', ticketId)
+      .eq('status', 'valid')
       .select()
-      .single();
+      .maybeSingle();
 
     if (checkError) {
       console.error('[Ticket Check-in] Update Error:', checkError);
       return NextResponse.json({ error: 'Failed to update ticket' }, { status: 500 });
+    }
+
+    // If no rows were updated, the ticket was not in 'valid' state
+    if (!ticket) {
+      // Fetch current state to return meaningful info
+      const { data: current } = await supabaseAdmin
+        .from('tickets')
+        .select('id, status, used_at')
+        .eq('id', ticketId)
+        .maybeSingle();
+
+      if (!current) {
+        return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: false,
+        status: 'already_used',
+        used_at: current.used_at,
+        message: 'Ticket has already been checked in'
+      }, { status: 409 });
     }
 
     return NextResponse.json({ success: true, ticket });

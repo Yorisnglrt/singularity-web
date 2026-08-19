@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendOrderTicketsEmail } from '@/lib/email/sendTicketEmail';
 import { sendActiveBroadcastCampaignsForTickets } from '@/lib/email/sendActiveBroadcastCampaignsForTickets';
+import { generateShortCode } from '@/lib/tickets/shortCode';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -68,6 +69,7 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
       const ticketCode = `${order.order_reference}-${ticketCounter}`;
       const nonce = Math.random().toString(36).substring(2, 7).toUpperCase();
       const qrPayload = `SG:TKT:${order.id}:${ticketCode}:${nonce}`;
+      const shortCode = generateShortCode();
 
       ticketInserts.push({
         order_id: orderId,
@@ -76,6 +78,7 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
         ticket_type_id: item.ticket_type_id,
         ticket_code: ticketCode,
         qr_payload: qrPayload,
+        short_code: shortCode,
         holder_name: order.customer_name,
         holder_email: order.customer_email,
         status: 'valid'

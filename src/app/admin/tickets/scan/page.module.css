@@ -42,18 +42,90 @@
   box-shadow: 0 0 8px var(--color-accent-primary);
 }
 
+/* ── Event Selector ── */
+
+.eventSelector {
+  margin-bottom: 0.5rem;
+}
+
+.eventSelect {
+  width: 100%;
+  background: #111;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: #fff;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  cursor: pointer;
+}
+
+.eventSelect:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+}
+
+.showOlderBtn {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.3rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  text-align: center;
+}
+
+.showOlderBtn:hover {
+  color: var(--color-accent-primary);
+}
+
+/* ── Counters ── */
+
+.counters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.counterMain {
+  color: var(--color-accent-primary);
+  font-weight: 700;
+}
+
+.counterSep {
+  color: var(--color-text-muted);
+}
+
+.counterRemaining {
+  color: var(--color-text-secondary);
+}
+
 /* ── Scan Section ── */
 
 .scanSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .cameraFrame {
   position: relative;
   width: 100%;
-  height: 220px; /* Simplified mobile height */
+  height: 220px;
   background: #000;
   border-radius: 12px;
   overflow: hidden;
@@ -78,7 +150,6 @@
   object-fit: cover !important;
 }
 
-/* Ensure no default overlays or weird borders from html5-qrcode */
 .viewfinder :global(#qr-shaded-region) {
   display: none !important;
 }
@@ -111,12 +182,41 @@
   text-align: center;
 }
 
-/* ── Manual Row ── */
+/* ── Input Section (code / email) ── */
 
-.manualRow {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.5rem;
+.inputSection {
+  margin-bottom: 0.75rem;
+}
+
+.inputTabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.inputTab {
+  flex: 1;
+  padding: 0.45rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.inputTab:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+.inputTabActive {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-accent-primary);
+  font-weight: 700;
 }
 
 .manualForm {
@@ -149,10 +249,225 @@
   font-weight: 800;
   font-size: 0.75rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .manualBtn:disabled {
   opacity: 0.3;
+}
+
+/* ── Email Results ── */
+
+.emailResults {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.emailResultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+  transition: border-color 0.15s;
+}
+
+.emailResultRow:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.emailResultLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow: hidden;
+}
+
+.emailResultEmail {
+  font-size: 0.75rem;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emailResultName {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+}
+
+.emailResultRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.emailResultCode {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+}
+
+.emailResultStatus {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.statusValid { background: rgba(0, 255, 178, 0.15); color: var(--color-accent-primary); }
+.statusUsed { background: rgba(255, 204, 0, 0.15); color: #ffcc00; }
+
+.noResults {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Ticket List Section ── */
+
+.ticketListSection {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.filterTab {
+  flex: 1;
+  padding: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.filterTab:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+.filterTabActive {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-weight: 700;
+}
+
+.ticketList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ticketRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+  transition: border-color 0.15s;
+}
+
+.ticketRow:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.ticketRowUsed {
+  opacity: 0.6;
+}
+
+.ticketRowLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow: hidden;
+}
+
+.ticketRowCode {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.ticketRowEmail {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.ticketRowName {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+}
+
+.ticketRowRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.ticketRowType {
+  font-size: 0.55rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.ticketRowStatus {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.ticketRowTime {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--color-text-muted);
+}
+
+.listLoading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
 }
 
 /* ── Result Section ── */
@@ -183,6 +498,7 @@
 .badgeUsed { background: #ffcc00; color: #000; }
 .badgeVoid { background: #ff3b5c; color: #fff; }
 .badgeInvalid { background: #ff3b5c; color: #fff; }
+.badgeWarn { background: #ff8c00; color: #000; }
 
 .checkInBtn {
   width: 100%;
@@ -197,6 +513,11 @@
   margin-bottom: 0.75rem;
   box-shadow: 0 0 20px rgba(0, 255, 178, 0.3);
   cursor: pointer;
+}
+
+.checkInBtn:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .resultMessage {
