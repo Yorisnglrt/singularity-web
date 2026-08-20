@@ -37,17 +37,30 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
           id,
           content,
           created_at,
-          user_id,
-          profiles (
-            display_name,
-            avatar_url
-          )
+          user_id
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments((data as unknown as Comment[]) || []);
+      const rawComments = data || [];
+      const userIds = Array.from(new Set(rawComments.map((c: any) => c.user_id).filter(Boolean)));
+
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('public_profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds);
+
+        const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+        const enriched = rawComments.map((c: any) => ({
+          ...c,
+          profiles: profileMap.get(c.user_id) || undefined
+        }));
+        setComments(enriched as Comment[]);
+      } else {
+        setComments(rawComments as Comment[]);
+      }
     } catch (err: unknown) {
       console.error('Error fetching comments:', err);
     } finally {

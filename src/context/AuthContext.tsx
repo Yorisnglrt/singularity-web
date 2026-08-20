@@ -164,9 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: authData.user.id,
           email: authData.user.email,
           display_name: displayName || '',
-          created_at: new Date().toISOString(),
           marketing_consent: marketingConsent,
-          marketing_consent_at: marketingConsent ? new Date().toISOString() : null,
         });
 
       if (profileError) {
@@ -309,8 +307,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) return { error: error.message };
 
-      // Update local state
-      setUser(prev => prev ? { ...prev, ...data } : null);
+      // Refresh full profile from DB to get server-managed audit timestamps
+      await fetchProfile(user.id, user.email);
       return {};
     } catch (err: any) {
       console.error('Update profile exception:', err);

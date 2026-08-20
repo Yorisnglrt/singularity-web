@@ -61,36 +61,35 @@ export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProv
       console.error('Error fetching reaction counts:', err);
     }
 
-    // 2. Fetch Reactors (Independent, joins profiles)
+    // 2. Fetch Reactors (Independent, queries public_profiles)
     try {
       const { data: reactorsData, error: reactorsError } = await supabase
         .from('event_reactions')
-        .select(`
-          user_id,
-          profiles (
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('user_id')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
 
       if (reactorsError) throw reactorsError;
 
+      const userIds = Array.from(new Set(reactorsData?.map((r: any) => r.user_id).filter(Boolean)));
       const uniqueUserMap = new Map<string, Reactor>();
-      reactorsData?.forEach((row: { 
-        user_id: string; 
-        profiles: { display_name: string; avatar_url: string | null } | { display_name: string; avatar_url: string | null }[] | null 
-      }) => {
-        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-        if (!uniqueUserMap.has(row.user_id) && profile?.display_name) {
-          uniqueUserMap.set(row.user_id, {
-            id: row.user_id,
-            name: profile.display_name,
-            avatarUrl: profile.avatar_url || undefined
-          });
-        }
-      });
+
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('public_profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds);
+
+        profilesData?.forEach((p: any) => {
+          if (p.id && p.display_name) {
+            uniqueUserMap.set(p.id, {
+              id: p.id,
+              name: p.display_name,
+              avatarUrl: p.avatar_url || undefined
+            });
+          }
+        });
+      }
 
       setTotalReactors(uniqueUserMap.size);
       setReactors(Array.from(uniqueUserMap.values()).slice(0, 10));

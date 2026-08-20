@@ -59,88 +59,91 @@ export default function CommunityChatBubble() {
     setLoading(true);
     setError('');
     try {
-      // Try with profile join first
       const { data, error: fetchError } = await supabase
-        .from('community_chat_messages')
-        .select(`
-          id,
-          user_id,
-          content,
-          created_at,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            is_admin
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(MAX_MESSAGES);
-
-      if (!fetchError && data) {
-        setMessages(normalizeMessages(data as Record<string, unknown>[]).reverse());
-        return;
-      }
-
-      // Fallback: fetch without profile join (e.g. if profiles RLS blocks anon)
-      console.warn('Chat: profile join failed, falling back to messages only:', fetchError);
-      const { data: fallbackData, error: fallbackError } = await supabase
         .from('community_chat_messages')
         .select('id, user_id, content, created_at')
         .order('created_at', { ascending: false })
         .limit(MAX_MESSAGES);
 
-      if (fallbackError) {
-        console.error('Chat fallback fetch error:', fallbackError);
+      if (fetchError) {
+        console.error('Chat fetch error:', fetchError);
         setError('Unable to load messages.');
         return;
       }
 
-      setMessages(normalizeMessages((fallbackData || []) as Record<string, unknown>[]).reverse());
+      const rawMessages = data || [];
+      const userIds = Array.from(new Set(rawMessages.map((m: any) => m.user_id).filter(Boolean)));
+
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('public_profiles')
+          .select('id, display_name, avatar_url, is_admin')
+          .in('id', userIds);
+
+        const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+        const enriched = rawMessages.map((m: any) => ({
+          id: m.id,
+          user_id: m.user_id,
+          content: m.content,
+          created_at: m.created_at,
+          profiles: profileMap.get(m.user_id) || undefined
+        }));
+        setMessages(enriched.reverse());
+      } else {
+        setMessages(rawMessages.map((m: any) => ({
+          id: m.id,
+          user_id: m.user_id,
+          content: m.content,
+          created_at: m.created_at
+        })).reverse());
+      }
     } catch (err) {
       console.error('Chat fetch exception:', err);
       setError('Unable to load messages.');
     } finally {
       setLoading(false);
     }
-  }, [normalizeMessages]);
+  }, []);
 
   // Fetch a single message by ID (for realtime inserts)
   const fetchSingleMessage = useCallback(async (messageId: string): Promise<ChatMessage | null> => {
     try {
-      // Try with profile join
       const { data, error: fetchError } = await supabase
-        .from('community_chat_messages')
-        .select(`
-          id,
-          user_id,
-          content,
-          created_at,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            is_admin
-          )
-        `)
-        .eq('id', messageId)
-        .single();
-
-      if (!fetchError && data) {
-        return normalizeMessages([data as Record<string, unknown>])[0] ?? null;
-      }
-
-      // Fallback: fetch without profile join
-      const { data: fallbackData, error: fallbackError } = await supabase
         .from('community_chat_messages')
         .select('id, user_id, content, created_at')
         .eq('id', messageId)
         .single();
 
-      if (fallbackError || !fallbackData) return null;
-      return normalizeMessages([fallbackData as Record<string, unknown>])[0] ?? null;
+      if (fetchError || !data) return null;
+
+      let authorProfile: ChatProfile | undefined;
+      if (data.user_id) {
+        const { data: profileData } = await supabase
+          .from('public_profiles')
+          .select('display_name, avatar_url, is_admin')
+          .eq('id', data.user_id)
+          .maybeSingle();
+
+        if (profileData) {
+          authorProfile = {
+            display_name: profileData.display_name,
+            avatar_url: profileData.avatar_url || undefined,
+            is_admin: profileData.is_admin
+          };
+        }
+      }
+
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        content: data.content,
+        created_at: data.created_at,
+        profiles: authorProfile
+      };
     } catch {
       return null;
     }
-  }, [normalizeMessages]);
+  }, []);
 
   // Subscribe to realtime inserts
   useEffect(() => {

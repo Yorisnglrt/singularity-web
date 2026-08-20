@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic';
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
 
-  // Fetch only safe public fields
+  // Fetch only safe public fields from public_profiles view
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('public_profiles')
     .select(`
       id,
       display_name,

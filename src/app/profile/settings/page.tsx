@@ -95,12 +95,6 @@ export default function ProfileSettingsPage() {
       city: formData.city.trim() || undefined,
       favoriteSubgenre: formData.favoriteSubgenre.trim() || undefined,
       marketingConsent: formData.marketingConsent,
-      marketingConsentAt: formData.marketingConsent 
-        ? (user.marketingConsentAt || new Date().toISOString()) 
-        : user.marketingConsentAt,
-      marketingUnsubscribedAt: !formData.marketingConsent 
-        ? new Date().toISOString() 
-        : null,
     });
 
     if (error) {

@@ -292,31 +292,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleMigrate = async () => {
-    if (!confirm('Tímto nahrajete všechna lokální JSON data do Supabase. Pokračovat?')) return;
-    setStatusMsg('Migrating data...');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/admin/migrate', {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token || ''}`
-        }
-      });
-      const json = await res.json();
-      if (json.success) {
-        setStatusMsg('Migration successful!');
-        console.log('Migration summary:', json.summary);
-        // Refresh data
-        tables.forEach(t => fetchData(t as Tab));
-      } else {
-        setStatusMsg(`Migration failed: ${json.error}`);
-      }
-    } catch {
-      setStatusMsg('Migration error.');
-    } finally {
-      setTimeout(() => setStatusMsg(''), 5000);
-    }
-  };
 
   const tables = ['artists', 'events', 'mixes', 'supporters'];
 
@@ -658,16 +633,7 @@ export default function AdminPage() {
 
         <div className={styles.editorGrid}>
           <aside className={styles.sidebar}>
-            <div style={{display:'flex', gap:'0.5rem', flexDirection:'column'}}>
-              <button className={styles.button} onClick={createNewItem}>+ Add New</button>
-              <button 
-                className={`${styles.button} ${styles.buttonOutline}`} 
-                onClick={handleMigrate}
-                style={{fontSize:'0.75rem', borderColor: 'var(--color-accent-primary)', color: 'var(--color-accent-primary)'}}
-              >
-                🔄 Migrate Local Data
-              </button>
-            </div>
+            <button className={styles.button} onClick={createNewItem}>+ Add New</button>
             <div style={{marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
               {data[activeTab].map((item: any) => (
                 <div
