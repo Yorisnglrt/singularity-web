@@ -4,6 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { 
+  normalizeMemberShortCode, 
+  isValidMemberShortCode, 
+  isValidLegacyMemberCode 
+} from '@/lib/membership/shortCode';
 import ScannerResultCard from '@/components/ScannerResultCard';
 import styles from './page.module.css';
 
@@ -13,13 +18,12 @@ interface ScannedMember {
   id: string;
   display_name: string;
   member_code: string;
+  member_short_code?: string;
   avatar_url: string | null;
   tier: string;
   points: number;
   member_since: string | null;
 }
-
-const MEMBER_QR_PREFIX = 'SINGULARITY_MEMBER:';
 
 export default function ScannerPage() {
   const { user, isLoading } = useAuth();
@@ -59,77 +63,64 @@ export default function ScannerPage() {
     }
   }, []);
 
-  // QR scan path: always looks up by qr_token only
-  const lookupByQrToken = useCallback(async (qrToken: string) => {
+  // Shared unified member lookup by 6-character short code or legacy member code
+  const lookupMember = useCallback(async (rawInput: string) => {
+    const trimmed = rawInput.trim();
+    if (!trimmed) return;
+
     setScanState('loading');
     setScannedMember(null);
+    setErrorMessage('');
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, member_code, avatar_url, tier, points, member_since')
-        .eq('qr_token', qrToken)
-        .maybeSingle();
+      const normalizedShortCode = normalizeMemberShortCode(trimmed);
+      let data: any = null;
+      let error: any = null;
 
-      if (error) {
-        setErrorMessage('Database error occurred.');
-        setScanState('error');
-        return;
-      }
-
-      if (!data) {
-        setErrorMessage('No member found for this QR code.');
-        setScanState('not-found');
-        return;
-      }
-
-      setScannedMember(data as ScannedMember);
-      setScanState('success');
-    } catch {
-      setErrorMessage('An unexpected error occurred.');
-      setScanState('error');
-    }
-  }, []);
-
-  // Manual input path: tries member_code first, then qr_token
-  const lookupByManualInput = useCallback(async (input: string) => {
-    setScanState('loading');
-    setScannedMember(null);
-
-    try {
-      // Try by member_code first (most likely manual input format: SG-XXXXXXXX)
-      let { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, member_code, avatar_url, tier, points, member_since')
-        .eq('member_code', input)
-        .maybeSingle();
-
-      if (!data && !error) {
-        // Fallback: try by qr_token (UUID pasted manually)
+      // 1. Primary lookup: 6-character member_short_code (only if valid)
+      if (isValidMemberShortCode(normalizedShortCode)) {
         const result = await supabase
           .from('profiles')
-          .select('id, display_name, member_code, avatar_url, tier, points, member_since')
-          .eq('qr_token', input)
+          .select('id, display_name, member_code, member_short_code, avatar_url, tier, points, member_since')
+          .eq('member_short_code', normalizedShortCode)
           .maybeSingle();
+
         data = result.data;
         error = result.error;
       }
 
+      // 2. Fallback: Legacy SG-XXXXXXXX member code (only if not already found and strictly valid)
+      if (!data && !error) {
+        const legacyCode = trimmed.toUpperCase().replace(/\s+/g, '');
+        if (isValidLegacyMemberCode(legacyCode)) {
+          const fallbackResult = await supabase
+            .from('profiles')
+            .select('id, display_name, member_code, member_short_code, avatar_url, tier, points, member_since')
+            .eq('member_code', legacyCode)
+            .maybeSingle();
+
+          data = fallbackResult.data;
+          error = fallbackResult.error;
+        }
+      }
+
       if (error) {
+        console.error('Member lookup error:', error);
         setErrorMessage('Database error occurred.');
         setScanState('error');
         return;
       }
 
       if (!data) {
-        setErrorMessage('No member found for this code or token.');
+        setErrorMessage(`No member found for code "${trimmed.toUpperCase()}".`);
         setScanState('not-found');
         return;
       }
 
       setScannedMember(data as ScannedMember);
       setScanState('success');
-    } catch {
+    } catch (err) {
+      console.error('Member lookup exception:', err);
       setErrorMessage('An unexpected error occurred.');
       setScanState('error');
     }
@@ -137,16 +128,8 @@ export default function ScannerPage() {
 
   const handleScanSuccess = useCallback(async (decodedText: string) => {
     await stopScanner();
-
-    // QR scan: must have prefix, extract qr_token
-    if (decodedText.startsWith(MEMBER_QR_PREFIX)) {
-      const qrToken = decodedText.slice(MEMBER_QR_PREFIX.length);
-      await lookupByQrToken(qrToken);
-    } else {
-      // Unknown QR format — still try as raw token
-      await lookupByQrToken(decodedText);
-    }
-  }, [lookupByQrToken, stopScanner]);
+    await lookupMember(decodedText);
+  }, [lookupMember, stopScanner]);
 
   const startScanner = useCallback(async () => {
     setScanState('scanning');
@@ -189,17 +172,9 @@ export default function ScannerPage() {
   }, [handleScanSuccess]);
 
   const handleManualLookup = useCallback(() => {
-    const input = manualInput.trim();
-    if (!input) return;
-
-    // Strip prefix if someone pastes the full QR payload
-    let searchTerm = input;
-    if (searchTerm.startsWith(MEMBER_QR_PREFIX)) {
-      searchTerm = searchTerm.slice(MEMBER_QR_PREFIX.length);
-    }
-
-    lookupByManualInput(searchTerm);
-  }, [manualInput, lookupByManualInput]);
+    if (!manualInput.trim()) return;
+    lookupMember(manualInput);
+  }, [manualInput, lookupMember]);
 
   const handleReset = useCallback(() => {
     stopScanner();
@@ -232,7 +207,7 @@ export default function ScannerPage() {
       <div className="container">
         <div className={styles.header}>
           <h1 className={styles.title}>Member Scanner</h1>
-          <p className={styles.subtitle}>Scan or search member QR codes</p>
+          <p className={styles.subtitle}>Scan member QR code or enter 6-character short code</p>
         </div>
 
         {/* Scanner viewport */}
@@ -300,7 +275,7 @@ export default function ScannerPage() {
           <div className={styles.resultSection}>
             <ScannerResultCard
               displayName={scannedMember.display_name}
-              memberCode={scannedMember.member_code}
+              memberCode={scannedMember.member_short_code || scannedMember.member_code}
               avatarUrl={scannedMember.avatar_url}
               tier={scannedMember.tier || 'Observer'}
               points={scannedMember.points || 0}
@@ -315,16 +290,20 @@ export default function ScannerPage() {
         {/* Manual input fallback — always visible except during loading */}
         {scanState !== 'loading' && scanState !== 'success' && (
           <div className={styles.manualSection}>
-            <label className={styles.manualLabel}>Manual Lookup</label>
+            <label className={styles.manualLabel}>Manual Member Lookup</label>
             <div className={styles.manualRow}>
               <input
                 className={styles.manualInput}
                 type="text"
-                placeholder="QR token or member code (e.g. SG-A1B2C3D4)"
+                placeholder="6-character code (e.g. A7K4XQ)"
                 value={manualInput}
+                maxLength={12}
                 onChange={(e) => setManualInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
                 id="scanner-manual-input"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
               />
               <button
                 className={styles.lookupBtn}

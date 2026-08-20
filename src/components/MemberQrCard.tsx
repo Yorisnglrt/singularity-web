@@ -3,21 +3,20 @@
 import { useState, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import StatusBadge from './StatusBadge';
+import { MEMBER_QR_PREFIX } from '@/lib/membership/shortCode';
 import styles from './MemberQrCard.module.css';
 
 interface MemberQrCardProps {
-  qrToken: string | null | undefined;
+  memberShortCode?: string | null | undefined;
   displayName: string;
-  memberCode: string | null | undefined;
-  tier: string | null | undefined;
+  memberCode?: string | null | undefined;
+  tier?: string | null | undefined;
   isAdmin?: boolean;
   onRegenerate?: () => void;
 }
 
-const QR_PREFIX = 'SINGULARITY_MEMBER:';
-
 export default function MemberQrCard({
-  qrToken,
+  memberShortCode,
   displayName,
   memberCode,
   tier,
@@ -28,21 +27,23 @@ export default function MemberQrCard({
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  const qrValue = qrToken ? `${QR_PREFIX}${qrToken}` : '';
+  // Canonical QR payload: M:<SHORT_CODE>
+  const qrValue = memberShortCode ? `${MEMBER_QR_PREFIX}${memberShortCode}` : '';
 
   const handleCopyCode = useCallback(async () => {
-    if (!memberCode) return;
+    const codeToCopy = memberShortCode || memberCode;
+    if (!codeToCopy) return;
     try {
-      await navigator.clipboard.writeText(memberCode);
+      await navigator.clipboard.writeText(codeToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: select text
     }
-  }, [memberCode]);
+  }, [memberShortCode, memberCode]);
 
   const handleDownload = useCallback(() => {
-    if (!qrRef.current) return;
+    if (!qrRef.current || !memberShortCode) return;
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
 
@@ -63,21 +64,21 @@ export default function MemberQrCard({
     img.onload = () => {
       ctx.drawImage(img, padding, padding, size, size);
       const link = document.createElement('a');
-      link.download = `singularity-member-${memberCode || 'qr'}.png`;
+      link.download = `singularity-member-${memberShortCode}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-  }, [memberCode]);
+  }, [memberShortCode]);
 
-  // Empty state
-  if (!qrToken) {
+  // Empty / uninitialized state
+  if (!memberShortCode) {
     return (
       <div className={styles.card}>
         <span className={styles.cardLabel}>Member QR</span>
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>◈</span>
-          <span className={styles.emptyText}>QR token not generated</span>
+          <span className={styles.emptyText}>Membership short code not generated</span>
         </div>
       </div>
     );
@@ -89,7 +90,7 @@ export default function MemberQrCard({
         <span className={styles.cardLabel}>Member QR</span>
 
         <p className={styles.helperText}>
-          This QR is used to identify the member at entry or staff scan.
+          Scan at entry or present to staff for membership verification.
         </p>
 
         <div className={styles.qrFrame} ref={qrRef} onClick={() => setExpanded(true)} title="Tap to expand">
@@ -101,6 +102,11 @@ export default function MemberQrCard({
             level="M"
             includeMargin={false}
           />
+        </div>
+
+        <div className={styles.shortCodeDisplay}>
+          <span className={styles.shortCodeLabel}>Manual Entry Code</span>
+          <span className={styles.shortCodeValue}>{memberShortCode}</span>
         </div>
 
         <div className={styles.memberInfo}>
@@ -126,7 +132,7 @@ export default function MemberQrCard({
           </button>
           {isAdmin && onRegenerate && (
             <button className={`${styles.actionBtn} ${styles.actionBtnAdmin}`} onClick={onRegenerate} id="member-qr-regenerate">
-              ↻ Regenerate Token
+              ↻ Regenerate Code
             </button>
           )}
         </div>
@@ -147,7 +153,10 @@ export default function MemberQrCard({
                 includeMargin={false}
               />
             </div>
-            <span className={styles.memberCode}>{memberCode}</span>
+            <div className={styles.shortCodeDisplay} style={{ background: 'rgba(255, 255, 255, 0.1)' }}>
+              <span className={styles.shortCodeLabel} style={{ color: '#aaa' }}>Member Code</span>
+              <span className={styles.shortCodeValue} style={{ fontSize: '1.5rem', color: '#fff' }}>{memberShortCode}</span>
+            </div>
             <button className={styles.overlayClose} onClick={() => setExpanded(false)}>
               Close
             </button>

@@ -81,6 +81,35 @@
   letter-spacing: var(--tracking-wider);
 }
 
+.shortCodeDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-5);
+  background: rgba(var(--color-accent-primary-rgb), 0.08);
+  border: 1px dashed rgba(var(--color-accent-primary-rgb), 0.35);
+  border-radius: var(--radius-md);
+}
+
+.shortCodeLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs, 0.65rem);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-muted);
+}
+
+.shortCodeValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: var(--weight-bold, 700);
+  color: var(--color-accent-primary);
+  letter-spacing: 0.25em;
+  text-shadow: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+}
+
 .tierRow {
   display: flex;
   align-items: center;

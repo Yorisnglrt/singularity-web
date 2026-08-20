@@ -536,7 +536,7 @@ export default function ProfilePage() {
         {/* Member QR Section */}
         <div className={styles.memberQrSection}>
           <MemberQrCard
-            qrToken={user.qrToken || null}
+            memberShortCode={user.memberShortCode || null}
             displayName={user.displayName}
             memberCode={user.memberCode || null}
             tier={user.tier || null}

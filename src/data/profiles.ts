@@ -15,6 +15,7 @@ export interface User {
   isAdmin: boolean;
   createdAt: string;
   memberCode?: string;
+  memberShortCode?: string;
   tier?: string;
   memberSince?: string;
   qrToken?: string;

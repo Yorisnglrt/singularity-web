@@ -221,12 +221,16 @@ async function generatePass(request: Request) {
     }
 
     // 7. Generate Pass
+    if (!profile.member_short_code) {
+      return NextResponse.json({ error: 'Profile missing member short code' }, { status: 400 });
+    }
+
     const passJson = {
       formatVersion: 1,
       passTypeIdentifier: passTypeId,
       teamIdentifier: teamId,
-      organizationName: 'Singularity Oslo',
-      description: 'Singularity Collective Membership',
+      organizationName: 'Singularity',
+      description: 'Singularity Membership Card',
       foregroundColor: 'rgb(255, 255, 255)',
       backgroundColor: 'rgb(0, 0, 0)',
       labelColor: 'rgb(153, 153, 153)',
@@ -236,7 +240,7 @@ async function generatePass(request: Request) {
         primaryFields: [{ key: 'name', label: 'MEMBER', value: profile.display_name }],
         secondaryFields: [{ key: 'points', label: 'RAVE POINTS', value: `${profile.points || 0} RP` }],
         auxiliaryFields: [
-          { key: 'memberCode', label: 'MEMBER CODE', value: profile.member_code || '—' },
+          { key: 'memberCode', label: 'MEMBER CODE', value: profile.member_short_code },
           {
             key: 'memberSince',
             label: 'MEMBER SINCE',
@@ -248,7 +252,7 @@ async function generatePass(request: Request) {
         backFields: [{ key: 'info', label: 'ABOUT', value: 'This pass grants access to Singularity Collective rewards and events.' }]
       },
       barcodes: [{
-        message: profile.qr_token || profile.id,
+        message: `M:${profile.member_short_code}`,
         format: 'PKBarcodeFormatQR',
         messageEncoding: 'iso-8859-1'
       }]
@@ -271,7 +275,7 @@ async function generatePass(request: Request) {
         signerKey,
         signerKeyPassphrase: p12Passphrase
       }, {
-        serialNumber: profile.member_code || profile.id
+        serialNumber: profile.member_short_code || profile.id
       });
       pkpassBuffer = pass.getAsBuffer();
       
@@ -282,7 +286,7 @@ async function generatePass(request: Request) {
         passJson: {
           passTypeIdentifier: passJson.passTypeIdentifier,
           teamIdentifier: passJson.teamIdentifier,
-          serialNumber: profile.member_code || profile.id,
+          serialNumber: profile.member_short_code || profile.id,
           organizationName: passJson.organizationName,
           description: passJson.description
         }
@@ -295,7 +299,7 @@ async function generatePass(request: Request) {
     return new Response(new Uint8Array(pkpassBuffer), {
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': `inline; filename="singularity_membership.pkpass"`,
+        'Content-Disposition': `inline; filename="singularity_membership_${profile.member_short_code}.pkpass"`,
         'Cache-Control': 'no-cache',
       },
     });

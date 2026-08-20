@@ -254,6 +254,7 @@ export function normalizeProfile(data: any, email?: string): User {
     isAdmin: data.is_admin || false,
     createdAt: data.created_at || new Date().toISOString(),
     memberCode: data.member_code || undefined,
+    memberShortCode: data.member_short_code || undefined,
     tier: data.tier || undefined,
     memberSince: data.member_since || undefined,
     qrToken: data.qr_token || undefined,
