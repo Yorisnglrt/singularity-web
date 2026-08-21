@@ -162,6 +162,10 @@
 /* Sections */
 .section { display: flex; flex-direction: column; gap: 1rem; }
 
+.ticketSection {
+  scroll-margin-top: calc(var(--nav-height, 72px) + var(--space-4, 24px));
+}
+
 .sectionTitle {
   font-size: var(--text-xs);
   font-family: var(--font-mono);

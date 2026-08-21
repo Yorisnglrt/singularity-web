@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { track } from '@vercel/analytics';
 import { Artist } from '@/data/artists';
 import ArtistCard from '@/components/ArtistCard';
 import { Event, EventTicketType } from '@/data/events';
@@ -28,6 +29,8 @@ interface Props {
 export default function EventDetailClient({ event, artists, ticketTypes, initialIsAdmin }: Props) {
   const { t, locale } = useI18n();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
+  const hasTrackedTicketLandedRef = useRef(false);
 
   useEffect(() => {
     if (user?.isAdmin && typeof document !== 'undefined') {
@@ -38,6 +41,67 @@ export default function EventDetailClient({ event, artists, ticketTypes, initial
       });
     }
   }, [user?.isAdmin]);
+
+  // Handle reliable deep-link hash scrolling to #tickets with layout stability & retry protection
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let rafId: number | null = null;
+    let attempts = 0;
+    const maxAttempts = 15; // Max 1.5s retry duration
+
+    const scrollToTickets = () => {
+      if (typeof window === 'undefined') return;
+      if (window.location.hash !== '#tickets') return;
+
+      const element = document.getElementById('tickets');
+      if (element) {
+        rafId = requestAnimationFrame(() => {
+          element.scrollIntoView({
+            behavior: 'auto',
+            block: 'start',
+          });
+
+          if (!hasTrackedTicketLandedRef.current) {
+            hasTrackedTicketLandedRef.current = true;
+            try {
+              track('ticket_section_landed', {
+                eventSlug: event.slug || event.id,
+                ...(typeof document !== 'undefined' && document.referrer ? { referrer: document.referrer } : {}),
+              });
+            } catch (err) {
+              console.warn('[Analytics] Failed to track ticket_section_landed:', err);
+            }
+          }
+        });
+        return;
+      }
+
+      // Retry if element is not in DOM yet (e.g. async components, test event auth check)
+      attempts++;
+      if (attempts < maxAttempts) {
+        timeoutId = setTimeout(scrollToTickets, 100);
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.location.hash === '#tickets') {
+      scrollToTickets();
+    }
+
+    const handleHashChange = () => {
+      if (window.location.hash === '#tickets') {
+        attempts = 0;
+        scrollToTickets();
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [event.slug, event.id, enableCheckout, ticketTypes.length, isAuthLoading, event.isPast]);
 
   // If this is a test event and server was not able to verify admin via cookies, verify via client auth
   if (event.isTestEvent && !initialIsAdmin) {
@@ -72,7 +136,6 @@ export default function EventDetailClient({ event, artists, ticketTypes, initial
     }
   }
 
-  const enableCheckout = process.env.NEXT_PUBLIC_ENABLE_TICKET_CHECKOUT === 'true';
   const lineupArtists = resolveLineupArtists(event.lineup, artists);
   const eventDate = new Date(event.date);
   const day = eventDate.getDate();
@@ -236,7 +299,7 @@ export default function EventDetailClient({ event, artists, ticketTypes, initial
 
             {/* Ticket Checkout Section (Feature Flagged) */}
             {enableCheckout && ticketTypes.length > 0 && !event.isPast && (
-              <div className={styles.section} id="tickets">
+              <div className={`${styles.section} ${styles.ticketSection}`} id="tickets">
                 <TicketPurchaseSection 
                   event={event} 
                   ticketTypes={ticketTypes} 
