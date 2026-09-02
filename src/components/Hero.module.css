@@ -149,6 +149,86 @@
   animation: fadeInUp 0.8s ease 0.3s both;
 }
 
+.eventInfo {
+  width: min(100%, 1000px);
+  min-width: 0;
+  min-height: 2.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+.eventHeading {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(var(--text-xl), 3vw, var(--text-3xl));
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 18px rgba(var(--color-accent-primary-rgb), 0.18);
+}
+
+.eventDate {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-accent-primary);
+  text-shadow: var(--glow-text);
+}
+
+.variantA {
+  flex-flow: row wrap;
+}
+
+.variantA .eventHeading {
+  font-size: clamp(0.75rem, 4vw, var(--text-3xl));
+}
+
+.variantA .eventDate {
+  font-size: clamp(0.7rem, 2.6vw, var(--text-base));
+}
+
+.eventInfoSkeleton,
+.countdownSkeleton {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius-md);
+}
+
+.eventInfoSkeleton {
+  width: min(72vw, 560px);
+  height: 2.5rem;
+}
+
+.countdownSkeleton {
+  width: min(82vw, 410px);
+  height: 5.25rem;
+}
+
+.eventInfoSkeleton::after,
+.countdownSkeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(var(--color-accent-primary-rgb), 0.07), transparent);
+  animation: skeletonPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.25; transform: translateX(-35%); }
+  50% { opacity: 0.8; transform: translateX(35%); }
+}
+
 /* Countdown */
 .countdownSection {
   display: flex;
@@ -273,6 +353,36 @@
     font-size: var(--text-base);
   }
 
+  .eventInfo {
+    min-height: 3.5rem;
+  }
+
+  .variantB {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .variantB .eventHeading {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: clamp(var(--text-lg), 6vw, var(--text-2xl));
+  }
+
+  .eventDate {
+    font-size: var(--text-sm);
+  }
+
+  .eventInfoSkeleton {
+    height: 3.5rem;
+  }
+
+  .countdownSkeleton {
+    height: 4rem;
+  }
+
   .countdown {
     gap: var(--space-2);
   }
@@ -331,6 +441,19 @@
   .tagline {
     font-size: var(--text-xl);
     max-width: 800px;
+  }
+
+  .eventInfo {
+    min-height: 3rem;
+  }
+
+  .eventInfoSkeleton {
+    height: 3rem;
+  }
+
+  .countdownSkeleton {
+    width: 530px;
+    height: 8.5rem;
   }
 
   .countdownValue {

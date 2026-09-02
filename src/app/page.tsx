@@ -22,28 +22,40 @@ export default function Home() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [mixes, setMixes] = useState<Mix[]>([]);
   const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
+      const eventsRequest = fetch('/api/events', { cache: 'no-store' })
+        .then(async response => {
+          if (!response.ok) throw new Error(`Events request failed with status ${response.status}`);
+          const data: unknown = await response.json();
+          setEvents(Array.isArray(data) ? data.map(normalizeEvent) : []);
+        })
+        .catch(err => {
+          console.error('Home events fetch error:', err);
+          setEventsError(true);
+        })
+        .finally(() => setEventsLoading(false));
+
       try {
-        const [evRes, artRes, mixRes] = await Promise.all([
-          fetch('/api/events', { cache: 'no-store' }),
+        const [artRes, mixRes] = await Promise.all([
           fetch('/api/artists', { cache: 'no-store' }),
           fetch('/api/mixes', { cache: 'no-store' })
         ]);
 
-        const [evData, artData, mixData] = await Promise.all([
-          evRes.json(),
+        const [artData, mixData] = await Promise.all([
           artRes.json(),
           mixRes.json()
         ]);
 
-        setEvents(Array.isArray(evData) ? evData.map(normalizeEvent) : []);
         setArtists(Array.isArray(artData) ? artData.map(normalizeArtist) : []);
         setMixes(Array.isArray(mixData) ? mixData.map(normalizeMix) : []);
       } catch (err) {
         console.error('Home data fetch error:', err);
       } finally {
+        await eventsRequest;
         setLoading(false);
       }
     };
@@ -94,7 +106,7 @@ export default function Home() {
 
   return (
     <>
-      <Hero nextEvent={nextEvent} />
+      <Hero nextEvent={nextEvent} isLoading={eventsLoading} hasError={eventsError} />
 
       {/* Next Event - Featured */}
       {nextEvent && (

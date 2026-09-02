@@ -5,62 +5,62 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from './Hero.module.css';
 import { Event as AppEvent } from '@/data/events';
+import { formatHeroEventDate, getEventCalendarDate, getEventTargetDate, isFutureTarget } from '@/lib/hero-event';
+
+export type HeroVariant = 'A' | 'B';
+const DEFAULT_VARIANT: HeroVariant = 'B';
+
+interface HeroProps {
+  nextEvent?: AppEvent;
+  isLoading?: boolean;
+  hasError?: boolean;
+  variant?: HeroVariant;
+}
+
+const emptyCountdown = { days: 0, hours: 0, mins: 0, secs: 0, isRunning: false };
+
+function calculateCountdown(targetDate: string) {
+  if (!targetDate) return emptyCountdown;
+  const diff = new Date(targetDate).getTime() - Date.now();
+  if (!Number.isFinite(diff) || diff <= 0) return emptyCountdown;
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    mins: Math.floor((diff / (1000 * 60)) % 60),
+    secs: Math.floor((diff / 1000) % 60),
+    isRunning: true,
+  };
+}
 
 function useCountdown(targetDate: string) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+  const [state, setState] = useState(() => ({
+    targetDate,
+    value: calculateCountdown(targetDate),
+  }));
 
   useEffect(() => {
-    const tick = () => {
-      if (!targetDate) return;
-      const diff = new Date(targetDate).getTime() - Date.now();
-      if (isNaN(diff) || diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, mins: 0, secs: 0 });
-        return;
-      }
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        mins: Math.floor((diff / (1000 * 60)) % 60),
-        secs: Math.floor((diff / 1000) % 60),
-      });
-    };
+    const tick = () => setState({ targetDate, value: calculateCountdown(targetDate) });
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [targetDate]);
 
-  return timeLeft;
+  // Props can change from loading -> loaded before the effect runs. Calculate the
+  // new target synchronously for that render so the UI never flashes a false TBA
+  // state or a row of zeroes.
+  return state.targetDate === targetDate ? state.value : calculateCountdown(targetDate);
 }
 
-function getEventTargetDate(event?: AppEvent): string {
-  if (!event || !event.date) return '';
-  
-  const datePart = event.date.substring(0, 10); // extracts YYYY-MM-DD
-  
-  if (event.time) {
-    const timeMatch = event.time.match(/([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)/);
-    if (timeMatch && timeMatch[1]) {
-      let timeStr = timeMatch[1];
-      if (timeStr.indexOf(':') === 1) timeStr = '0' + timeStr; // pad hour
-      if (timeStr.length === 5) timeStr += ':00'; // pad seconds
-      return `${datePart}T${timeStr}`;
-    }
-  }
-  
-  return event.date;
-}
-
-export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
+export default function Hero({ nextEvent, isLoading = false, hasError = false, variant = DEFAULT_VARIANT }: HeroProps) {
   const { t } = useI18n();
-  const countdown = useCountdown(getEventTargetDate(nextEvent));
-
-  // A valid upcoming event is one in the future (countdown has at least some time left)
-  const hasUpcomingEvent = !!nextEvent && (
-    countdown.days > 0 || countdown.hours > 0 || countdown.mins > 0 || countdown.secs > 0
-  );
+  const targetDate = getEventTargetDate(nextEvent);
+  const countdown = useCountdown(targetDate);
+  const hasUpcomingEvent = !isLoading && !hasError && !!nextEvent && isFutureTarget(targetDate);
+  const eventDate = formatHeroEventDate(nextEvent);
+  const calendarDate = getEventCalendarDate(nextEvent);
 
   return (
-    <section className={styles.hero} id="hero">
+    <section className={styles.hero} id="hero" aria-busy={isLoading}>
       {/* Background grid stays in the back */}
       <div className={styles.bgGrid} />
 
@@ -82,9 +82,21 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
         </div>
 
         <p className={styles.subtitle}>{t('hero.subtitle')}</p>
-        <p className={styles.tagline}>{t('hero.tagline')}</p>
 
-        {hasUpcomingEvent ? (
+        {isLoading ? (
+          <div className={styles.eventInfoSkeleton} role="status" aria-label="Loading upcoming event" />
+        ) : hasUpcomingEvent ? (
+          <div className={`${styles.eventInfo} ${variant === 'A' ? styles.variantA : styles.variantB}`}>
+            <h2 className={styles.eventHeading}>{nextEvent.title}</h2>
+            <time className={styles.eventDate} dateTime={calendarDate}>{eventDate}</time>
+          </div>
+        ) : (
+          <p className={styles.tagline}>{t('hero.tagline')}</p>
+        )}
+
+        {isLoading ? (
+          <div className={styles.countdownSkeleton} aria-hidden="true" />
+        ) : hasUpcomingEvent ? (
           <div className={styles.countdown}>
             <div className={styles.countdownUnit}>
               <span className={styles.countdownValue}>{countdown.days}</span>
@@ -111,7 +123,7 @@ export default function Hero({ nextEvent }: { nextEvent?: AppEvent }) {
         )}
 
         <div className={styles.ctas}>
-          <Link href={nextEvent ? `/events/${nextEvent.slug || nextEvent.id}` : "/events"} className="btn btn-primary" id="hero-cta-events">
+          <Link href={hasUpcomingEvent ? `/events/${nextEvent.slug || nextEvent.id}` : "/events"} className="btn btn-primary" id="hero-cta-events">
             {t('hero.cta')}
           </Link>
           <Link href="/membership" className="btn btn-outline" id="hero-cta-membership">

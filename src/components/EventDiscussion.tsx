@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -29,7 +29,7 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('event_comments')
@@ -44,7 +44,7 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
 
       if (error) throw error;
       const rawComments = data || [];
-      const userIds = Array.from(new Set(rawComments.map((c: any) => c.user_id).filter(Boolean)));
+      const userIds = Array.from(new Set(rawComments.map(comment => comment.user_id).filter(Boolean)));
 
       if (userIds.length > 0) {
         const { data: profilesData } = await supabase
@@ -52,10 +52,10 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
           .select('id, display_name, avatar_url')
           .in('id', userIds);
 
-        const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
-        const enriched = rawComments.map((c: any) => ({
-          ...c,
-          profiles: profileMap.get(c.user_id) || undefined
+        const profileMap = new Map((profilesData || []).map(profile => [profile.id, profile]));
+        const enriched = rawComments.map(comment => ({
+          ...comment,
+          profiles: profileMap.get(comment.user_id) || undefined
         }));
         setComments(enriched as Comment[]);
       } else {
@@ -66,14 +66,15 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId]);
 
   useEffect(() => {
     fetchComments();
-  }, [eventId]);
+  }, [fetchComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!user) {
       openAuthModal();
       return;
@@ -90,18 +91,37 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
     setError('');
 
     try {
-      const { error } = await supabase
-        .from('event_comments')
-        .insert({
-          event_id: eventId,
-          user_id: user.id,
-          content: trimmed
-        });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        openAuthModal();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
 
-      if (error) throw error;
-      
+      const response = await fetch(`/api/events/${encodeURIComponent(eventId)}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ content: trimmed }),
+      });
+      const result = await response.json().catch(() => null) as {
+        comment?: Comment;
+        error?: string;
+        code?: string;
+      } | null;
+
+      if (!response.ok || !result?.comment) {
+        console.error('[event-comments] post rejected', {
+          eventId,
+          status: response.status,
+          code: result?.code,
+        });
+        throw new Error(result?.error || 'Failed to post comment. Please try again.');
+      }
+
+      setComments(previous => [result.comment!, ...previous]);
       setContent('');
-      fetchComments();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to post comment');
     } finally {
