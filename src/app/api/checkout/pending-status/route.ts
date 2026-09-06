@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cancelPayment } from '@/lib/vipps';
-import { PENDING_ORDER_TTL_MINUTES } from '@/app/api/checkout/create-pending-order/route';
+import { PENDING_ORDER_TTL_MINUTES } from '@/lib/checkout';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

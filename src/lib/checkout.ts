@@ -1,0 +1,1 @@
+export const PENDING_ORDER_TTL_MINUTES = 15;

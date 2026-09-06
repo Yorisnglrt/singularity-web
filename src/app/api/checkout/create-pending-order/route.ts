@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 // ── Constants ───────────────────────────────────────────────────────
 const MAX_QUANTITY = 10;
 /** Must stay in sync with the TTL constant inside reserve_pending_order RPC. */
-export const PENDING_ORDER_TTL_MINUTES = 15;
+import { PENDING_ORDER_TTL_MINUTES } from '@/lib/checkout';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

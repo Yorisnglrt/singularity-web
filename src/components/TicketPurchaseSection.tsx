@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n';
 import styles from './TicketPurchaseSection.module.css';
-import { PENDING_ORDER_TTL_MINUTES } from '@/app/api/checkout/create-pending-order/route';
+import { PENDING_ORDER_TTL_MINUTES } from '@/lib/checkout';
 
 interface Props {
   event: Event;
