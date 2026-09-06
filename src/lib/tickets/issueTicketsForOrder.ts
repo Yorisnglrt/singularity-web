@@ -143,6 +143,16 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
       });
       if (ttError) {
         console.error(`[tickets] Failed to increment sold counts for order ${order.order_reference}:`, ttError);
+      } else {
+        // Release the pending reservation now that sold_quantity has been incremented.
+        // This keeps reserved_quantity and sold_quantity consistent:
+        // on payment: sold_quantity++ and reserved_quantity-- together → net capacity unchanged.
+        const { error: releaseError } = await supabaseAdmin.rpc('release_order_reservation', {
+          p_order_id: orderId
+        });
+        if (releaseError) {
+          console.error(`[tickets] release_order_reservation failed for order ${order.order_reference}:`, releaseError);
+        }
       }
     }
 
@@ -159,6 +169,7 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
   } catch (ttErr: any) {
     console.error(`[tickets] sold_quantity/guest count increment crashed for ${order.order_reference}:`, ttErr.message);
   }
+
 
   // 6. Mark order as issued
   const { error: updateError } = await supabaseAdmin

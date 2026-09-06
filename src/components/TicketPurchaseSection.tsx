@@ -1,15 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Event, EventTicketType } from '@/data/events';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n';
 import styles from './TicketPurchaseSection.module.css';
+import { PENDING_ORDER_TTL_MINUTES } from '@/app/api/checkout/create-pending-order/route';
 
 interface Props {
   event: Event;
   ticketTypes: EventTicketType[];
 }
+
+interface AlertModalState {
+  type: 'confirm' | 'error';
+  title: string;
+  message: string;
+  onConfirm?: () => void;
+}
+
+const GUEST_ORDER_KEY = (eventId: string) => `pending_order_${eventId}`;
 
 function parseUtcDate(dateStr: string | null): Date | null {
   if (!dateStr) return null;
@@ -21,9 +32,9 @@ function parseUtcDate(dateStr: string | null): Date | null {
 }
 
 export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
+  const { t } = useI18n();
   const [nowTime, setNowTime] = useState(Date.now());
 
-  // Helper to determine if a ticket type is available
   const isTicketTypeAvailable = (tt: EventTicketType) => {
     const saleEnd = parseUtcDate(tt.saleEndsAt);
     const isDeadlinePassed = saleEnd ? saleEnd.getTime() < nowTime : false;
@@ -32,9 +43,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   };
 
   const availableTypes = ticketTypes.filter(isTicketTypeAvailable);
-  
-  // Find the cheapest available ticket type
-  const defaultSelected = availableTypes.length > 0 
+  const defaultSelected = availableTypes.length > 0
     ? [...availableTypes].sort((a, b) => a.priceNok - b.priceNok)[0]
     : null;
 
@@ -54,42 +63,93 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [checkingPending, setCheckingPending] = useState(false);
   const [freeTicketsCount, setFreeTicketsCount] = useState(0);
   const [useFreeTicket, setUseFreeTicket] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'PAID' | 'FREE' | null>(null);
-  const [pendingMethod, setPendingMethod] = useState<'WALLET' | 'CARD' | null>(null);
+
+  // ── P4: email emphasis state (replaces the old confirm modal) ──────
+  const [emailHighlight, setEmailHighlight] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCloseModal = () => {
-    if (loading) return;
-    setShowConfirmModal(false);
-    setPendingAction(null);
-    setPendingMethod(null);
-    if (emailInputRef.current) {
-      emailInputRef.current.focus();
-    }
-  };
+  // ── P3: alert/confirm modal (replaces native confirm/alert) ────────
+  const [alertModal, setAlertModal] = useState<AlertModalState | null>(null);
 
-  const handleConfirmEmail = () => {
-    if (loading) return;
-    setShowConfirmModal(false);
-    if (pendingAction === 'PAID' && pendingMethod) {
-      executePaidCheckout(pendingMethod);
-    } else if (pendingAction === 'FREE') {
-      executeFreeTicketCheckout();
-    }
-    setPendingAction(null);
-    setPendingMethod(null);
-  };
+  const showAlert = useCallback((title: string, message: string) => {
+    setAlertModal({ type: 'error', title, message });
+  }, []);
 
+  const showConfirm = useCallback((title: string, message: string, onConfirm: () => void) => {
+    setAlertModal({ type: 'confirm', title, message, onConfirm });
+  }, []);
+
+  const closeAlertModal = useCallback(() => {
+    setAlertModal(null);
+  }, []);
+
+  // Keyboard: close alert modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showConfirmModal && !loading) {
-        handleCloseModal();
-      }
+      if (e.key === 'Escape' && alertModal) closeAlertModal();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showConfirmModal, loading]);
+  }, [alertModal, closeAlertModal]);
+
+  // ── P1 Gap 2: check sessionStorage for guest pending order ────────
+  const checkGuestPendingOrder = useCallback(async () => {
+    try {
+      const raw = sessionStorage.getItem(GUEST_ORDER_KEY(event.id));
+      if (!raw) return;
+      const { orderReference, claimToken } = JSON.parse(raw);
+      const res = await fetch(
+        `/api/checkout/pending-status?eventId=${event.id}&orderReference=${encodeURIComponent(orderReference)}&claimToken=${encodeURIComponent(claimToken)}`
+      );
+      const data = await res.json();
+      if (data.hasPending) {
+        setPendingOrder({ ...data.order, claimToken });
+      } else {
+        sessionStorage.removeItem(GUEST_ORDER_KEY(event.id));
+        setPendingOrder(null);
+      }
+    } catch {
+      // sessionStorage not available or parse error — ignore
+    }
+  }, [event.id]);
+
+  const checkPendingOrder = useCallback(async () => {
+    if (!user) return;
+    setCheckingPending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/checkout/pending-status?eventId=${event.id}`, {
+        headers: {
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data.hasPending) {
+        setPendingOrder(data.order);
+      } else {
+        setPendingOrder(null);
+      }
+    } catch (err) {
+      console.error('Failed to check pending order:', err);
+    } finally {
+      setCheckingPending(false);
+    }
+  }, [user, event.id]);
+
+  const fetchFreeTicketsCount = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('reward_claims')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('reward_type', 'free_ticket')
+        .eq('status', 'available');
+      if (!error) setFreeTicketsCount(data?.length || 0);
+    } catch (err) {
+      console.error('Failed to fetch free tickets count:', err);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -100,25 +160,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     } else {
       setFreeTicketsCount(0);
       setUseFreeTicket(false);
+      // Guest: check sessionStorage for a pending order on this event
+      checkGuestPendingOrder();
     }
   }, [user]);
-
-  const fetchFreeTicketsCount = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('reward_claims')
-        .select('id')
-        .eq('profile_id', user!.id)
-        .eq('reward_type', 'free_ticket')
-        .eq('status', 'available');
-
-      if (!error) {
-        setFreeTicketsCount(data?.length || 0);
-      }
-    } catch (err) {
-      console.error('Failed to fetch free tickets count:', err);
-    }
-  };
 
   // Ensure selected type is always valid/available
   useEffect(() => {
@@ -129,7 +174,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     }
   }, [ticketTypes, defaultSelected, nowTime]);
 
-  // Recalculate states and trigger updates based on start/end timers
+  // Recalculate states based on start/end timers
   useEffect(() => {
     const hasFutureSales = ticketTypes.some(tt => {
       const start = parseUtcDate(tt.saleStartsAt);
@@ -155,15 +200,13 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         return end && end.getTime() > current;
       });
 
-      if (!stillFutureSales && !stillFutureEnds) {
-        clearInterval(interval);
-      }
+      if (!stillFutureSales && !stillFutureEnds) clearInterval(interval);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [ticketTypes]);
 
-  // Dynamically clear the server error if the sales open up while on screen
+  // Clear sale-start error when sales open
   useEffect(() => {
     if (selectedType && selectedType.saleStartsAt) {
       const start = parseUtcDate(selectedType.saleStartsAt);
@@ -173,33 +216,9 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     }
   }, [nowTime, selectedType, error]);
 
-  const checkPendingOrder = async () => {
-    if (!user) return;
-    setCheckingPending(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`/api/checkout/pending-status?eventId=${event.id}`, {
-        headers: {
-          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
-        }
-      });
-      const data = await res.json();
-      if (data.hasPending) {
-        setPendingOrder(data.order);
-      } else {
-        setPendingOrder(null);
-      }
-    } catch (err) {
-      console.error('Failed to check pending order:', err);
-    } finally {
-      setCheckingPending(false);
-    }
-  };
-
-  const handleCancelOrder = async () => {
-    if (!pendingOrder || !user) return;
-    if (!confirm('Er du sikker på at du vil avbryte denne bestillingen?')) return;
-    
+  // ── Cancel order ──────────────────────────────────────────────────
+  const doCancel = useCallback(async () => {
+    if (!pendingOrder) return;
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -209,36 +228,45 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           'Content-Type': 'application/json',
           ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
         },
-        body: JSON.stringify({ orderReference: pendingOrder.orderReference })
+        body: JSON.stringify({
+          orderReference: pendingOrder.orderReference,
+          ...(pendingOrder.claimToken ? { claimToken: pendingOrder.claimToken } : {})
+        })
       });
-      
+
       if (res.ok) {
         setPendingOrder(null);
+        try { sessionStorage.removeItem(GUEST_ORDER_KEY(event.id)); } catch {}
       } else {
         const data = await res.json();
-        alert(data.error || 'Kunne ikke avbryte bestillingen');
-        // Refresh status if something changed server-side
-        checkPendingOrder();
+        showAlert(t('tickets.cancelOrder'), data.error || t('tickets.cancelOrderError'));
+        // Refresh in case status changed server-side
+        user ? checkPendingOrder() : checkGuestPendingOrder();
       }
-    } catch (err) {
-      console.error('Cancel error:', err);
-      alert('En uventet feil oppstod');
+    } catch {
+      showAlert(t('tickets.cancelOrder'), t('tickets.unexpectedError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [pendingOrder, user, event.id, t, showAlert, checkPendingOrder, checkGuestPendingOrder]);
 
-  const handleContinuePayment = async () => {
+  const handleCancelOrder = useCallback(() => {
+    showConfirm(
+      t('tickets.cancelOrder'),
+      t('tickets.cancelOrderConfirm'),
+      doCancel
+    );
+  }, [showConfirm, t, doCancel]);
+
+  const handleContinuePayment = useCallback(async () => {
     if (!pendingOrder) return;
     setLoading(true);
-    
-    // 1. Primárně použít uloženou URL z pending-status
+
     if (pendingOrder.paymentUrl) {
       window.location.href = pendingOrder.paymentUrl;
       return;
     }
 
-    // 2. Fallback: Zkusit zavolat create endpoint pro získání URL (pro starší objednávky)
     try {
       const vippsRes = await fetch('/api/payments/vipps/create', {
         method: 'POST',
@@ -250,19 +278,18 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       if (vippsRes.ok && vippsData.redirectUrl) {
         window.location.href = vippsData.redirectUrl;
       } else {
-        // Zobrazíme norskou chybu pokud URL chybí
-        alert('Betalingslenken mangler. Avbryt bestillingen og start på nytt.');
+        showAlert(t('tickets.continuePayment'), t('tickets.paymentUrlMissing'));
       }
-    } catch (err: any) {
-      alert('En uventet feil oppstod. Prøv igjen senere.');
+    } catch {
+      showAlert(t('tickets.continuePayment'), t('tickets.unexpectedError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [pendingOrder, t, showAlert]);
 
   const handleIncrement = () => {
     if (!selectedType) return;
-    const max = selectedType.totalQuantity 
+    const max = selectedType.totalQuantity
       ? Math.min(10, selectedType.totalQuantity - selectedType.soldQuantity)
       : 10;
     if (quantity < max) setQuantity(q => q + 1);
@@ -272,15 +299,20 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     if (quantity > 1) setQuantity(q => q - 1);
   };
 
-  const executeFreeTicketCheckout = async () => {
+  // ── P4: email emphasis helper ──────────────────────────────────────
+  const emphasizeEmail = useCallback(() => {
+    setEmailHighlight(true);
+    emailInputRef.current?.focus();
+    setTimeout(() => setEmailHighlight(false), 1600);
+  }, []);
+
+  const executeFreeTicketCheckout = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('You must be logged in to claim a free ticket reward.');
-      }
+      if (!session) throw new Error('You must be logged in to claim a free ticket reward.');
 
       const res = await fetch('/api/checkout/use-free-ticket', {
         method: 'POST',
@@ -298,9 +330,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to process free ticket purchase');
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to process free ticket purchase');
 
       if (data.ok && data.orderId) {
         setSuccess({ isFreeTicket: true, orderId: data.orderId });
@@ -310,16 +340,15 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [event.id, selectedType, email, name, phone]);
 
-  const executePaidCheckout = async (method: 'WALLET' | 'CARD') => {
+  const executePaidCheckout = useCallback(async (method: 'WALLET' | 'CARD') => {
     setLoading(true);
     setError(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // Step 1: Create pending order in ticket_orders
+
       const orderRes = await fetch('/api/checkout/create-pending-order', {
         method: 'POST',
         headers: {
@@ -343,7 +372,17 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         throw new Error(orderData.error || 'Failed to create order');
       }
 
-      // Step 2: Initiate Vipps payment
+      // P1 Gap 2: persist claimToken for guest recovery
+      if (!session && orderData.claimToken) {
+        try {
+          sessionStorage.setItem(GUEST_ORDER_KEY(event.id), JSON.stringify({
+            orderReference: orderData.orderReference,
+            claimToken: orderData.claimToken,
+            eventId: event.id,
+          }));
+        } catch {}
+      }
+
       setSuccess({ redirecting: true, orderReference: orderData.orderReference });
 
       const vippsRes = await fetch('/api/payments/vipps/create', {
@@ -354,12 +393,9 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
       const vippsData = await vippsRes.json();
 
-      if (!vippsRes.ok) {
-        throw new Error(vippsData.error || 'Failed to start Vipps payment');
-      }
+      if (!vippsRes.ok) throw new Error(vippsData.error || 'Failed to start Vipps payment');
 
       if (vippsData.redirectUrl) {
-        // Step 3: Redirect to Vipps
         window.location.href = vippsData.redirectUrl;
         return;
       } else {
@@ -371,70 +407,55 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [event.id, selectedType, quantity, email, name, phone]);
 
-  const handleFreeTicketSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ── Validation + submit ───────────────────────────────────────────
+  const validate = (): boolean => {
     if (!selectedType || !isTicketTypeAvailable(selectedType)) {
       setError('Please select an available ticket type');
-      return;
+      return false;
     }
     const start = parseUtcDate(selectedType.saleStartsAt);
     if (start && Date.now() < start.getTime()) {
       setError('Ticket sales have not started yet');
-      return;
+      return false;
     }
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
-      return;
+      emphasizeEmail();
+      return false;
     }
     if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
       setError('A name is required for Supporter tickets.');
-      return;
+      return false;
     }
     if (!agree) {
       setError('You must agree to the Terms of Sale');
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const handleFreeTicketSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
     setError(null);
-    setPendingAction('FREE');
-    setPendingMethod(null);
-    setShowConfirmModal(true);
+    // P4: emphasize email field inline, then proceed directly
+    emphasizeEmail();
+    setTimeout(() => executeFreeTicketCheckout(), 200);
   };
 
   const handleSubmit = async (e?: React.FormEvent, methodOverride?: 'WALLET' | 'CARD') => {
     if (e) e.preventDefault();
     const method = methodOverride || paymentMethod;
-    
-    if (!selectedType || !isTicketTypeAvailable(selectedType)) {
-      setError('Please select an available ticket type');
-      return;
-    }
-    const start = parseUtcDate(selectedType.saleStartsAt);
-    if (start && Date.now() < start.getTime()) {
-      setError('Ticket sales have not started yet');
-      return;
-    }
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-    if (selectedType.isSupporter && (!name || name.trim().length < 2)) {
-      setError('A name is required for Supporter tickets to be listed on our /supporters page.');
-      return;
-    }
-    if (!agree) {
-      setError('You must agree to the Terms of Sale');
-      return;
-    }
-
+    if (!validate()) return;
     setError(null);
-    setPendingAction('PAID');
-    setPendingMethod(method);
-    setShowConfirmModal(true);
+    // P4: emphasize email field inline, then proceed directly
+    emphasizeEmail();
+    setTimeout(() => executePaidCheckout(method), 200);
   };
 
+  // ── Success states ────────────────────────────────────────────────
   if (success) {
     if (success.isFreeTicket) {
       return (
@@ -462,54 +483,93 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     );
   }
 
+  // ── Pending order recovery (both auth users and guests) ──────────
   if (pendingOrder) {
+    const createdAt = pendingOrder.createdAt ? new Date(pendingOrder.createdAt).getTime() : null;
+    const expiresInMin = createdAt
+      ? Math.max(0, Math.round((PENDING_ORDER_TTL_MINUTES * 60 * 1000 - (Date.now() - createdAt)) / 60000))
+      : null;
+
     return (
       <div className={styles.container}>
         <div className={styles.recoveryBox}>
-          <h2 className={styles.recoveryTitle}>Du har en pågående bestilling som ikke er betalt ennå.</h2>
+          <h2 className={styles.recoveryTitle}>{t('tickets.pendingOrderTitle')}</h2>
           <div className={styles.recoveryDetails}>
             <div className={styles.recoveryItem}>
-              <span className={styles.recoveryLabel}>Billettype</span>
+              <span className={styles.recoveryLabel}>{t('tickets.ticketType')}</span>
               <span className={styles.recoveryValue}>{pendingOrder.ticketTypeName}</span>
             </div>
             <div className={styles.recoveryItem}>
-              <span className={styles.recoveryLabel}>Antall</span>
+              <span className={styles.recoveryLabel}>{t('tickets.quantity')}</span>
               <span className={styles.recoveryValue}>{pendingOrder.quantity} stk</span>
             </div>
             <div className={styles.recoveryItem}>
-              <span className={styles.recoveryLabel}>Totalpris</span>
+              <span className={styles.recoveryLabel}>{t('tickets.totalPrice')}</span>
               <span className={styles.recoveryValue}>{pendingOrder.totalAmountNok} NOK</span>
             </div>
+            {expiresInMin !== null && (
+              <div className={styles.recoveryItem}>
+                <span className={styles.recoveryLabel}>{t('tickets.expiresIn')}</span>
+                <span className={styles.recoveryValue}>{expiresInMin} {t('tickets.minutes')}</span>
+              </div>
+            )}
           </div>
           <div className={styles.recoveryActions}>
-            <button 
+            <button
               className={`${styles.paymentBtn} btn btn-primary`}
               onClick={handleContinuePayment}
               disabled={loading}
             >
-              {loading ? 'Laster...' : 'Gå tilbake til betaling'}
+              {loading ? t('tickets.loading') : t('tickets.continuePayment')}
             </button>
-            <button 
+            <button
               className={styles.cancelBtn}
               onClick={handleCancelOrder}
               disabled={loading}
             >
-              {loading ? '...' : 'Avbryt bestilling'}
+              {loading ? '...' : t('tickets.cancelOrder')}
             </button>
           </div>
-          <p className={styles.recoveryHint}>
-            Hvis du vil kjøpe andre billetter eller endre antall, må du først avbryte den pågående bestillingen.
-          </p>
+          <p className={styles.recoveryHint}>{t('tickets.pendingOrderHint')}</p>
         </div>
+
+        {/* P3: Alert/Confirm modal */}
+        {alertModal && (
+          <div className={styles.modalOverlay} onClick={closeAlertModal}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <button type="button" className={styles.modalClose} onClick={closeAlertModal} aria-label="Close">✕</button>
+              <div className={styles.modalHeader}>
+                <h3 className={styles.modalTitle}>{alertModal.title}</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p>{alertModal.message}</p>
+              </div>
+              <div className={styles.modalActions}>
+                {alertModal.type === 'confirm' ? (
+                  <>
+                    <button type="button" className={styles.modalSecondaryBtn} onClick={closeAlertModal} disabled={loading}>
+                      Avbryt
+                    </button>
+                    <button type="button" className={styles.modalPrimaryBtn} onClick={() => { closeAlertModal(); alertModal.onConfirm?.(); }} disabled={loading}>
+                      {loading ? t('tickets.loading') : 'Bekreft'}
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className={styles.modalPrimaryBtn} onClick={closeAlertModal}>
+                    OK
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   const handleUseFreeTicketChange = (checked: boolean) => {
     setUseFreeTicket(checked);
-    if (checked) {
-      setQuantity(1);
-    }
+    if (checked) setQuantity(1);
   };
 
   const salesStart = selectedType ? parseUtcDate(selectedType.saleStartsAt) : null;
@@ -527,20 +587,6 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     : null;
   const displayError = error || salesStartError;
 
-  // Dočasný debug log
-  if (selectedType && selectedType.saleStartsAt) {
-    const rawSalesStart = selectedType.saleStartsAt;
-    const parsedTimestamp = parseUtcDate(rawSalesStart)?.getTime() ?? 0;
-    const nowTs = nowTime;
-    const comparisonResult = nowTs >= parsedTimestamp;
-    console.log('[DEBUG] Client ticket sales start check:', {
-      rawSalesStart,
-      parsedTimestamp,
-      nowTs,
-      comparisonResult
-    });
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -549,10 +595,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           {ticketTypes.map(tt => {
             const isAvailable = isTicketTypeAvailable(tt);
             const isSelected = selectedType?.id === tt.id;
-            
+
             return (
-              <div 
-                key={tt.id} 
+              <div
+                key={tt.id}
                 className={`${styles.ticketItem} ${isSelected ? styles.ticketItemSelected : ''} ${!isAvailable ? styles.soldOut : ''}`}
                 onClick={() => isAvailable && setSelectedType(tt)}
               >
@@ -573,8 +619,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           })}
         </div>
       </div>
- 
-      <form className={styles.checkoutGrid} onSubmit={(e) => e.preventDefault()}>
+
+      <form className={styles.checkoutGrid} onSubmit={e => e.preventDefault()}>
         <div className={styles.checkoutDetails}>
           <div className={styles.field}>
             <div className={styles.quantityRow}>
@@ -587,15 +633,14 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             </div>
           </div>
 
-          {/* Use Free Ticket Option */}
           {isLoggedIn && freeTicketsCount > 0 && (
             <div className={styles.field} style={{ marginTop: '0.25rem', marginBottom: '1.25rem' }}>
               <label className={styles.checkboxContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className={styles.checkbox}
                   checked={useFreeTicket}
-                  onChange={e => handleUseFreeTicketChange(e.target.checked)} 
+                  onChange={e => handleUseFreeTicketChange(e.target.checked)}
                 />
                 <span className={styles.checkboxLabel} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-accent-primary)', fontWeight: 'bold' }}>
                   Use available Free Ticket Reward ({freeTicketsCount} claim{freeTicketsCount > 1 ? 's' : ''} available)
@@ -607,34 +652,38 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
           <div className={styles.row}>
             <div className={styles.field}>
               <label className={styles.label}>Your Name {selectedType?.isSupporter && '*'}</label>
-              <input 
-                className={styles.input} 
-                value={name} 
-                onChange={e => setName(e.target.value)} 
+              <input
+                className={styles.input}
+                value={name}
+                onChange={e => setName(e.target.value)}
                 placeholder={selectedType?.isSupporter ? "First name (required for supporters)" : "First name (optional)"}
                 required={selectedType?.isSupporter}
               />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Email Address *</label>
-              <input 
+              {/* P4: inline email emphasis with animation class */}
+              <input
                 ref={emailInputRef}
-                className={styles.input} 
+                className={`${styles.input} ${emailHighlight ? styles.emailHighlight : ''}`}
                 type="email"
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="email@example.com"
                 required
               />
+              <p className={styles.emailHint}>
+                We'll send your ticket and QR code here — double-check this address.
+              </p>
             </div>
           </div>
 
           <div className={styles.field}>
             <label className={styles.label}>Phone Number</label>
-            <input 
-              className={styles.input} 
-              value={phone} 
-              onChange={e => setPhone(e.target.value)} 
+            <input
+              className={styles.input}
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
               placeholder="+47 000 00 000 (optional)"
             />
           </div>
@@ -687,11 +736,11 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             </div>
 
             <label className={styles.checkboxContainer}>
-              <input 
-                type="checkbox" 
-                className={styles.checkbox} 
-                checked={agree} 
-                onChange={e => setAgree(e.target.checked)} 
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={agree}
+                onChange={e => setAgree(e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
                 I agree to the <a href="/terms-of-sale" target="_blank" rel="noopener noreferrer">Terms of Sale</a>
@@ -699,7 +748,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             </label>
 
             {useFreeTicket ? (
-              <button 
+              <button
                 type="button"
                 className={styles.paymentBtn}
                 style={{ width: '100%', background: 'var(--color-accent-primary)', color: '#000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}
@@ -710,7 +759,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
               </button>
             ) : (
               <div className={styles.paymentActions}>
-                <button 
+                <button
                   type="button"
                   className={`${styles.paymentBtn} ${styles.vippsBtn}`}
                   onClick={() => { setPaymentMethod('WALLET'); handleSubmit(undefined, 'WALLET'); }}
@@ -718,7 +767,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 >
                   {loading && paymentMethod === 'WALLET' ? '...' : 'VIPPS'}
                 </button>
-                <button 
+                <button
                   type="button"
                   className={`${styles.paymentBtn} ${styles.cardBtn}`}
                   onClick={() => { setPaymentMethod('CARD'); handleSubmit(undefined, 'CARD'); }}
@@ -732,41 +781,37 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         </div>
       </form>
 
-      {showConfirmModal && (
-        <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button type="button" className={styles.modalClose} onClick={handleCloseModal} aria-label="Close modal">
-              ✕
-            </button>
+      {/* P3: Alert/Confirm modal */}
+      {alertModal && (
+        <div className={styles.modalOverlay} onClick={closeAlertModal}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <button type="button" className={styles.modalClose} onClick={closeAlertModal} aria-label="Close modal">✕</button>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Check your email</h3>
+              <h3 className={styles.modalTitle}>{alertModal.title}</h3>
             </div>
             <div className={styles.modalBody}>
-              <p>Your ticket and QR code will be sent to:</p>
-              <div className={styles.modalEmailBox}>
-                {email}
-              </div>
-              <p>
-                Please make sure the address is correct. If the email is wrong, you may not receive your ticket or QR code.
-              </p>
+              <p>{alertModal.message}</p>
             </div>
             <div className={styles.modalActions}>
-              <button 
-                type="button" 
-                className={styles.modalSecondaryBtn} 
-                onClick={handleCloseModal}
-                disabled={loading}
-              >
-                Edit email
-              </button>
-              <button 
-                type="button" 
-                className={styles.modalPrimaryBtn} 
-                onClick={handleConfirmEmail}
-                disabled={loading}
-              >
-                {loading ? 'Processing...' : (pendingAction === 'FREE' ? 'Email is correct – Confirm ticket' : 'Email is correct – Continue to payment')}
-              </button>
+              {alertModal.type === 'confirm' ? (
+                <>
+                  <button type="button" className={styles.modalSecondaryBtn} onClick={closeAlertModal} disabled={loading}>
+                    Avbryt
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.modalPrimaryBtn}
+                    onClick={() => { closeAlertModal(); alertModal.onConfirm?.(); }}
+                    disabled={loading}
+                  >
+                    {loading ? t('tickets.loading') : 'Bekreft'}
+                  </button>
+                </>
+              ) : (
+                <button type="button" className={styles.modalPrimaryBtn} onClick={closeAlertModal}>
+                  OK
+                </button>
+              )}
             </div>
           </div>
         </div>

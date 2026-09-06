@@ -163,7 +163,7 @@ export default async function EventDetailPage({ params, searchParams }: Props) {
       if (byId) {
         // If it has a slug, redirect to the slug URL while preserving query params
         if (byId.slug) {
-          const queryString = new URLSearchParams(sParams as any).toString();
+          const queryString = new URLSearchParams(sParams as Record<string, string>).toString();
           const redirectUrl = `/events/${byId.slug}${queryString ? `?${queryString}` : ''}`;
           redirect(redirectUrl);
         }
@@ -183,7 +183,7 @@ export default async function EventDetailPage({ params, searchParams }: Props) {
   }
 
   // Prepare lineup filter
-  const lineupStrings = Array.isArray(event.lineup) ? event.lineup.map((s: any) => String(s)) : [];
+  const lineupStrings = Array.isArray(event.lineup) ? event.lineup.map((s: unknown) => String(s)) : [];
   
   // Parallelize remaining fetches
   const [artistsResponse, ticketTypesResponse] = await Promise.all([

@@ -9,6 +9,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // ── Constants ───────────────────────────────────────────────────────
 const MAX_QUANTITY = 10;
+/** Must stay in sync with the TTL constant inside reserve_pending_order RPC. */
+export const PENDING_ORDER_TTL_MINUTES = 15;
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
       if (user) {
         profileId = user.id;
       }
-      // If token is invalid, we silently treat as guest — no error
+      // If token is invalid, silently treat as guest — no error
     }
 
     // ── Fetch ticket type and event ──
@@ -123,17 +125,7 @@ export async function POST(req: Request) {
     if (ticketType.sale_starts_at) {
       const saleStart = parseUtcDate(ticketType.sale_starts_at);
       if (saleStart) {
-        const saleStartMs = saleStart.getTime();
-
-        // Dočasný debug log
-        console.log('[DEBUG] Server ticket sales start check:', {
-          rawSalesStart: ticketType.sale_starts_at,
-          parsedTimestamp: saleStartMs,
-          nowTs: now,
-          comparisonResult: now >= saleStartMs
-        });
-
-        if (now < saleStartMs) {
+        if (now < saleStart.getTime()) {
           const formattedStart = saleStart.toLocaleString('en-GB', {
             timeZone: 'Europe/Oslo',
             day: '2-digit',
@@ -162,92 +154,75 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'A name is required for Supporter tickets.' }, { status: 400 });
     }
 
-    // ── Check availability ──
-    if (ticketType.total_quantity != null) {
-      const available = ticketType.total_quantity - (ticketType.sold_quantity || 0);
-      if (available < quantity) {
-        return NextResponse.json({
-          error: `Not enough tickets available. ${available} remaining, ${quantity} requested`,
-        }, { status: 409 });
-      }
-    }
-
     // ── Check price ──
     const unitPrice: number = ticketType.price_nok ?? 0;
     if (unitPrice < 0) {
       return NextResponse.json({ error: 'Invalid ticket price' }, { status: 500 });
     }
 
-    // ── Build order ──
+    // ── Build order parameters ──
     const orderReference = generateOrderReference();
     const claimToken = crypto.randomUUID();
     const totalAmountNok = unitPrice * quantity;
     const pointsPerTicket = ticketType.is_supporter ? 200 : 150;
     const ravePointsEarned = quantity * pointsPerTicket;
 
-    const orderRow = {
-      order_reference: orderReference,
-      customer_email: customerEmail.trim().toLowerCase(),
-      customer_name: customerName?.trim() || null,
-      customer_phone: customerPhone?.trim() || null,
-      total_amount_nok: totalAmountNok,
-      currency: 'NOK',
-      sales_channel: 'online',
-      payment_provider: 'vipps',
-      payment_status: 'pending',
-      payment_method_type: finalMethod,
-      profile_id: profileId,
-      rave_points_earned: ravePointsEarned,
-      points_awarded: false,
-      claim_token: claimToken,
-      metadata: {},
-    };
+    // ── Atomically reserve stock and create order ──
+    // The RPC handles: expired reservation cleanup, capacity check, insert, reserved_quantity increment.
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('reserve_pending_order', {
+      p_ticket_type_id:     ticketTypeId,
+      p_event_id:           eventId,
+      p_quantity:           quantity,
+      p_customer_email:     customerEmail.trim().toLowerCase(),
+      p_customer_name:      customerName?.trim() || null,
+      p_customer_phone:     customerPhone?.trim() || null,
+      p_total_amount_nok:   totalAmountNok,
+      p_order_reference:    orderReference,
+      p_claim_token:        claimToken,
+      p_profile_id:         profileId,
+      p_payment_method:     finalMethod,
+      p_rave_points_earned: ravePointsEarned,
+      p_ticket_type_name:   ticketType.name,
+      p_unit_price_nok:     unitPrice,
+      p_is_supporter:       !!ticketType.is_supporter,
+    });
 
-    // ── Insert order ──
-    const { data: order, error: orderError } = await supabase
-      .from('ticket_orders')
-      .insert(orderRow)
-      .select('id')
-      .single();
-
-    if (orderError || !order) {
-      console.error('[create-pending-order] Order insert failed:', orderError);
+    if (rpcError) {
+      console.error('[create-pending-order] RPC error:', rpcError);
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
     }
 
-    // ── Insert order item ──
-    const itemRow = {
-      order_id: order.id,
-      event_id: eventId,
-      ticket_type_id: ticketTypeId,
-      ticket_type_name: ticketType.name,
-      quantity,
-      unit_price_nok: unitPrice,
-      line_total_nok: totalAmountNok,
-      is_supporter: !!ticketType.is_supporter,
-    };
-
-    const { error: itemError } = await supabase
-      .from('ticket_order_items')
-      .insert(itemRow);
-
-    if (itemError) {
-      console.error('[create-pending-order] Item insert failed, cleaning up order:', itemError);
-      // Cleanup: delete the orphaned order
-      await supabase.from('ticket_orders').delete().eq('id', order.id);
-      return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 });
+    if (!rpcResult?.success) {
+      const code = rpcResult?.error_code;
+      if (code === 'CAPACITY_REACHED') {
+        const available = rpcResult?.available ?? 0;
+        return NextResponse.json({
+          error: `Not enough tickets available. ${available} remaining, ${quantity} requested`,
+        }, { status: 409 });
+      }
+      if (code === 'TICKET_TYPE_NOT_FOUND') {
+        return NextResponse.json({ error: 'Ticket type not found' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
     }
 
     // ── Success ──
-    return NextResponse.json({
+    const response: Record<string, any> = {
       ok: true,
-      orderId: order.id,
-      orderReference,
-      totalAmountNok,
+      orderId: rpcResult.order_id,
+      orderReference: rpcResult.order_reference,
+      totalAmountNok: rpcResult.total_amount_nok,
       currency: 'NOK',
-      ravePointsEarned,
+      ravePointsEarned: rpcResult.rave_points_earned,
       paymentStatus: 'pending',
-    });
+    };
+
+    // Return claimToken only for guest orders — logged-in orders use profile_id as ownership proof.
+    if (!profileId) {
+      response.claimToken = rpcResult.claim_token;
+    }
+
+    return NextResponse.json(response);
 
   } catch (err) {
     console.error('[create-pending-order] Unexpected error:', err);

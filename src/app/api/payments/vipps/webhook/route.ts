@@ -163,6 +163,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
+    // 3b. Gap 1 backstop: if our order is cancelled (TTL-expired or user-cancelled)
+    //     but Vipps reports paid/authorized, the buyer may have completed payment after
+    //     our TTL kicked in. Re-check capacity before allowing issuance.
+    if (
+      order.payment_status === 'cancelled' &&
+      (localStatus === 'paid' || localStatus === 'authorized')
+    ) {
+      const { data: reReserve, error: reReserveError } = await supabaseAdmin.rpc(
+        'reserve_pending_order_for_existing',
+        { p_order_id: order.id }
+      );
+
+      if (reReserveError || !reReserve?.success) {
+        // No capacity — do not issue a ticket. Mark for manual review and refund.
+        console.error(
+          '[vipps/webhook] CAPACITY CONFLICT — order paid after expiry, no stock left:',
+          order.order_reference
+        );
+        await supabaseAdmin
+          .from('ticket_orders')
+          .update({ payment_status: 'paid_unfulfilled', updated_at: new Date().toISOString() })
+          .eq('id', order.id);
+        return NextResponse.json({ ok: true, action: 'requires_review' });
+      }
+      // Capacity available — re-reservation succeeded, fall through to normal paid path.
+    }
+
     // 4. Build update
     const updatePayload: Record<string, any> = {
       payment_status: localStatus,
@@ -181,6 +208,10 @@ export async function POST(request: Request) {
       updatePayload.cancelled_at = new Date().toISOString();
     }
 
+    if (localStatus === 'failed') {
+      updatePayload.updated_at = new Date().toISOString();
+    }
+
     if (localStatus === 'refunded' || localStatus === 'partially_refunded') {
       updatePayload.refunded_at = new Date().toISOString();
     }
@@ -197,6 +228,17 @@ export async function POST(request: Request) {
     }
 
     console.log(`[vipps/webhook] Order ${order.id} updated to ${localStatus}`);
+
+    // Release reservation when Vipps cancels or fails the payment.
+    // release_order_reservation is idempotent (reservation_released flag).
+    if (localStatus === 'cancelled' || localStatus === 'failed') {
+      (async () => {
+        const { error: releaseErr } = await supabaseAdmin.rpc('release_order_reservation', { p_order_id: order.id });
+        if (releaseErr) {
+          console.error('[vipps/webhook] release_order_reservation failed:', releaseErr.message);
+        }
+      })();
+    }
 
     // If AUTHORIZED, initiate capture (reserve-capture flow)
     // Uses same stable idempotency key as status route for safe deduplication

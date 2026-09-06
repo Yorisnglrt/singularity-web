@@ -230,13 +230,24 @@ GRANT ALL ON public.profiles TO service_role;
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Drop all existing policies on profiles
-DROP POLICY IF EXISTS "Public Read Profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Admins can read all profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+-- Dynamically drop all existing policies on public.profiles regardless of historical name
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT policyname
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'profiles'
+  LOOP
+    EXECUTE format(
+      'DROP POLICY IF EXISTS %I ON public.profiles',
+      r.policyname
+    );
+  END LOOP;
+END
+$$;
 
 -- 6a. SELECT Policies
 CREATE POLICY "Users can read own profile" ON public.profiles

@@ -158,3 +158,26 @@ export async function capturePayment(
 
   console.log(`[vipps] Capture initiated for ${reference}, amount ${amountOre} øre`);
 }
+
+/**
+ * Cancel an active Vipps ePayment.
+ * Safe to call speculatively — if payment is already captured, Vipps returns 4xx.
+ * Callers should catch and log rather than re-throw.
+ */
+export async function cancelPayment(reference: string): Promise<void> {
+  const headers = await vippsHeaders();
+
+  const res = await fetch(`${VIPPS_API_BASE}/epayment/v1/payments/${reference}/cancel`, {
+    method: 'POST',
+    headers,
+    body: '{}',
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    console.error('[vipps] Cancel payment failed:', res.status, errorBody);
+    throw new Error(`Vipps cancel payment failed: ${res.status}`);
+  }
+
+  console.log(`[vipps] Cancel initiated for ${reference}`);
+}
