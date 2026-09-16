@@ -3,9 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 // ── Server-only Supabase client (service role) ──────────────────────
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error(`Missing Supabase environment variables: url=${!!supabaseUrl}, serviceRoleKey=${!!supabaseServiceRoleKey}`);
+  }
+  return createClient(supabaseUrl, supabaseServiceRoleKey);
+}
 
 // ── Constants ───────────────────────────────────────────────────────
 const MAX_QUANTITY = 10;
@@ -40,6 +45,8 @@ function generateOrderReference(): string {
 // ── POST handler ────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
+    const supabase = getSupabaseClient();
+
     // ── Parse body ──
     let body: any;
     try {
@@ -189,7 +196,7 @@ export async function POST(req: Request) {
 
     if (rpcError) {
       console.error('[create-pending-order] RPC error:', rpcError);
-      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create order', details: rpcError.message || JSON.stringify(rpcError) }, { status: 500 });
     }
 
     if (!rpcResult?.success) {
@@ -224,8 +231,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json(response);
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('[create-pending-order] Unexpected error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create order', details: err?.message || String(err) }, { status: 500 });
   }
 }

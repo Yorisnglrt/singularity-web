@@ -369,7 +369,8 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       const orderData = await orderRes.json();
 
       if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
+        const msg = orderData.details ? `${orderData.error || 'Failed to create order'} (${orderData.details})` : (orderData.error || 'Failed to create order');
+        throw new Error(msg);
       }
 
       // P1 Gap 2: persist claimToken for guest recovery
