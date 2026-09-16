@@ -30,10 +30,23 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
     return { issued: 0, alreadyIssued: false };
   }
 
-  // Handle Fallbacks (Email & Points) if already issued
-  if (order.tickets_issued) {
-    console.log(`[tickets] already issued for order ${order.order_reference}`);
-    
+  // 2.5 Atomic claim: flips tickets_issued false -> true in a single UPDATE.
+  // Only the caller that actually performs the flip proceeds to issue
+  // tickets; every other concurrent/duplicate call (webhook vs. status
+  // polling vs. free-ticket route can all race within milliseconds of each
+  // other) falls through to the "already issued" fallback below instead of
+  // re-inserting tickets.
+  const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_order_for_issuance', {
+    p_order_id: orderId
+  });
+
+  if (claimError) {
+    throw new Error(`Failed to claim order ${order.order_reference} for issuance: ${claimError.message}`);
+  }
+
+  if (!claimed) {
+    console.log(`[tickets] already issued (or claimed by a concurrent call) for order ${order.order_reference}`);
+
     // Fallback: Email delivery
     if (order.email_status !== 'sent') {
       console.log(`[tickets] email is ${order.email_status}, retrying delivery for ${order.order_reference}`);
@@ -46,10 +59,25 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
 
     // Fallback: Points Awarding
     await awardPointsForOrder(order);
-    
+
     return { issued: 0, alreadyIssued: true };
   }
 
+  try {
+    return await issueClaimedOrder(order, orderId);
+  } catch (err) {
+    // Roll back the claim so a subsequent retry (webhook redelivery, next
+    // poll) can attempt issuance again instead of getting stuck with
+    // tickets_issued = true and no tickets.
+    await supabaseAdmin
+      .from('ticket_orders')
+      .update({ tickets_issued: false })
+      .eq('id', orderId);
+    throw err;
+  }
+}
+
+async function issueClaimedOrder(order: any, orderId: string): Promise<{ issued: number; alreadyIssued: boolean }> {
   // 3. Fetch order items
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('ticket_order_items')
@@ -61,40 +89,56 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
   }
 
   // 4. Generate ticket records
-  const ticketInserts: any[] = [];
-  let ticketCounter = 1;
+  function buildTicketInserts(): any[] {
+    const inserts: any[] = [];
+    let ticketCounter = 1;
 
-  for (const item of items) {
-    for (let i = 0; i < item.quantity; i++) {
-      const ticketCode = `${order.order_reference}-${ticketCounter}`;
-      const nonce = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const shortCode = generateShortCode();
-      const qrPayload = shortCode;
+    for (const item of items!) {
+      for (let i = 0; i < item.quantity; i++) {
+        const ticketCode = `${order.order_reference}-${ticketCounter}`;
+        const shortCode = generateShortCode();
+        const qrPayload = shortCode;
 
-      ticketInserts.push({
-        order_id: orderId,
-        order_item_id: item.id,
-        event_id: item.event_id,
-        ticket_type_id: item.ticket_type_id || null,
-        guest_code_id: item.guest_code_id || null,
-        ticket_type: item.guest_code_id ? 'guest' : 'paid',
-        ticket_code: ticketCode,
-        qr_payload: qrPayload,
-        short_code: shortCode,
-        holder_name: order.customer_name,
-        holder_email: order.customer_email,
-        status: 'valid'
-      });
+        inserts.push({
+          order_id: orderId,
+          order_item_id: item.id,
+          event_id: item.event_id,
+          ticket_type_id: item.ticket_type_id || null,
+          guest_code_id: item.guest_code_id || null,
+          ticket_type: item.guest_code_id ? 'guest' : 'paid',
+          ticket_code: ticketCode,
+          qr_payload: qrPayload,
+          short_code: shortCode,
+          holder_name: order.customer_name,
+          holder_email: order.customer_email,
+          status: 'valid'
+        });
 
-      ticketCounter++;
+        ticketCounter++;
+      }
     }
+    return inserts;
   }
 
-  // 5. Bulk insert tickets
+  // 5. Bulk insert tickets, retrying with freshly generated short/qr codes
+  // if a unique-constraint collision occurs (26^6 combinations makes this
+  // astronomically unlikely, but the DB unique index is the real guarantee
+  // and a single collision would otherwise fail the whole batch insert).
   console.log(`[tickets] issuing for order ${order.order_reference}...`);
-  const { error: insertError } = await supabaseAdmin
-    .from('tickets')
-    .insert(ticketInserts);
+  const MAX_INSERT_ATTEMPTS = 3;
+  let ticketInserts: any[] = [];
+  let insertError: any = null;
+
+  for (let attempt = 1; attempt <= MAX_INSERT_ATTEMPTS; attempt++) {
+    ticketInserts = buildTicketInserts();
+    const result = await supabaseAdmin.from('tickets').insert(ticketInserts);
+    insertError = result.error;
+
+    if (!insertError) break;
+    if (insertError.code !== '23505') break; // not a unique-violation, don't retry
+
+    console.warn(`[tickets] code collision on attempt ${attempt}/${MAX_INSERT_ATTEMPTS} for order ${order.order_reference}, regenerating:`, insertError.message);
+  }
 
   if (insertError) {
     console.error(`[tickets] issue failed for order ${order.order_reference}:`, insertError);
@@ -171,17 +215,17 @@ export async function issueTicketsForOrder(orderId: string): Promise<{ issued: n
   }
 
 
-  // 6. Mark order as issued
+  // 6. Record issuance timestamp (tickets_issued was already flipped to true
+  // atomically by claim_order_for_issuance() before this function ran).
   const { error: updateError } = await supabaseAdmin
     .from('ticket_orders')
     .update({
-      tickets_issued: true,
       tickets_issued_at: new Date().toISOString()
     })
     .eq('id', orderId);
 
   if (updateError) {
-    console.error(`[tickets] Failed to update tickets_issued flag for ${order.order_reference}:`, updateError);
+    console.error(`[tickets] Failed to set tickets_issued_at for ${order.order_reference}:`, updateError);
   }
 
   console.log(`[tickets] issued count ${ticketInserts.length} for order ${order.order_reference}`);

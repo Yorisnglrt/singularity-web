@@ -4,8 +4,24 @@ import path from 'path';
 import forge from 'node-forge';
 
 const cwd = process.cwd();
+
+function getEnvVal(key) {
+  const envContent = fs.readFileSync(path.join(cwd, '.env.local'), 'utf-8');
+  const match = envContent.match(new RegExp(`^${key}=(.*)$`, 'm'));
+  if (!match) return null;
+  let val = match[1].trim();
+  if (val.startsWith('"') && val.endsWith('"')) {
+    val = val.substring(1, val.length - 1);
+  }
+  return val;
+}
+
 const p12Buffer = fs.readFileSync(path.join(cwd, 'certs', 'singularity-wallet-pass-cert.p12'));
-const p12Passphrase = 'Dj.fabrikken$0583!';
+const p12Passphrase = getEnvVal('APPLE_WALLET_P12_PASSPHRASE');
+if (!p12Passphrase) {
+  console.error('Missing APPLE_WALLET_P12_PASSPHRASE in .env.local');
+  process.exit(1);
+}
 const wwdrBuffer = fs.readFileSync(path.join(cwd, 'certs', 'AppleWWDRCAG4.pem'));
 
 const p12Asn1 = forge.asn1.fromDer(p12Buffer.toString('binary'));

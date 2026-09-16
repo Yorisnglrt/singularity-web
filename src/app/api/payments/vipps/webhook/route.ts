@@ -134,12 +134,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing event name' }, { status: 400 });
     }
 
-    // 1. Find the order
-    const { data: order, error: orderError } = await supabaseAdmin
+    // 1. Find the order — try order_reference first (the reference we
+    // generate), then fall back to vipps_reference. Two targeted lookups
+    // instead of a single .or() filter built from an externally-supplied
+    // value, which could misbehave if `reference` ever contains characters
+    // PostgREST's filter syntax treats specially (e.g. a comma).
+    let { data: order, error: orderError } = await supabaseAdmin
       .from('ticket_orders')
       .select('id, order_reference, total_amount_nok, payment_status, vipps_reference')
-      .or(`order_reference.eq.${reference},vipps_reference.eq.${reference}`)
-      .single();
+      .eq('order_reference', reference)
+      .maybeSingle();
+
+    if (!order && !orderError) {
+      const fallback = await supabaseAdmin
+        .from('ticket_orders')
+        .select('id, order_reference, total_amount_nok, payment_status, vipps_reference')
+        .eq('vipps_reference', reference)
+        .maybeSingle();
+      order = fallback.data;
+      orderError = fallback.error;
+    }
 
     if (orderError || !order) {
       console.error('[vipps/webhook] Order not found for reference:', reference, orderError);
