@@ -45,12 +45,21 @@ export async function POST(
       return data;
     },
     async getPublicProfile(userId) {
-      const { data } = await supabase
+      const { data: viewData } = await supabase
         .from('public_profiles')
         .select('display_name, avatar_url')
         .eq('id', userId)
         .maybeSingle();
-      return data;
+
+      if (viewData) return viewData;
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
+
+      return profileData;
     },
   });
 

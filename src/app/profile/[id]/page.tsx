@@ -14,8 +14,7 @@ export const dynamic = 'force-dynamic';
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
 
-  // Fetch only safe public fields from public_profiles view
-  const { data: profile, error } = await supabase
+  let { data: profile } = await supabase
     .from('public_profiles')
     .select(`
       id,
@@ -32,9 +31,32 @@ export default async function PublicProfilePage({ params }: Props) {
       created_at
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
-  if (error || !profile) {
+  if (!profile) {
+    const { data: fallbackProfile } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        display_name,
+        avatar_url,
+        bio,
+        favorite_producer,
+        favorite_track,
+        favorite_subgenre,
+        favorite_venue,
+        favorite_festival,
+        city,
+        points,
+        created_at
+      `)
+      .eq('id', id)
+      .maybeSingle();
+
+    profile = fallbackProfile;
+  }
+
+  if (!profile) {
     notFound();
   }
 
