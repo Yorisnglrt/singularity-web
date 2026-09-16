@@ -82,8 +82,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // 6. Call use_free_ticket_reward RPC
-    const { data: orderId, error: rpcError } = await userSupabase.rpc('use_free_ticket_reward', {
+    // 6. Call use_points_free_ticket RPC — claims 500 points and creates
+    // the paid 0 NOK order in a single atomic step. No pre-claim on the
+    // profile page needed anymore; this checks the live points balance
+    // itself and fails cleanly if it's below 500.
+    const { data: orderId, error: rpcError } = await userSupabase.rpc('use_points_free_ticket', {
       p_event_id: eventId,
       p_ticket_type_id: ticketTypeId,
       p_customer_email: customerEmail.trim().toLowerCase(),
@@ -92,9 +95,9 @@ export async function POST(req: Request) {
     });
 
     if (rpcError) {
-      console.error('[api/checkout/use-free-ticket] RPC use_free_ticket_reward failed:', rpcError);
-      return NextResponse.json({ 
-        error: rpcError.message || 'Failed to process free ticket reward claim' 
+      console.error('[api/checkout/use-free-ticket] RPC use_points_free_ticket failed:', rpcError);
+      return NextResponse.json({
+        error: rpcError.message || 'Failed to redeem points for a free ticket'
       }, { status: 400 });
     }
 
