@@ -75,10 +75,18 @@ export default function CommunityChatBubble() {
       const userIds = Array.from(new Set(rawMessages.map((m: any) => m.user_id).filter(Boolean)));
 
       if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
+        let { data: profilesData } = await supabase
           .from('public_profiles')
           .select('id, display_name, avatar_url, is_admin')
           .in('id', userIds);
+
+        if (!profilesData || profilesData.length === 0) {
+          const { data: fallbackProfiles } = await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url, is_admin')
+            .in('id', userIds);
+          profilesData = fallbackProfiles;
+        }
 
         const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
         const enriched = rawMessages.map((m: any) => ({
@@ -118,11 +126,20 @@ export default function CommunityChatBubble() {
 
       let authorProfile: ChatProfile | undefined;
       if (data.user_id) {
-        const { data: profileData } = await supabase
+        let { data: profileData } = await supabase
           .from('public_profiles')
           .select('display_name, avatar_url, is_admin')
           .eq('id', data.user_id)
           .maybeSingle();
+
+        if (!profileData) {
+          const { data: fallbackProfile } = await supabase
+            .from('profiles')
+            .select('display_name, avatar_url, is_admin')
+            .eq('id', data.user_id)
+            .maybeSingle();
+          profileData = fallbackProfile;
+        }
 
         if (profileData) {
           authorProfile = {

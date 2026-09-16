@@ -75,10 +75,18 @@ export default function EventActions({ eventId, eventSlug, ticketUrl, ticketProv
       const uniqueUserMap = new Map<string, Reactor>();
 
       if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
+        let { data: profilesData } = await supabase
           .from('public_profiles')
           .select('id, display_name, avatar_url')
           .in('id', userIds);
+
+        if (!profilesData || profilesData.length === 0) {
+          const { data: fallbackProfiles } = await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url')
+            .in('id', userIds);
+          profilesData = fallbackProfiles;
+        }
 
         profilesData?.forEach((p: any) => {
           if (p.id && p.display_name) {
