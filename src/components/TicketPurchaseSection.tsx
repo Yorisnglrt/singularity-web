@@ -21,6 +21,7 @@ interface AlertModalState {
 }
 
 const GUEST_ORDER_KEY = (eventId: string) => `pending_order_${eventId}`;
+const FREE_TICKET_POINTS_COST = 500;
 
 function parseUtcDate(dateStr: string | null): Date | null {
   if (!dateStr) return null;
@@ -61,8 +62,19 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CARD'>('WALLET');
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const [checkingPending, setCheckingPending] = useState(false);
-  const [freeTicketsCount, setFreeTicketsCount] = useState(0);
+
+  // ── Spendable points, computed live — no separate "claim" step needed
+  // anymore. Same calc as the profile page: lifetime points minus
+  // everything already reserved/used/available in reward_claims. ──
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [loadingPoints, setLoadingPoints] = useState(true);
   const [useFreeTicket, setUseFreeTicket] = useState(false);
+
+  // ── Mystery ticket winner nickname form state ──
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameSubmitting, setNicknameSubmitting] = useState(false);
+  const [nicknameSubmitted, setNicknameSubmitted] = useState(false);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
 
   // ── P4: email emphasis state (replaces the old confirm modal) ──────
   const [emailHighlight, setEmailHighlight] = useState(false);
@@ -136,18 +148,23 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
     }
   }, [user, event.id]);
 
-  const fetchFreeTicketsCount = useCallback(async () => {
+  const fetchAvailablePoints = useCallback(async () => {
     if (!user) return;
+    setLoadingPoints(true);
     try {
-      const { data, error } = await supabase
-        .from('reward_claims')
-        .select('id')
-        .eq('profile_id', user.id)
-        .eq('reward_type', 'free_ticket')
-        .eq('status', 'available');
-      if (!error) setFreeTicketsCount(data?.length || 0);
+      const [{ data: profileData, error: profileError }, { data: claimsData, error: claimsError }] = await Promise.all([
+        supabase.from('profiles').select('points').eq('id', user.id).single(),
+        supabase.from('reward_claims').select('points_cost').eq('profile_id', user.id).in('status', ['available', 'reserved', 'used']),
+      ]);
+      if (profileError) throw profileError;
+      const claimedTotal = claimsError ? 0 : (claimsData || []).reduce((sum, c: any) => sum + (c.points_cost || 0), 0);
+      const lifetimePoints = profileData?.points || 0;
+      setAvailablePoints(Math.max(0, lifetimePoints - claimedTotal));
     } catch (err) {
-      console.error('Failed to fetch free tickets count:', err);
+      console.error('Failed to fetch available points:', err);
+      setAvailablePoints(0);
+    } finally {
+      setLoadingPoints(false);
     }
   }, [user]);
 
@@ -156,9 +173,10 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       if (user.email) setEmail(user.email);
       if (user.displayName) setName(user.displayName);
       checkPendingOrder();
-      fetchFreeTicketsCount();
+      fetchAvailablePoints();
     } else {
-      setFreeTicketsCount(0);
+      setAvailablePoints(0);
+      setLoadingPoints(false);
       setUseFreeTicket(false);
       // Guest: check sessionStorage for a pending order on this event
       checkGuestPendingOrder();
@@ -312,7 +330,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('You must be logged in to claim a free ticket reward.');
+      if (!session) throw new Error('You must be logged in to redeem points for a free ticket.');
 
       const res = await fetch('/api/checkout/use-free-ticket', {
         method: 'POST',
@@ -334,13 +352,14 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
 
       if (data.ok && data.orderId) {
         setSuccess({ isFreeTicket: true, orderId: data.orderId });
+        fetchAvailablePoints(); // refresh balance after spending 500 RP
       }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [event.id, selectedType, email, name, phone]);
+  }, [event.id, selectedType, email, name, phone, fetchAvailablePoints]);
 
   const executePaidCheckout = useCallback(async (method: 'WALLET' | 'CARD') => {
     setLoading(true);
@@ -372,6 +391,18 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         throw new Error(orderData.error || 'Failed to create order');
       }
 
+      // ── Mystery ticket: fully free (quantity was 1 and it won) ──
+      // The order is already paid and the ticket already issued server-side
+      // — nothing to send to Vipps for.
+      if (orderData.fullyFree) {
+        setSuccess({
+          mysteryFullWin: true,
+          orderId: orderData.orderId,
+          orderReference: orderData.orderReference,
+        });
+        return;
+      }
+
       // P1 Gap 2: persist claimToken for guest recovery
       if (!session && orderData.claimToken) {
         try {
@@ -383,7 +414,15 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
         } catch {}
       }
 
-      setSuccess({ redirecting: true, orderReference: orderData.orderReference });
+      setSuccess({
+        redirecting: true,
+        orderReference: orderData.orderReference,
+        // Mixed win: quantity>1 and 1 unit came out free — still needs
+        // Vipps for the paid remainder, but worth telling them now rather
+        // than let it be a silent surprise on the receipt.
+        isMysteryWin: !!orderData.isMysteryWin,
+        freeUnits: orderData.freeUnits || 0,
+      });
 
       const vippsRes = await fetch('/api/payments/vipps/create', {
         method: 'POST',
@@ -408,6 +447,34 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       setLoading(false);
     }
   }, [event.id, selectedType, quantity, email, name, phone]);
+
+  // ── Mystery winner nickname submission ─────────────────────────────
+  const submitNickname = useCallback(async (orderId: string) => {
+    if (!nicknameInput.trim()) {
+      setNicknameError('Please enter a nickname');
+      return;
+    }
+    setNicknameSubmitting(true);
+    setNicknameError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/checkout/mystery-winner-nickname', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ orderId, nickname: nicknameInput.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save nickname');
+      setNicknameSubmitted(true);
+    } catch (err: any) {
+      setNicknameError(err.message);
+    } finally {
+      setNicknameSubmitting(false);
+    }
+  }, [nicknameInput]);
 
   // ── Validation + submit ───────────────────────────────────────────
   const validate = (): boolean => {
@@ -472,11 +539,60 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
       );
     }
 
+    if (success.mysteryFullWin) {
+      return (
+        <div className={styles.success}>
+          <h3 className={styles.successTitle}>🎉 Du vant en gratis billett!</h3>
+          <p className={styles.successText}>
+            Gratulerer! Billetten din er utstedt gratis og sendt til <strong>{email}</strong>.
+          </p>
+          <div className={styles.orderRef}>Bestillings-ID: {success.orderReference}</div>
+
+          {!nicknameSubmitted ? (
+            <div style={{ marginTop: '1.5rem', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>
+              <p style={{ fontSize: 'var(--text-sm)', marginBottom: '0.75rem' }}>
+                Skriv inn et kallenavn som vises på arrangementssiden for å vise at du vant:
+              </p>
+              <input
+                className={styles.input}
+                value={nicknameInput}
+                onChange={e => setNicknameInput(e.target.value)}
+                placeholder="Kallenavn (maks 24 tegn)"
+                maxLength={24}
+              />
+              {nicknameError && <div className={styles.error} style={{ marginTop: '0.5rem' }}>{nicknameError}</div>}
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ marginTop: '0.75rem', width: '100%' }}
+                onClick={() => submitNickname(success.orderId)}
+                disabled={nicknameSubmitting}
+              >
+                {nicknameSubmitting ? 'Lagrer...' : 'Vis navnet mitt'}
+              </button>
+            </div>
+          ) : (
+            <p className={styles.successText} style={{ marginTop: '1rem' }}>
+              Takk! <strong>{nicknameInput.trim()}</strong> vises nå på arrangementssiden. 🎊
+            </p>
+          )}
+
+          <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <a href="/profile" className="btn btn-primary" style={{ padding: '0.625rem 1.25rem', textDecoration: 'none' }}>Gå til profil</a>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={styles.success}>
-        <h3 className={styles.successTitle}>Redirecting to Vipps…</h3>
+        <h3 className={styles.successTitle}>
+          {success.isMysteryWin ? `🎉 ${success.freeUnits} av billettene dine er gratis!` : 'Redirecting to Vipps…'}
+        </h3>
         <p className={styles.successText}>
-          Your order has been created. You are being redirected to Vipps to complete payment.
+          {success.isMysteryWin
+            ? 'Du trenger bare å betale for de resterende billettene. Sender deg til Vipps nå…'
+            : 'Your order has been created. You are being redirected to Vipps to complete payment.'}
         </p>
         <div className={styles.orderRef}>{success.orderReference}</div>
       </div>
@@ -633,7 +749,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             </div>
           </div>
 
-          {isLoggedIn && freeTicketsCount > 0 && (
+          {isLoggedIn && !loadingPoints && availablePoints >= FREE_TICKET_POINTS_COST && (
             <div className={styles.field} style={{ marginTop: '0.25rem', marginBottom: '1.25rem' }}>
               <label className={styles.checkboxContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
                 <input
@@ -643,7 +759,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                   onChange={e => handleUseFreeTicketChange(e.target.checked)}
                 />
                 <span className={styles.checkboxLabel} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-accent-primary)', fontWeight: 'bold' }}>
-                  Use available Free Ticket Reward ({freeTicketsCount} claim{freeTicketsCount > 1 ? 's' : ''} available)
+                  Use {FREE_TICKET_POINTS_COST} RP for a free ticket (you have {availablePoints} RP)
                 </span>
               </label>
             </div>
