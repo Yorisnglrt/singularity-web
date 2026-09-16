@@ -33,7 +33,12 @@ export async function POST(
     async insertComment({ eventId: id, userId, content }) {
       const { data, error } = await supabase
         .from('event_comments')
-        .insert({ event_id: id, user_id: userId, content })
+        .insert({
+          event_id: id,
+          event_id_legacy: id,
+          user_id: userId,
+          content,
+        })
         .select('id, event_id, user_id, content, created_at')
         .single();
       if (error) throw error;
