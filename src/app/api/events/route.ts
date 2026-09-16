@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     let query = supabase
       .from('events')
       .select('*')
-      .order('date', { ascending: false });
+      .order('date', { ascending: true });
 
     // If caller is NOT a verified admin or includeTest is not requested, strictly filter out test events
     if (!isAdmin || !includeTest) {

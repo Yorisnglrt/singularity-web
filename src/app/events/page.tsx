@@ -62,8 +62,13 @@ export default function EventsPage() {
 
   const filtered = useMemo(() => {
     const base = normalizedEvents.filter(e => e.isPast === showPast);
-    if (filter === 'all') return base;
-    return base.filter(e => e.type === filter);
+    const sorted = [...base].sort((a, b) => {
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      return timeA - timeB;
+    });
+    if (filter === 'all') return sorted;
+    return sorted.filter(e => e.type === filter);
   }, [normalizedEvents, showPast, filter]);
 
   const filters = ['all', 'club', 'underground', 'outdoor'];
