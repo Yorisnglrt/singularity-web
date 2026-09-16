@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { issueTicketsForOrder } from '@/lib/tickets/issueTicketsForOrder';
 
 // ── Server-only Supabase client (service role) ──────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!;
@@ -69,6 +70,9 @@ export async function POST(req: Request) {
     const finalMethod = (paymentMethodType && validMethods.includes(paymentMethodType)) ? paymentMethodType : 'WALLET';
 
     // ── Optional auth: resolve profile_id if logged in ──
+    // Note: profile_id is also what gates mystery-ticket eligibility inside
+    // reserve_pending_order (guests never roll), so this resolution matters
+    // beyond just points/ownership bookkeeping.
     let profileId: string | null = null;
     const authHeader = req.headers.get('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -161,14 +165,18 @@ export async function POST(req: Request) {
     }
 
     // ── Build order parameters ──
+    // total_amount_nok / rave_points_earned sent here are the "no mystery
+    // win" baseline; if the RPC's internal roll wins, IT recomputes the
+    // final totals server-side (never trusts these back) and returns them
+    // in the response instead.
     const orderReference = generateOrderReference();
     const claimToken = crypto.randomUUID();
     const totalAmountNok = unitPrice * quantity;
     const pointsPerTicket = ticketType.is_supporter ? 200 : 150;
     const ravePointsEarned = quantity * pointsPerTicket;
 
-    // ── Atomically reserve stock and create order ──
-    // The RPC handles: expired reservation cleanup, capacity check, insert, reserved_quantity increment.
+    // ── Atomically reserve stock, roll the mystery ticket draw (if
+    // eligible), and create the order ──
     const { data: rpcResult, error: rpcError } = await supabase.rpc('reserve_pending_order', {
       p_ticket_type_id:     ticketTypeId,
       p_event_id:           eventId,
@@ -206,7 +214,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
     }
 
-    // ── Success ──
+    const freeUnits: number = rpcResult.free_units ?? 0;
+    const fullyFree: boolean = !!rpcResult.fully_free;
+
+    // ── Fully-free win (quantity was 1): the order is already 'paid' with
+    // nothing left to charge — issue the ticket right now instead of
+    // sending the customer to Vipps for 0 NOK. ──
+    if (fullyFree) {
+      try {
+        await issueTicketsForOrder(rpcResult.order_id);
+      } catch (issueErr: any) {
+        console.error('[create-pending-order] mystery win ticket issuance failed, order is still paid:', issueErr);
+        // Don't fail the response — the order is paid; issuance can be
+        // retried by the pending-status poll fallback in issueTicketsForOrder.
+      }
+
+      return NextResponse.json({
+        ok: true,
+        isMysteryWin: true,
+        fullyFree: true,
+        orderId: rpcResult.order_id,
+        orderReference: rpcResult.order_reference,
+        paymentStatus: 'paid',
+      });
+    }
+
+    // ── Success (normal paid flow, possibly a mixed win where 1 of N
+    // units is free but the remainder still needs Vipps payment) ──
     const response: Record<string, any> = {
       ok: true,
       orderId: rpcResult.order_id,
@@ -215,6 +249,8 @@ export async function POST(req: Request) {
       currency: 'NOK',
       ravePointsEarned: rpcResult.rave_points_earned,
       paymentStatus: 'pending',
+      isMysteryWin: freeUnits > 0,
+      freeUnits,
     };
 
     // Return claimToken only for guest orders — logged-in orders use profile_id as ownership proof.
