@@ -3,9 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import { cancelPayment } from '@/lib/vipps';
 import { PENDING_ORDER_TTL_MINUTES } from '@/lib/checkout';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error(`Missing Supabase environment variables: url=${!!supabaseUrl}, serviceRoleKey=${!!supabaseServiceRoleKey}`);
+  }
+  return createClient(supabaseUrl, supabaseServiceRoleKey);
+}
 
 const TTL_MS = PENDING_ORDER_TTL_MINUTES * 60 * 1000;
 
@@ -32,7 +37,7 @@ const ORDER_SELECT = `
  * - Releases the reserved stock (idempotent).
  * - Non-blocking: attempts to cancel the Vipps payment session (defense-in-depth).
  */
-async function expireOrder(order: { id: string; vipps_reference: string | null; order_reference: string }) {
+async function expireOrder(supabase: any, order: { id: string; vipps_reference: string | null; order_reference: string }) {
   await supabase
     .from('ticket_orders')
     .update({ payment_status: 'cancelled', updated_at: new Date().toISOString() })
@@ -50,6 +55,7 @@ async function expireOrder(order: { id: string; vipps_reference: string | null; 
 
 export async function GET(req: Request) {
   try {
+    const supabase = getSupabaseClient();
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get('eventId');
     const orderReference = searchParams.get('orderReference');
@@ -80,7 +86,7 @@ export async function GET(req: Request) {
 
       if (ordersError) {
         console.error('[pending-status] Guest DB Error:', ordersError);
-        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+        return NextResponse.json({ error: 'Database error', details: ordersError.message }, { status: 500 });
       }
 
       if (!orders || orders.length === 0) {
@@ -91,7 +97,7 @@ export async function GET(req: Request) {
 
       // Lazy expiry check
       if (Date.now() - new Date(order.created_at).getTime() > TTL_MS) {
-        await expireOrder(order);
+        await expireOrder(supabase, order);
         return NextResponse.json({ hasPending: false });
       }
 
@@ -101,8 +107,8 @@ export async function GET(req: Request) {
         order: {
           orderReference: order.order_reference,
           totalAmountNok: order.total_amount_nok,
-          ticketTypeName: item.ticket_type_name,
-          quantity: item.quantity,
+          ticketTypeName: item?.ticket_type_name || '',
+          quantity: item?.quantity || 1,
           paymentUrl: order.payment_url,
           createdAt: order.created_at,
         }
@@ -128,7 +134,7 @@ export async function GET(req: Request) {
 
     if (ordersError) {
       console.error('[pending-status] DB Error:', ordersError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      return NextResponse.json({ error: 'Database error', details: ordersError.message }, { status: 500 });
     }
 
     if (!orders || orders.length === 0) {
@@ -139,7 +145,7 @@ export async function GET(req: Request) {
 
     // Lazy expiry check
     if (Date.now() - new Date(order.created_at).getTime() > TTL_MS) {
-      await expireOrder(order);
+      await expireOrder(supabase, order);
       return NextResponse.json({ hasPending: false });
     }
 
@@ -149,15 +155,15 @@ export async function GET(req: Request) {
       order: {
         orderReference: order.order_reference,
         totalAmountNok: order.total_amount_nok,
-        ticketTypeName: item.ticket_type_name,
-        quantity: item.quantity,
+        ticketTypeName: item?.ticket_type_name || '',
+        quantity: item?.quantity || 1,
         paymentUrl: order.payment_url,
         createdAt: order.created_at,
       }
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('[pending-status] Unexpected error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: err?.message || String(err) }, { status: 500 });
   }
 }
