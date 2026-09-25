@@ -226,6 +226,7 @@ export function normalizeTicketType(tt: any): EventTicketType {
     soldQuantity: tt.soldQuantity ?? tt.sold_quantity ?? 0,
     isActive: !!(tt.isActive ?? tt.is_active),
     isSupporter: !!(tt.isSupporter ?? tt.is_supporter),
+    ravePoints: tt.ravePoints ?? tt.rave_points ?? null,
     saleStartsAt: tt.saleStartsAt || tt.sale_starts_at || null,
     saleEndsAt: tt.saleEndsAt || tt.sale_ends_at || null,
     sortOrder: tt.sortOrder ?? tt.sort_order ?? 0,
