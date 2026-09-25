@@ -36,6 +36,7 @@ export interface EventTicketType {
   soldQuantity: number;
   isActive: boolean;
   isSupporter: boolean;
+  ravePoints?: number | null; // manual RP per ticket; null = default (Supporter 200, Early Bird 150, others 100)
   saleStartsAt: string | null;
   saleEndsAt: string | null;
   sortOrder: number;
