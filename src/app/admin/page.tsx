@@ -26,6 +26,7 @@ export interface EventTicketType {
   soldQuantity: number;
   isActive: boolean;
   isSupporter: boolean;
+  ravePoints?: number | null; // manual RP per ticket; null = default (Supporter 200, Early Bird 150, others 100)
   saleStartsAt?: string | null;
   saleEndsAt?: string | null;
   sortOrder: number;
@@ -94,6 +95,7 @@ export default function AdminPage() {
           soldQuantity: tt.sold_quantity ?? 0,
           isActive: tt.is_active ?? true,
           isSupporter: tt.is_supporter ?? false,
+          ravePoints: tt.rave_points ?? null,
           saleStartsAt: tt.sale_starts_at ?? null,
           saleEndsAt: tt.sale_ends_at ?? null,
           sortOrder: tt.sort_order ?? 0,

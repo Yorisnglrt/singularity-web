@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Event, EventTicketType } from '@/data/events';
+import { getRavePointsPerTicket } from '@/lib/ravePoints';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n';
@@ -613,7 +614,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                   </div>
                 </div>
                 <div className={styles.ticketPrice}>
-                  {tt.priceNok} NOK / +{tt.isSupporter ? 200 : 150} RP
+                  {tt.priceNok} NOK / +{getRavePointsPerTicket(tt)} RP
                 </div>
               </div>
             );
@@ -693,7 +694,7 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
             <div className={styles.guestRpInfo}>
               <strong className={styles.guestRpTitle}>Want to collect Rave Points?</strong>
               <p className={styles.guestRpBody}>
-                Create an account with the same email after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> from this purchase.
+                Create an account with the same email after checkout to collect <strong>+{quantity * getRavePointsPerTicket(selectedType)} RP</strong> from this purchase.
               </p>
               <a href="/membership" className={styles.guestRpLink}>Create account</a>
             </div>
@@ -729,9 +730,9 @@ export default function TicketPurchaseSection({ event, ticketTypes }: Props) {
                 {useFreeTicket ? (
                   <>Earn <strong>+0 RP</strong> (Free Ticket Reward applied)</>
                 ) : isLoggedIn ? (
-                  <>Earn <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong> after payment</>
+                  <>Earn <strong>+{quantity * getRavePointsPerTicket(selectedType)} RP</strong> after payment</>
                 ) : (
-                  <>Create an account after checkout to collect <strong>+{quantity * (selectedType?.isSupporter ? 200 : 150)} RP</strong></>
+                  <>Create an account after checkout to collect <strong>+{quantity * getRavePointsPerTicket(selectedType)} RP</strong></>
                 )}
               </span>
             </div>

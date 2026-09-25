@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './EventForm.module.css';
 import type { EventTicketType } from './page';
+import { getDefaultRavePoints, getRavePointsPerTicket } from '@/lib/ravePoints';
 
 // Helper to extract colors from existing posterColor gradient
 function parseGradient(css: string): { colorA: string; colorB: string; dir: string } {
@@ -803,6 +804,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
     soldQuantity: 0,
     isActive: true,
     isSupporter: false,
+    ravePoints: null,
     saleStartsAt: null,
     saleEndsAt: null,
     sortOrder: (ticketTypes.length + 1) * 10,
@@ -818,6 +820,10 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
       if (!Number.isInteger(qty) || qty < tt.soldQuantity) {
         errs.totalQuantity = `Must be an integer ≥ ${tt.soldQuantity} (sold)`;
       }
+    }
+    if (tt.ravePoints != null) {
+      const rp = Number(tt.ravePoints);
+      if (!Number.isInteger(rp) || rp < 0) errs.ravePoints = 'Must be an integer ≥ 0';
     }
     if (tt.saleStartsAt && tt.saleEndsAt && tt.saleEndsAt < tt.saleStartsAt) {
       errs.saleEndsAt = 'End cannot be before start';
@@ -1129,7 +1135,7 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
               <span className={styles.lineupName} style={{ flex: 1, minWidth: 120 }}>
                 <strong>{tt.name}</strong>{' '}
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
-                  {tt.priceNok} NOK · {tt.isActive ? '✓ Active' : '✗ Inactive'}
+                  {tt.priceNok} NOK · {getRavePointsPerTicket(tt)} RP{tt.ravePoints == null ? ' (default)' : ''} · {tt.isActive ? '✓ Active' : '✗ Inactive'}
                   {tt.totalQuantity != null ? ` · ${tt.soldQuantity}/${tt.totalQuantity} sold` : ` · ${tt.soldQuantity} sold`}
                 </span>
               </span>
@@ -1190,6 +1196,15 @@ export default function EventForm({ item, allArtists, ticketTypes, onSave, onDup
                   <input type="number" className={styles.input} value={editingTT.soldQuantity} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
                   <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Read-only (managed by system)</p>
                 </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Rave Points per ticket</label>
+                  <input type="number" className={styles.input} value={editingTT.ravePoints ?? ''} onChange={e => setEditingTT({ ...editingTT, ravePoints: e.target.value === '' ? null : parseInt(e.target.value) })} min={0} step={1} placeholder={`Default: ${getDefaultRavePoints(editingTT.name, editingTT.isSupporter)} RP`} />
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Leave empty for default (Supporter 200, Early Bird 150, others 100).</p>
+                  {ttErrors.ravePoints && <span style={{ color: '#ff3b5c', fontSize: '0.75rem' }}>{ttErrors.ravePoints}</span>}
+                </div>
+              </div>
+
+              <div className={styles.row2} style={{ marginTop: '0.5rem' }}>
                 <div className={styles.field}>
                   <label className={styles.label}>Sort Order</label>
                   <input type="number" className={styles.input} value={editingTT.sortOrder} onChange={e => setEditingTT({ ...editingTT, sortOrder: parseInt(e.target.value) || 0 })} step={1} />
