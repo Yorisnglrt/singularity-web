@@ -178,6 +178,12 @@ export function mapTicketTypeToDb(tt: any) {
     // sold_quantity is managed by the system (incremented on issuance), do not overwrite via admin
     is_active: tt.isActive ?? tt.is_active ?? true,
     is_supporter: !!(tt.isSupporter ?? tt.is_supporter),
+    rave_points: (() => {
+      const raw = tt.ravePoints ?? tt.rave_points;
+      if (raw == null || raw === '') return null;
+      const n = parseInt(String(raw), 10);
+      return isNaN(n) ? null : Math.max(0, n);
+    })(),
     sale_starts_at: tt.saleStartsAt ?? tt.sale_starts_at ?? null,
     sale_ends_at: tt.saleEndsAt ?? tt.sale_ends_at ?? null,
     sort_order: parseInt(String(tt.sortOrder ?? tt.sort_order ?? 0), 10) || 0,
