@@ -16,6 +16,7 @@ function getSupabaseClient() {
 const MAX_QUANTITY = 10;
 /** Must stay in sync with the TTL constant inside reserve_pending_order RPC. */
 import { PENDING_ORDER_TTL_MINUTES } from '@/lib/checkout';
+import { getRavePointsPerTicket } from '@/lib/ravePoints';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
     const orderReference = generateOrderReference();
     const claimToken = crypto.randomUUID();
     const totalAmountNok = unitPrice * quantity;
-    const pointsPerTicket = ticketType.is_supporter ? 200 : 150;
+    const pointsPerTicket = getRavePointsPerTicket(ticketType);
     const ravePointsEarned = quantity * pointsPerTicket;
 
     // ── Atomically reserve stock and create order ──
